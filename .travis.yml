@@ -1,0 +1,14 @@
+language: node_js
+node_js:
+  - "node"
+  - "lts/*"
+  - "13"
+  - "12"
+
+script: echo "Running tests against $(node -v)..."
+
+jobs:
+  include:
+    - stage: Run tests
+      node_js: node
+      script: jest --coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage
