@@ -1,10 +1,7 @@
 import { Err, fail, ok } from '@alexshelkov/result';
 
-import { MiddlewareCreator, Request, ServiceContainer } from '../types';
+import { creator, route, addService, MiddlewareCreator, Request, ServiceContainer } from '../index';
 import { createEvent, createContext, createRequest } from '../__stubs__';
-import { creator } from '../creator';
-import { route } from '../router';
-import { addService } from '../utils';
 
 type A1 = { a1: string };
 type A2 = { a2: boolean };
@@ -32,6 +29,7 @@ const routerCreatorTest: MiddlewareCreator<{ a2: boolean }, TestRouter, Err> = (
       a: options.a2 ? { a2: true } : { a1: '1' },
     });
   };
+
 describe('router', () => {
   it('works with raw handlers', async () => {
     expect.assertions(2);

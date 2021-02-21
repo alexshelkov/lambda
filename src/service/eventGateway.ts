@@ -27,4 +27,5 @@ const eventGateway: MiddlewareCreator<
       eventGateway: (request.event as unknown) as APIGatewayProxyEvent,
     });
   };
+
 export default eventGateway;

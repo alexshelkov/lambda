@@ -8,6 +8,10 @@ export {
   Transform,
   Request,
   RequestError,
+  AwsEvent,
+  AwsContext,
+  AwsHandler,
+  AwsResult,
 } from './types';
 
 export { Creator, creator, GetService, PickService, GetError } from './creator';

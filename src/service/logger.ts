@@ -44,4 +44,5 @@ const logger: MiddlewareCreator<
     addService(request, {
       logger: createLogger(request.service.transport),
     });
+
 export default logger;

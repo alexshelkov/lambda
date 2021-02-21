@@ -27,7 +27,7 @@ const jsonBody: MiddlewareCreator<JsonBodyOptions, JsonBodyService, JsonBodyErro
       body = JSON.parse(request.event.body) as unknown;
     } catch (err) {
       return fail('JsonBodyParseError', {
-        message: err instanceof Error ? err.message : 'Unknown parse error',
+        message: (err as Error).message,
       });
     }
 
@@ -41,4 +41,5 @@ const jsonBody: MiddlewareCreator<JsonBodyOptions, JsonBodyService, JsonBodyErro
       jsonBody: body as JsonBody,
     });
   };
+
 export default jsonBody;

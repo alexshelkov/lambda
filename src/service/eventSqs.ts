@@ -36,4 +36,5 @@ const sqs: MiddlewareCreator<EventSqsOptions, EventSqsService, EventSqsErrors> =
       eventSqsRecord: record,
     });
   };
+
 export default sqs;

@@ -99,7 +99,7 @@ export const creatorTest5Error: MiddlewareCreator<
     });
   };
 
-export const createEvent = (): AwsEvent => ({} as AwsEvent);
+export const createEvent = (event: AwsEvent = {}): AwsEvent => event;
 
 export const createContext = (): AwsContext => ({} as AwsContext);
 

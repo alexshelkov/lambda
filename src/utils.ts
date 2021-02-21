@@ -1,4 +1,4 @@
-import { compare, FailureException, ok, Result, Status, Success } from '@alexshelkov/result';
+import { compare, FailureException, ok, Result, Success } from '@alexshelkov/result';
 
 import {
   Handler,
@@ -18,21 +18,19 @@ import {
   AwsContext,
 } from './types';
 
-export const json = async (
-  result: Result<unknown, unknown>
-): // eslint-disable-next-line @typescript-eslint/require-await
-Promise<AwsResult> => {
+// eslint-disable-next-line @typescript-eslint/require-await
+export const json = async (result: Result<unknown, unknown>): Promise<AwsResult> => {
   let code: number;
 
   if (result.code) {
     code = result.code;
   } else {
-    code = result.status === Status.Success ? 200 : 400;
+    code = result.status === 'success' ? 200 : 400;
   }
 
-  if (result.status === Status.Success && result.data === undefined) {
+  if (result.status === 'success' && result.data === undefined) {
     delete result.data;
-  } else if (result.status === Status.Error && result.error === undefined) {
+  } else if (result.status === 'error' && result.error === undefined) {
     delete result.error;
   }
 
@@ -41,12 +39,13 @@ Promise<AwsResult> => {
 
   let body: string;
 
-  if (result.status === Status.Success) {
+  if (result.status === 'success') {
     body = result.data !== undefined ? JSON.stringify(result) : '';
   } else {
-    delete result.stack;
-
-    body = JSON.stringify({ ...result, message: undefined, name: undefined });
+    body =
+      result.error !== undefined
+        ? JSON.stringify({ ...result, message: undefined, name: undefined, stack: undefined })
+        : '';
   }
 
   return {
@@ -176,7 +175,7 @@ export const lambda = <
   let response;
 
   try {
-    if (request.status === Status.Error) {
+    if (request.status === 'error') {
       response = await failure({
         event,
         context,

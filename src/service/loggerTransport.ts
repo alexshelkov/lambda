@@ -37,4 +37,5 @@ const transport: MiddlewareCreator<TransportOptions, TransportService, Transport
     addService(request, {
       transport: createTransport(),
     });
+
 export default transport;

@@ -1,6 +1,6 @@
-import { fail, ok, Status } from '@alexshelkov/result';
+import { fail, ok } from '@alexshelkov/result';
 
-import { connect, join } from '../utils';
+import { connect, join } from '../index';
 
 import {
   creatorTest1,
@@ -50,9 +50,9 @@ describe('middleware utils', () => {
 
     const response = await creatorTest12({ op1: '1', op4: '1' })(createRequest({}));
 
-    expect(response.status).toBe(Status.Error);
+    expect(response.status).toBe('error');
 
-    expect(response.status === Status.Error ? response.error.type : null).toStrictEqual('err4');
+    expect(response.status === 'error' ? response.error.type : null).toStrictEqual('err4');
   });
 
   it('returns first failed middleware error', async () => {
@@ -62,9 +62,9 @@ describe('middleware utils', () => {
 
     const response = await creatorTest12({ op4: '1', op5: '1' })(createRequest({}));
 
-    expect(response.status).toBe(Status.Error);
+    expect(response.status).toBe('error');
 
-    expect(response.status === Status.Error ? response.error.type : {}).toStrictEqual('err4');
+    expect(response.status === 'error' ? response.error.type : {}).toStrictEqual('err4');
   });
 });
 

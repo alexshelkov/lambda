@@ -40,4 +40,5 @@ const sns: MiddlewareCreator<EventSnsOptions, EventSnsService, EventSnsErrors> =
       eventSnsMessage: message,
     });
   };
+
 export default sns;

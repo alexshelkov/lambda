@@ -16,21 +16,11 @@ import { join, joinFailure, joinUnexpected, connect, json, lambda } from './util
 
 const idHandler = <Service extends ServiceContainer, Data, Error>(
   data: Data
-): Handler<
-  Service,
-  Data,
-  Error
-  // eslint-disable-next-line @typescript-eslint/require-await
-> => async () => ok(data, { order: -2 });
+): Handler<Service, Data, Error> => () => Promise.resolve(ok(data, { order: -2 }));
 
 const idHandlerFailure = <ServiceError, Data, Error>(
   data: Data
-): HandlerError<
-  ServiceError,
-  Data,
-  Error
-  // eslint-disable-next-line @typescript-eslint/require-await
-> => async () => ok(data, { order: -2 });
+): HandlerError<ServiceError, Data, Error> => () => Promise.resolve(ok(data, { order: -2 }));
 
 export interface Creator<
   OptionsAdded extends ServiceOptions,
@@ -109,7 +99,7 @@ export interface Creator<
     ServiceDepsAdded
   >;
 
-  unexpected: <ExceptionData, ExceptionError>(
+  onUnexpected: <ExceptionData, ExceptionError>(
     exception: HandlerException<ExceptionData, ExceptionError>
   ) => Creator<
     OptionsAdded,
@@ -316,7 +306,7 @@ export const creatorHelper = <
     );
   },
 
-  unexpected: <ExceptionData, ExceptionError>(
+  onUnexpected: <ExceptionData, ExceptionError>(
     exception2: HandlerException<ExceptionData, ExceptionError>
   ) => {
     const exception12 = joinUnexpected(exception1, exception2);
@@ -361,6 +351,27 @@ export const creatorHelper = <
   },
 });
 
+export const success1: Handler<ServiceContainer, never, Err> = () =>
+  Promise.resolve(fail('Not implemented', { order: -1 }));
+
+export const error1: HandlerError<Err, never, Err> = (request) =>
+  Promise.resolve(fail(request.error.type, { order: -1, ...request.error }));
+
+export const exception1: HandlerException<never, Err> = ({ exception }) => {
+  const name = exception instanceof Error ? exception.name : 'unknown';
+  const message = exception instanceof Error ? exception.message : undefined;
+
+  const error = fail<Err>(`Uncaught exception: ${name}`, { order: -1, message });
+
+  error.stack = exception instanceof Error ? exception.stack : error.stack;
+
+  return Promise.resolve(error);
+};
+
+export const transform1: Transform = json;
+
+export const transformError1: Transform = json;
+
 export const creator = <
   Options1 extends ServiceOptions,
   Service1 extends ServiceContainer,
@@ -369,29 +380,6 @@ export const creator = <
   creator1: MiddlewareCreator<Options1, Service1, ServiceError1>
 ): typeof creatorType => {
   const options1: Options1 = {} as Options1;
-
-  // eslint-disable-next-line @typescript-eslint/require-await
-  const success1: Handler<Service1, never, Err> = async () =>
-    fail('Not implemented', { order: -1 });
-
-  // eslint-disable-next-line @typescript-eslint/require-await
-  const error1: HandlerError<ServiceError1, never, Err> = async (request) =>
-    fail(request.error.type, { order: -1 });
-
-  // eslint-disable-next-line @typescript-eslint/require-await
-  const exception1: HandlerException<never, Err> = async ({ exception }) => {
-    const name = exception instanceof Error ? exception.name : 'unknown';
-    const message = exception instanceof Error ? exception.message : undefined;
-
-    const error = fail<Err>(`Uncaught exception: ${name}`, { order: -1, message });
-
-    error.stack = exception instanceof Error ? exception.stack : error.stack;
-
-    return error;
-  };
-
-  const transform1: Transform = json;
-  const transformError1: Transform = json;
 
   const creatorType = creatorHelper(
     creator1,
