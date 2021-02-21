@@ -322,10 +322,10 @@ export const creatorHelper = <
     );
   },
 
-  onOk: (transform2: Transform = json) =>
+  onOk: (transform2: Transform) =>
     creatorHelper(creator1, options1, success1, error1, exception1, transform2, transformError1),
 
-  onFail: (transformError2: Transform = json) =>
+  onFail: (transformError2: Transform) =>
     creatorHelper(creator1, options1, success1, error1, exception1, transform1, transformError2),
 
   cr: () => creator1,

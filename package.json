@@ -1,7 +1,7 @@
 {
   "name": "@alexshelkov/lambda",
   "description": "Type-safe middleware for AWS Lambda",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "Alex Shelkovskiy <alexshelkov@gmail.com>",
   "repository": "https://github.com/alexshelkov/lambda",
   "license": "MIT",
