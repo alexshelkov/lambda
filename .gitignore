@@ -1,0 +1,27 @@
+# Editors
+.idea
+.vscode
+
+# Package directories
+lerna-debug.log
+node_modules
+jspm_packages
+
+# Builded
+coverage
+dist
+tsconfig.tsbuildinfo
+
+# Serverless
+.serverless
+.env
+.env.local
+.env.dev
+.env.prod
+
+# Tmp files
+t.ts
+t1.ts
+t2.ts
+t1.js
+t2.js
