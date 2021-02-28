@@ -1,5 +1,6 @@
 import { ok } from '@alexshelkov/result';
 
+import { SQSHandler, SQSEvent } from 'aws-lambda';
 import { eventSqsService, creator } from '../../index';
 import { createContext, createEvent } from '../../__stubs__';
 
@@ -9,16 +10,18 @@ describe('eventSqs', () => {
 
     const res = creator(eventSqsService);
 
-    const resOk = res.ok(() => Promise.resolve(ok('success')));
+    const resOk = res.ok(() => {
+      return Promise.resolve(ok('success'));
+    });
 
-    expect(await resOk.req()(createEvent(), createContext(), () => {})).toMatchObject({
+    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"EventSqsRequestError"}}',
     });
   });
 
   it('parse SQSEvent event', async () => {
-    expect.assertions(4);
+    expect.assertions(7);
 
     const res = creator(eventSqsService);
 
@@ -30,8 +33,34 @@ describe('eventSqs', () => {
       return Promise.resolve(ok('success'));
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
+    const resTransOK = resOk.onOk(async (_r, { event }) => {
+      expect(event).toMatchObject({ Records: [{ eventSource: 'aws:sqs', body: 'Test message' }] });
+    });
+
+    // eslint-disable-next-line @typescript-eslint/require-await
+    const resTransFail = resTransOK.onFail(async (_r, { event }) => {
+      expect(event).toMatchObject({ Records: [{ eventSource: 'wrong type' }] });
+    });
+
+    const handle: SQSHandler = resTransFail.req();
+
     expect(
-      await resOk.req()(
+      await handle(
+        createEvent({
+          Records: [
+            {
+              eventSource: 'wrong type',
+            },
+          ],
+        } as SQSEvent),
+        createContext(),
+        () => {}
+      )
+    ).toBeUndefined();
+
+    expect(
+      await handle(
         createEvent({
           Records: [
             {
@@ -39,13 +68,10 @@ describe('eventSqs', () => {
               body: 'Test message',
             },
           ],
-        }),
+        } as SQSEvent),
         createContext(),
         () => {}
       )
-    ).toMatchObject({
-      statusCode: 200,
-      body: '{"status":"success","data":"success"}',
-    });
+    ).toBeUndefined();
   });
 });

@@ -14,17 +14,25 @@ export type JsonRequestError = { type: 'JsonRequestError' } & Err;
 export type JsonBodyParseError = { type: 'JsonBodyParseError' } & Err;
 export type JsonBodyErrors = JsonRequestError | JsonBodyParseError;
 
-const jsonBody: MiddlewareCreator<JsonBodyOptions, JsonBodyService, JsonBodyErrors> = () =>
+const isHaveBody = (event: unknown): event is { body: string } => {
+  return (
+    typeof event === 'object' &&
+    event !== null &&
+    typeof (event as { body: unknown }).body === 'string'
+  );
+};
+
+const jsonBody: MiddlewareCreator<JsonBodyOptions, JsonBodyService, JsonBodyErrors> = () => {
   // eslint-disable-next-line @typescript-eslint/require-await
-  async (request) => {
-    if (typeof request.event.body !== 'string') {
+  return async (request) => {
+    if (!isHaveBody(request.event)) {
       return fail('JsonRequestError');
     }
 
-    let body: unknown;
+    let body;
 
     try {
-      body = JSON.parse(request.event.body) as unknown;
+      body = JSON.parse(request.event.body) as JsonBody;
     } catch (err) {
       return fail('JsonBodyParseError', {
         message: (err as Error).message,
@@ -38,8 +46,9 @@ const jsonBody: MiddlewareCreator<JsonBodyOptions, JsonBodyService, JsonBodyErro
     }
 
     return addService(request, {
-      jsonBody: body as JsonBody,
+      jsonBody: body,
     });
   };
+};
 
 export default jsonBody;

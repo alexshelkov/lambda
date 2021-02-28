@@ -1,25 +1,37 @@
 import { Err, fail } from '@alexshelkov/result';
 
-import { Handler, ServiceContainer, Request } from './types';
+import { Handler, ServiceContainer, Request, AwsEvent } from './types';
 
-export interface Router<Service extends ServiceContainer, Routed extends ServiceContainer> {
-  (request: Request<Service>): Request<Routed> | false;
+export interface Router<
+  Event extends AwsEvent,
+  Service extends ServiceContainer,
+  Routed extends ServiceContainer
+> {
+  (request: Request<Event, Service>): Request<Event, Routed> | false;
 }
 
 export type SkippedError = {
   type: 'Skipped';
 } & Err;
 
-export const route = <Service extends ServiceContainer, Routed extends ServiceContainer>(
-  router: Router<Service, Routed>
-) => <Data, Error>(
-  handler: Handler<Routed, Data, Error>
-): Handler<Service, Data, SkippedError | Error> => async (request: Request<Service>) => {
-  const routedRequest = router(request);
+export const route = <
+  Event extends AwsEvent,
+  Service extends ServiceContainer,
+  Routed extends ServiceContainer
+>(
+  router: Router<Event, Service, Routed>
+) => {
+  return <Data, Error>(
+    handler: Handler<Event, Routed, Data, Error>
+  ): Handler<Event, Service, Data, SkippedError | Error> => {
+    return async (request: Request<Event, Service>) => {
+      const routedRequest = router(request);
 
-  if (!routedRequest) {
-    return fail<SkippedError>('Skipped', { skip: true });
-  }
+      if (!routedRequest) {
+        return fail<SkippedError>('Skipped', { skip: true });
+      }
 
-  return handler(routedRequest);
+      return handler(routedRequest);
+    };
+  };
 };

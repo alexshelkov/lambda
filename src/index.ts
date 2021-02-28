@@ -9,12 +9,10 @@ export {
   Request,
   RequestError,
   AwsEvent,
-  AwsContext,
   AwsHandler,
-  AwsResult,
 } from './types';
 
-export { Creator, creator, GetService, PickService, GetError } from './creator';
+export { Creator, creator, GetService, PickService, GetError, GetEvent } from './creator';
 
 export { json, connect, lambda, join, joinFailure, addService } from './utils';
 

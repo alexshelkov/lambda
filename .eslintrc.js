@@ -44,6 +44,7 @@ module.exports = {
       ],
       rules: {
         'no-param-reassign': 'off',
+        'arrow-body-style': ['error', 'always'],
         '@typescript-eslint/no-unused-vars': [
           'error',
           { varsIgnorePattern: '^_', argsIgnorePattern: '^_' },

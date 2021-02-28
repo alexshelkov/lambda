@@ -12,20 +12,30 @@ export type EventGatewayService = { eventGateway: APIGatewayProxyEvent };
 export type EventGatewayRequestError = { type: 'EventGatewayRequestError' } & Err;
 export type EventGatewayErrors = EventGatewayRequestError;
 
+const isApiGatewayEvent = (event: unknown): event is APIGatewayProxyEvent => {
+  return (
+    event !== null &&
+    typeof event === 'object' &&
+    typeof (event as { httpMethod: unknown }).httpMethod === 'string' &&
+    typeof (event as { resource: unknown }).resource === 'string'
+  );
+};
+
 const eventGateway: MiddlewareCreator<
   EventGatewayOptions,
   EventGatewayService,
   EventGatewayErrors
-> = () =>
+> = () => {
   // eslint-disable-next-line @typescript-eslint/require-await
-  async (request) => {
-    if (!(request.event.httpMethod && request.event.resource)) {
+  return async (request) => {
+    if (!isApiGatewayEvent(request.event)) {
       return fail('EventGatewayRequestError');
     }
 
     return addService(request, {
-      eventGateway: (request.event as unknown) as APIGatewayProxyEvent,
+      eventGateway: request.event,
     });
   };
+};
 
 export default eventGateway;

@@ -1,3 +1,5 @@
+import { SNSHandler, SNSEvent } from 'aws-lambda';
+
 import { ok } from '@alexshelkov/result';
 
 import { eventSnsService, creator } from '../../index';
@@ -9,16 +11,18 @@ describe('eventSns', () => {
 
     const res = creator(eventSnsService);
 
-    const resOk = res.ok(() => Promise.resolve(ok('success')));
+    const resOk = res.ok(() => {
+      return Promise.resolve(ok('success'));
+    });
 
-    expect(await resOk.req()(createEvent(), createContext(), () => {})).toMatchObject({
+    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"EventSnsRequestError"}}',
     });
   });
 
   it('parse SNSEvent event', async () => {
-    expect.assertions(4);
+    expect.assertions(7);
 
     const res = creator(eventSnsService);
 
@@ -30,8 +34,36 @@ describe('eventSns', () => {
       return Promise.resolve(ok('success'));
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
+    const resTransOK = resOk.onOk(async (_r, { event }) => {
+      expect(event).toMatchObject({
+        Records: [{ EventSource: 'aws:sns', Sns: { Message: 'Test message' } }],
+      });
+    });
+
+    // eslint-disable-next-line @typescript-eslint/require-await
+    const resTransFail = resTransOK.onFail(async (_r, { event }) => {
+      expect(event).toMatchObject({ Records: [{ EventSource: 'wrong type' }] });
+    });
+
+    const handle: SNSHandler = resTransFail.req();
+
     expect(
-      await resOk.req()(
+      await handle(
+        createEvent({
+          Records: [
+            {
+              EventSource: 'wrong type',
+            },
+          ],
+        } as SNSEvent),
+        createContext(),
+        () => {}
+      )
+    ).toBeUndefined();
+
+    expect(
+      await handle(
         createEvent({
           Records: [
             {
@@ -41,13 +73,10 @@ describe('eventSns', () => {
               },
             },
           ],
-        }),
+        } as SNSEvent),
         createContext(),
         () => {}
       )
-    ).toMatchObject({
-      statusCode: 200,
-      body: '{"status":"success","data":"success"}',
-    });
+    ).toBeUndefined();
   });
 });

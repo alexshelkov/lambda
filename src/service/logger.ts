@@ -13,6 +13,8 @@ export interface Logger {
   error: (...messages: any[]) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   warn: (...messages: any[]) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  debug: (...messages: any[]) => void;
 }
 
 export type LoggerService = {
@@ -21,28 +23,35 @@ export type LoggerService = {
 
 export type LoggerErrors = never;
 
-const createLogger = (transport: Transport): Logger => ({
-  log(...messages: unknown[]) {
-    transport.send('log', messages);
-  },
-  error(...messages: unknown[]) {
-    transport.send('error', messages);
-  },
-  warn(...messages: unknown[]) {
-    transport.send('warn', messages);
-  },
-});
+const createLogger = (transport: Transport): Logger => {
+  return {
+    log(...messages: unknown[]) {
+      transport.send('log', messages);
+    },
+    error(...messages: unknown[]) {
+      transport.send('error', messages);
+    },
+    warn(...messages: unknown[]) {
+      transport.send('warn', messages);
+    },
+    debug(...messages: unknown[]) {
+      transport.send('debug', messages);
+    },
+  };
+};
 
 const logger: MiddlewareCreator<
   LoggerOptions,
   LoggerService,
   LoggerErrors,
   TransportService
-> = () =>
+> = () => {
   // eslint-disable-next-line @typescript-eslint/require-await
-  async (request) =>
-    addService(request, {
+  return async (request) => {
+    return addService(request, {
       logger: createLogger(request.service.transport),
     });
+  };
+};
 
 export default logger;

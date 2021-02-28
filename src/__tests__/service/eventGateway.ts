@@ -1,3 +1,5 @@
+import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
+
 import { ok } from '@alexshelkov/result';
 
 import { eventGatewayService, creator } from '../../index';
@@ -9,9 +11,11 @@ describe('eventGateway', () => {
 
     const res = creator(eventGatewayService);
 
-    const resOk = res.ok(() => Promise.resolve(ok('success')));
+    const resOk = res.ok(() => {
+      return Promise.resolve(ok('success'));
+    });
 
-    expect(await resOk.req()(createEvent(), createContext(), () => {})).toMatchObject({
+    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"EventGatewayRequestError"}}',
     });
@@ -29,9 +33,11 @@ describe('eventGateway', () => {
       return Promise.resolve(ok('success'));
     });
 
+    const handle = resOk.req() as APIGatewayProxyHandler;
+
     expect(
-      await resOk.req()(
-        createEvent({ httpMethod: 'GET', resource: 'test' }),
+      await handle(
+        createEvent({ httpMethod: 'GET', resource: 'test' } as APIGatewayProxyEvent),
         createContext(),
         () => {}
       )

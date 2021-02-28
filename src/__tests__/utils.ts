@@ -74,10 +74,16 @@ describe('handlers utils', () => {
 
     const handlers = await join(
       join(
-        async (_r) => ok('1'),
-        async (_r) => ok('1')
+        async (_r) => {
+          return ok('1');
+        },
+        async (_r) => {
+          return ok('1');
+        }
       ),
-      async (_r) => ok(2)
+      async (_r) => {
+        return ok(2);
+      }
     )(createRequest({}));
 
     expect(handlers).toMatchObject({ status: 'success', data: 2 });
@@ -87,8 +93,12 @@ describe('handlers utils', () => {
     expect.assertions(1);
 
     const handlers = await join(
-      async (_r) => fail<TestError<'err'>>('err'),
-      async (_r) => ok(2)
+      async (_r) => {
+        return fail<TestError<'err'>>('err');
+      },
+      async (_r) => {
+        return ok(2);
+      }
     )(createRequest({}));
 
     expect(handlers).toMatchObject({ status: 'error', error: { type: 'err' } });
