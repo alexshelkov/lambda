@@ -28,7 +28,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@alexshelkov/lambda": "^1.0.1"
+    "@alexshelkov/lambda": "^1.1.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.15.0",
