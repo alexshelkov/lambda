@@ -26,7 +26,7 @@
     "check": "tsc --noEmit && eslint --fix src && typescript-docs-verifier",
     "build": "tsc -b",
     "test": "jest --coverage --collectCoverageFrom=src/** --collectCoverageFrom=!**/__stubs__/**",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "rm -rf dist && npm run build"
   },
   "dependencies": {
     "@alexshelkov/result": "^1.0.3",
