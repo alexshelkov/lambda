@@ -64,15 +64,20 @@ export interface MiddlewareCreator<
   >;
 }
 
-export interface Handler<Event extends AwsEvent, Service extends ServiceContainer, Data, Error> {
+export interface Handler<
+  Service extends ServiceContainer,
+  Data,
+  Error,
+  Event extends AwsEvent = AwsEvent
+> {
   (request: Request<Event, Service>): Response<Data, Error>;
 }
 
-export interface HandlerError<Event extends AwsEvent, ServiceError, Data, Error> {
+export interface HandlerError<ServiceError, Data, Error, Event extends AwsEvent = AwsEvent> {
   (request: RequestError<Event, ServiceError>): Response<Data, Error>;
 }
 
-export interface HandlerException<Event extends AwsEvent, Data, Error> {
+export interface HandlerException<Data, Error, Event extends AwsEvent = AwsEvent> {
   (request: RequestException<Event>): Response<Data, Error>;
 }
 

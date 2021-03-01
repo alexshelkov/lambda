@@ -22,8 +22,8 @@ export const route = <
   router: Router<Event, Service, Routed>
 ) => {
   return <Data, Error>(
-    handler: Handler<Event, Routed, Data, Error>
-  ): Handler<Event, Service, Data, SkippedError | Error> => {
+    handler: Handler<Routed, Data, Error, Event>
+  ): Handler<Service, Data, SkippedError | Error, Event> => {
     return async (request: Request<Event, Service>) => {
       const routedRequest = router(request);
 

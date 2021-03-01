@@ -169,10 +169,10 @@ describe('creator', () => {
     type ServiceType = GetService<typeof res>;
     type EventType = GetEvent<typeof res>;
 
-    const h1: Handler<EventType, ServiceType, string, Err> = async () => {
+    const h1: Handler<ServiceType, string, Err, EventType> = async () => {
       return ok('success');
     };
-    const e1: HandlerError<EventType, ErrorType, string, Err> = async () => {
+    const e1: HandlerError<ErrorType, string, Err, EventType> = async () => {
       return fail('error');
     };
 
@@ -209,10 +209,10 @@ describe('creator', () => {
     type ServiceType = GetService<typeof res>;
     type EventType = GetEvent<typeof res>;
 
-    const h1: Handler<EventType, ServiceType, string, Err> = async () => {
+    const h1: Handler<ServiceType, string, Err, EventType> = async () => {
       return ok('success');
     };
-    const e1: HandlerError<EventType, ErrorType, string, Err> = async () => {
+    const e1: HandlerError<ErrorType, string, Err, EventType> = async () => {
       return fail('error');
     };
 
@@ -566,10 +566,10 @@ describe('creator', () => {
     const res2 = creator(dbLoggerCreator).srv(loggerCreator).opt({ throwError: true });
 
     const handle: Handler<
-      GetEvent<typeof res2>,
       GetService<typeof res2>,
       boolean,
-      number
+      number,
+      GetEvent<typeof res2>
     > = async ({ service: { logger } }) => {
       logger.log('test message 2');
 

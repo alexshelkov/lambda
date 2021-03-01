@@ -101,9 +101,9 @@ export const join = <
   Data2,
   Error2
 >(
-  c1: Handler<Event, Service1, Data1, Error1>,
-  c2: Handler<Event, Service2, Data2, Error2>
-): Handler<Event, Service1 & Service2, Data1 | Data2, Error1 | Error2> => {
+  c1: Handler<Service1, Data1, Error1, Event>,
+  c2: Handler<Service2, Data2, Error2, Event>
+): Handler<Service1 & Service2, Data1 | Data2, Error1 | Error2, Event> => {
   return async (request: Request<Event, Service1 & Service2>) => {
     const r1 = await c1(request);
     const r2 = await c2(request);
@@ -129,9 +129,9 @@ export const joinFailure = <
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Message2
 >(
-  c1: HandlerError<Event, ServiceError1, Data1, Error1>,
-  c2: HandlerError<Event, ServiceError2, Data2, Error2>
-): HandlerError<Event, ServiceError1 | ServiceError2, Data1 | Data2, Error1 | Error2> => {
+  c1: HandlerError<ServiceError1, Data1, Error1, Event>,
+  c2: HandlerError<ServiceError2, Data2, Error2, Event>
+): HandlerError<ServiceError1 | ServiceError2, Data1 | Data2, Error1 | Error2, Event> => {
   return async (request: RequestError<Event, ServiceError1 | ServiceError2>) => {
     const r1 = await c1(request as RequestError<Event, ServiceError1>);
     const r2 = await c2(request as RequestError<Event, ServiceError2>);
@@ -151,9 +151,9 @@ export const joinUnexpected = <
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Message2
 >(
-  c1: HandlerException<Event, Data1, Error1>,
-  c2: HandlerException<Event, Data2, Error2>
-): HandlerException<Event, Data1 | Data2, Error1 | Error2> => {
+  c1: HandlerException<Data1, Error1, Event>,
+  c2: HandlerException<Data2, Error2, Event>
+): HandlerException<Data1 | Data2, Error1 | Error2, Event> => {
   return async (request: RequestException<Event>) => {
     const r1 = await c1(request);
     const r2 = await c2(request);
@@ -195,9 +195,9 @@ export const lambda = <
   ExceptionError
 >(
   middleware: Middleware<Service, ServiceError, ServiceContainer, Event>,
-  exception: HandlerException<Event, ExceptionData, ExceptionError>,
-  failure: HandlerError<Event, ServiceError, FailureData, FailureError>,
-  success: Handler<Event, Service, Data, Error>,
+  exception: HandlerException<ExceptionData, ExceptionError, Event>,
+  failure: HandlerError<ServiceError, FailureData, FailureError, Event>,
+  success: Handler<Service, Data, Error, Event>,
   transform: Transform<Event, ResponseOk>,
   transformError: Transform<Event, ResponseErr>
 ): AwsHandler<Event, ResponseOk | ResponseErr> => {

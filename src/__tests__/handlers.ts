@@ -63,11 +63,11 @@ describe('custom handlers', () => {
 
     type Session = DefineAuthChallengeTriggerEvent['request']['session'][0] | undefined;
 
-    const h1: Handler<EventType, ServiceType, Session, Err> = async (request) => {
+    const h1: Handler<ServiceType, Session, Err, EventType> = async (request) => {
       return ok(request.event.request.session[0]);
     };
 
-    const e1: HandlerError<EventType, ErrorType, string, Err> = async () => {
+    const e1: HandlerError<ErrorType, string, Err, EventType> = async () => {
       return fail('error');
     };
 
