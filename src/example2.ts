@@ -1,5 +1,5 @@
 import { ok } from '@alexshelkov/result';
-import { Handler, MiddlewareCreator, AwsEvent, creator, addService } from '@alexshelkov/lambda';
+import { Handler, MiddlewareCreator, creator, addService } from '@alexshelkov/lambda';
 
 type Hello = {
   sayHello: () => string; // hello service will show errors if sayHello is missing or wrong type
@@ -15,7 +15,7 @@ const hello: MiddlewareCreator<{}, Hello, never> = () => {
 
 type API = {};
 
-const handle: Handler<AwsEvent, Hello, API, never> = async () => {
+const handle: Handler<Hello, API, never> = async () => {
   return ok({});
 };
 

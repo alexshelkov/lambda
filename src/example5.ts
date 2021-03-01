@@ -1,5 +1,5 @@
 import { Err, ok, fail, nope } from '@alexshelkov/result';
-import { Handler, MiddlewareCreator, AwsEvent, creator, addService } from '@alexshelkov/lambda';
+import { Handler, MiddlewareCreator, creator, addService } from '@alexshelkov/lambda';
 
 type Hello = {
   sayHello: () => string;
@@ -48,7 +48,7 @@ type API = {
   message: string;
 };
 
-const handle: Handler<AwsEvent, Hello, API, never> = async (request) => {
+const handle: Handler<Hello, API, never> = async (request) => {
   return ok({
     message: request.service.sayHelloWorld(),
   });
