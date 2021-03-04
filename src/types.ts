@@ -81,6 +81,6 @@ export interface HandlerException<Data, Error, Event extends AwsEvent = AwsEvent
   (request: RequestException<Event>): Response<Data, Error>;
 }
 
-export interface Transform<Event extends AwsEvent, Response> {
-  (response: Result<unknown, unknown>, event: Event): Promise<Response>;
+export interface Transform<Event extends AwsEvent, Res> {
+  (response: Result<unknown, unknown>, event: Event): Promise<Res>;
 }

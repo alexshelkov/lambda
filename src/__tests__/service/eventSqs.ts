@@ -43,7 +43,10 @@ describe('eventSqs', () => {
       expect(event).toMatchObject({ Records: [{ eventSource: 'wrong type' }] });
     });
 
-    const handle: SQSHandler = resTransFail.req();
+    // eslint-disable-next-line @typescript-eslint/require-await
+    const resTransFatal = resTransFail.onFatal(async () => {});
+
+    const handle: SQSHandler = resTransFatal.req();
 
     expect(
       await handle(

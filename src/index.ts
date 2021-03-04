@@ -14,7 +14,7 @@ export {
 
 export { Creator, creator, GetService, PickService, GetError, GetEvent } from './creator';
 
-export { json, connect, lambda, join, joinFailure, addService } from './utils';
+export { json, connect, lambda, join, joinFailure, joinFatal, addService } from './utils';
 
 export { route, Router, SkippedError } from './router';
 

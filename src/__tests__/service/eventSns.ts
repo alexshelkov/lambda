@@ -46,7 +46,10 @@ describe('eventSns', () => {
       expect(event).toMatchObject({ Records: [{ EventSource: 'wrong type' }] });
     });
 
-    const handle: SNSHandler = resTransFail.req();
+    // eslint-disable-next-line @typescript-eslint/require-await
+    const resTransFatal = resTransFail.onFatal(async () => {});
+
+    const handle: SNSHandler = resTransFatal.req();
 
     expect(
       await handle(

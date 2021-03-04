@@ -116,18 +116,10 @@ export const joinFailure = <
   Event extends AwsEvent,
   ServiceError1,
   ServiceError2,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ServiceMessage1,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ServiceMessage2,
   Data1,
   Error1,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Message1,
   Data2,
-  Error2,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Message2
+  Error2
 >(
   c1: HandlerError<ServiceError1, Data1, Error1, Event>,
   c2: HandlerError<ServiceError2, Data2, Error2, Event>
@@ -140,17 +132,7 @@ export const joinFailure = <
   };
 };
 
-export const joinUnexpected = <
-  Event extends AwsEvent,
-  Data1,
-  Error1,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Message1,
-  Data2,
-  Error2,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Message2
->(
+export const joinFatal = <Event extends AwsEvent, Data1, Error1, Data2, Error2>(
   c1: HandlerException<Data1, Error1, Event>,
   c2: HandlerException<Data2, Error2, Event>
 ): HandlerException<Data1 | Data2, Error1 | Error2, Event> => {
@@ -164,12 +146,12 @@ export const joinUnexpected = <
 
 export const addService = <
   Event extends AwsEvent,
-  Service extends ServiceContainer,
-  ServiceAdded extends ServiceContainer
+  Service1 extends ServiceContainer,
+  Service2 extends ServiceContainer
 >(
-  request: Request<Event, Service>,
-  addedService: ServiceAdded
-): Success<Request<Event, Service & ServiceAdded>> => {
+  request: Request<Event, Service1>,
+  addedService: Service2
+): Success<Request<Event, Service1 & Service2>> => {
   return ok({
     ...request,
     service: {
@@ -181,12 +163,11 @@ export const addService = <
 
 export const lambda = <
   Event extends AwsEvent,
-  ResponseOk,
-  ResponseErr,
+  ResOk,
+  ResErr,
+  ResFatal,
   Service extends ServiceContainer,
   ServiceError,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ServiceErrorMessage,
   Data,
   Error,
   FailureData,
@@ -198,21 +179,22 @@ export const lambda = <
   exception: HandlerException<ExceptionData, ExceptionError, Event>,
   failure: HandlerError<ServiceError, FailureData, FailureError, Event>,
   success: Handler<Service, Data, Error, Event>,
-  transform: Transform<Event, ResponseOk>,
-  transformError: Transform<Event, ResponseErr>
-): AwsHandler<Event, ResponseOk | ResponseErr> => {
+  transform: Transform<Event, ResOk>,
+  transformError: Transform<Event, ResErr>,
+  transformException: Transform<Event, ResFatal>
+): AwsHandler<Event, ResOk | ResErr | ResFatal> => {
   return async (event: Event['event'], context: Event['context']) => {
     const evObj = { event, context } as Event;
-
-    const request = await middleware({
-      event,
-      context,
-      service: {} as Service,
-    });
 
     let response;
 
     try {
+      const request = await middleware({
+        event,
+        context,
+        service: {} as Service,
+      });
+
       if (request.status === 'error') {
         response = await failure({
           event,
@@ -254,7 +236,7 @@ export const lambda = <
         exception: err,
       });
 
-      response = await transformError(response, evObj);
+      response = await transformException(response, evObj);
     }
 
     return response;

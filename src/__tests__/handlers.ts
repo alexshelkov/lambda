@@ -2,17 +2,7 @@ import { DefineAuthChallengeTriggerHandler, DefineAuthChallengeTriggerEvent } fr
 
 import { Err, fail, ok } from '@alexshelkov/result';
 
-import {
-  creator,
-  GetError,
-  GetService,
-  Handler,
-  HandlerError,
-  MiddlewareCreator,
-  ServiceContainer,
-  ServiceOptions,
-  GetEvent,
-} from '../index';
+import { creator, GetError, GetService, Handler, HandlerError, GetEvent } from '../index';
 
 import { creatorTest1, createEvent, createContext } from '../__stubs__';
 
@@ -43,19 +33,9 @@ const defineEvent = (): DefineAuthChallengeTriggerEvent => {
 
 describe('custom handlers', () => {
   describe('will works with Cognito handlers', () => {
-    const define: MiddlewareCreator<
-      ServiceOptions,
-      ServiceContainer,
-      never,
-      ServiceContainer,
-      { event: DefineAuthChallengeTriggerEvent; context: unknown }
-    > = () => {
-      return async (request) => {
-        return ok(request);
-      };
-    };
+    type Event = { event: DefineAuthChallengeTriggerEvent; context: unknown };
 
-    const res = creator(define).srv(creatorTest1).opt({ op1: '1' });
+    const res = creator(creatorTest1).ctx<Event>().opt({ op1: '1' });
 
     type ErrorType = GetError<typeof res>;
     type ServiceType = GetService<typeof res>;
@@ -81,7 +61,7 @@ describe('custom handlers', () => {
       return event;
     });
 
-    const resTransErr = resTranOk.onFail(async (r, { event }) => {
+    const resTransErr = resTranOk.onFatal(async (r, { event }) => {
       ((event as unknown) as { badEvent: unknown }).badEvent = r.err();
 
       return event;

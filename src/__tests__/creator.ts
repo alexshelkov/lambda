@@ -12,9 +12,11 @@ import {
   ServiceOptions,
   GetEvent,
   addService,
+  RequestError,
+  AwsEvent,
 } from '../index';
 
-import { success1, error1, exception1 } from '../creator';
+import { error1 } from '../creator';
 
 import {
   creatorTest1,
@@ -167,12 +169,11 @@ describe('creator', () => {
 
     type ErrorType = GetError<typeof res>;
     type ServiceType = GetService<typeof res>;
-    type EventType = GetEvent<typeof res>;
 
-    const h1: Handler<ServiceType, string, Err, EventType> = async () => {
+    const h1: Handler<ServiceType, string, Err> = async () => {
       return ok('success');
     };
-    const e1: HandlerError<ErrorType, string, Err, EventType> = async () => {
+    const e1: HandlerError<ErrorType, string, Err> = async () => {
       return fail('error');
     };
 
@@ -201,7 +202,7 @@ describe('creator', () => {
     };
 
     const res = creator(cr)
-      .srv(creatorTest2)
+      .srv(creatorTest1)
       .srv(creatorTest3)
       .opt({ op1: '1', op2: '1', op3: '1' });
 
@@ -421,7 +422,7 @@ describe('creator', () => {
         return ok(true);
       });
 
-      const resExc = resOk.onUnexpected(async (request) => {
+      const resExc = resOk.fatal(async (request) => {
         expect((request.exception as Error).message).toStrictEqual(
           'Unhandled exception in middleware'
         );
@@ -448,7 +449,7 @@ describe('creator', () => {
         return ok(true);
       });
 
-      const res1Exc = res1Ok.onUnexpected(async (request) => {
+      const res1Exc = res1Ok.fatal(async (request) => {
         expect((request.exception as Error).message).toStrictEqual(
           'Unhandled exception in callback'
         );
@@ -600,7 +601,7 @@ describe('creator', () => {
 
       const res = creator(creatorTest1).opt({ op1: '1' });
 
-      const resOk = res.ok(async (_r) => {
+      const resOk = res.ok(async () => {
         return ok('success');
       });
 
@@ -662,8 +663,42 @@ describe('creator', () => {
     });
   });
 
+  describe('error1', () => {
+    it('will be Unknown for non-string types', async () => {
+      expect.assertions(1);
+
+      const err1 = await error1({
+        error: 1,
+      } as RequestError<AwsEvent, number>);
+
+      expect(err1.err().type).toStrictEqual('Unknown');
+    });
+
+    it('will return error type for string', async () => {
+      expect.assertions(1);
+
+      const err1 = await error1({
+        error: 'test',
+      } as RequestError<AwsEvent, string>);
+
+      expect(err1.err().type).toStrictEqual('test');
+    });
+
+    it('will be Unknown for non-string Err types', async () => {
+      expect.assertions(1);
+
+      const err1 = await error1({
+        error: {
+          type: (1 as unknown) as string,
+        },
+      } as RequestError<AwsEvent, Err>);
+
+      expect(err1.err().type).toStrictEqual('Unknown');
+    });
+  });
+
   it('ensure equivalence', async () => {
-    expect.assertions(6);
+    expect.assertions(3);
 
     const options = { op1: '1' };
 
@@ -671,9 +706,6 @@ describe('creator', () => {
 
     expect(res.options()).toStrictEqual(options);
     expect(res.cr()).toStrictEqual(creatorTest1);
-    expect(res.handle()).toStrictEqual(success1);
-    expect(res.errorHandle()).toStrictEqual(error1);
-    expect(res.exception()).toStrictEqual(exception1);
     expect(res.md()).not.toBeUndefined();
   });
 

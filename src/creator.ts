@@ -14,7 +14,7 @@ import {
   AwsEvent,
 } from './types';
 
-import { join, joinFailure, joinUnexpected, connect, json, lambda } from './utils';
+import { join, joinFailure, joinFatal, connect, json, lambda } from './utils';
 
 const idHandler = <Event extends AwsEvent, Service extends ServiceContainer, Data, Error>(
   data: Data
@@ -34,173 +34,207 @@ const idHandlerFailure = <Event extends AwsEvent, ServiceError, Data, Error>(
 
 export interface Creator<
   Event extends AwsEvent,
-  ResponseOk,
-  ResponseErr,
-  OptionsAdded extends ServiceOptions,
-  ServiceAdded extends ServiceContainer,
-  ServiceErrorAdded,
-  DataAdded,
-  ErrorAdded,
-  FailureDataAdded,
-  FailureErrorAdded,
-  ExceptionDataAdded,
-  ExceptionErrorAdded,
-  ServiceDepsAdded extends ServiceOptions = ServiceContainer
+  ResOk1,
+  ResErr1,
+  ResFatal1,
+  Options1 extends ServiceOptions,
+  Service1 extends ServiceContainer,
+  ServiceError1,
+  Data1,
+  Error1,
+  FailureData1,
+  FailureError1,
+  ExceptionData1,
+  ExceptionError1,
+  ServiceDeps extends ServiceOptions = ServiceContainer
 > {
-  srv: <Options extends ServiceOptions, Service extends ServiceContainer, ServiceError>(
+  srv: <Options2 extends ServiceOptions, Service2 extends ServiceContainer, ServiceError2>(
     middlewareCreator: MiddlewareCreator<
-      OptionsAdded & Options,
-      Service,
-      ServiceError,
-      ServiceDepsAdded,
+      Options1 & Options2,
+      Service2,
+      ServiceError2,
+      ServiceDeps,
       Event
     >
   ) => Creator<
     Event,
-    ResponseOk,
-    ResponseErr,
-    OptionsAdded & Options,
-    ServiceAdded & Service,
-    ServiceError | ServiceErrorAdded,
-    DataAdded,
-    ErrorAdded,
-    FailureDataAdded,
-    FailureErrorAdded,
-    ExceptionDataAdded,
-    ExceptionErrorAdded,
-    Service & ServiceDepsAdded
+    ResOk1,
+    ResErr1,
+    ResFatal1,
+    Options1 & Options2,
+    Service1 & Service2,
+    ServiceError2 | ServiceError1,
+    Data1,
+    Error1,
+    FailureData1,
+    FailureError1,
+    ExceptionData1,
+    ExceptionError1,
+    Service2 & ServiceDeps
   >;
 
   opt: (
-    options: Partial<OptionsAdded>
+    options: Partial<Options1>
   ) => Creator<
     Event,
-    ResponseOk,
-    ResponseErr,
-    OptionsAdded,
-    ServiceAdded,
-    ServiceErrorAdded,
-    DataAdded,
-    ErrorAdded,
-    FailureDataAdded,
-    FailureErrorAdded,
-    ExceptionDataAdded,
-    ExceptionErrorAdded,
-    ServiceDepsAdded
+    ResOk1,
+    ResErr1,
+    ResFatal1,
+    Options1,
+    Service1,
+    ServiceError1,
+    Data1,
+    Error1,
+    FailureData1,
+    FailureError1,
+    ExceptionData1,
+    ExceptionError1,
+    ServiceDeps
   >;
 
-  ok: <Data, Error>(
-    success: Handler<ServiceAdded, Data, Error, Event>
+  ctx: <Event2 extends AwsEvent>() => Creator<
+    Event2,
+    ResOk1,
+    ResErr1,
+    ResFatal1,
+    Options1,
+    Service1,
+    ServiceError1,
+    Data1,
+    Error1,
+    FailureData1,
+    FailureError1,
+    ExceptionData1,
+    ExceptionError1,
+    ServiceDeps
+  >;
+
+  ok: <Data2, Error2>(
+    success: Handler<Service1, Data2, Error2, Event>
   ) => Creator<
     Event,
-    ResponseOk,
-    ResponseErr,
-    OptionsAdded,
-    ServiceAdded,
-    ServiceErrorAdded,
-    DataAdded | Data,
-    ErrorAdded | Error,
-    FailureDataAdded,
-    FailureErrorAdded,
-    ExceptionDataAdded,
-    ExceptionErrorAdded,
-    ServiceDepsAdded
+    ResOk1,
+    ResErr1,
+    ResFatal1,
+    Options1,
+    Service1,
+    ServiceError1,
+    Data1 | Data2,
+    Error1 | Error2,
+    FailureData1,
+    FailureError1,
+    ExceptionData1,
+    ExceptionError1,
+    ServiceDeps
   >;
 
-  fail: <FailureData, FailureError>(
-    error: HandlerError<ServiceErrorAdded, FailureData, FailureError, Event>
+  fail: <FailureData2, FailureError2>(
+    error: HandlerError<ServiceError1, FailureData2, FailureError2, Event>
   ) => Creator<
     Event,
-    ResponseOk,
-    ResponseErr,
-    OptionsAdded,
-    ServiceAdded,
-    ServiceErrorAdded,
-    DataAdded,
-    ErrorAdded,
-    FailureDataAdded | FailureData,
-    FailureErrorAdded | FailureError,
-    ExceptionDataAdded,
-    ExceptionErrorAdded,
-    ServiceDepsAdded
+    ResOk1,
+    ResErr1,
+    ResFatal1,
+    Options1,
+    Service1,
+    ServiceError1,
+    Data1,
+    Error1,
+    FailureData1 | FailureData2,
+    FailureError1 | FailureError2,
+    ExceptionData1,
+    ExceptionError1,
+    ServiceDeps
   >;
 
-  onUnexpected: <ExceptionData, ExceptionError>(
-    exception: HandlerException<ExceptionData, ExceptionError, Event>
+  fatal: <ExceptionData2, ExceptionError2>(
+    exception: HandlerException<ExceptionData2, ExceptionError2, Event>
   ) => Creator<
     Event,
-    ResponseOk,
-    ResponseErr,
-    OptionsAdded,
-    ServiceAdded,
-    ServiceErrorAdded,
-    DataAdded,
-    ErrorAdded,
-    FailureDataAdded,
-    FailureErrorAdded,
-    ExceptionDataAdded | ExceptionData,
-    ExceptionErrorAdded | ExceptionError,
-    ServiceDepsAdded
+    ResOk1,
+    ResErr1,
+    ResFatal1,
+    Options1,
+    Service1,
+    ServiceError1,
+    Data1,
+    Error1,
+    FailureData1,
+    FailureError1,
+    ExceptionData1 | ExceptionData2,
+    ExceptionError1 | ExceptionError2,
+    ServiceDeps
   >;
 
-  onOk: <OkResponse>(
-    transform: Transform<Event, OkResponse>
+  onOk: <ResOk2>(
+    transform: Transform<Event, ResOk2>
   ) => Creator<
     Event,
-    OkResponse,
-    ResponseErr,
-    OptionsAdded,
-    ServiceAdded,
-    ServiceErrorAdded,
-    DataAdded,
-    ErrorAdded,
-    FailureDataAdded,
-    FailureErrorAdded,
-    ExceptionDataAdded,
-    ExceptionErrorAdded,
-    ServiceDepsAdded
+    ResOk2,
+    ResErr1,
+    ResFatal1,
+    Options1,
+    Service1,
+    ServiceError1,
+    Data1,
+    Error1,
+    FailureData1,
+    FailureError1,
+    ExceptionData1,
+    ExceptionError1,
+    ServiceDeps
   >;
 
-  onFail: <ErrorResponse>(
-    transformError: Transform<Event, ErrorResponse>
+  onFail: <ResErr2>(
+    transformError: Transform<Event, ResErr2>
   ) => Creator<
     Event,
-    ResponseOk,
-    ErrorResponse,
-    OptionsAdded,
-    ServiceAdded,
-    ServiceErrorAdded,
-    DataAdded,
-    ErrorAdded,
-    FailureDataAdded,
-    FailureErrorAdded,
-    ExceptionDataAdded,
-    ExceptionErrorAdded,
-    ServiceDepsAdded
+    ResOk1,
+    ResErr2,
+    ResFatal1,
+    Options1,
+    Service1,
+    ServiceError1,
+    Data1,
+    Error1,
+    FailureData1,
+    FailureError1,
+    ExceptionData1,
+    ExceptionError1,
+    ServiceDeps
   >;
 
-  md: () => Middleware<ServiceAdded, ServiceErrorAdded, ServiceDepsAdded, Event>;
-
-  cr: () => MiddlewareCreator<
-    OptionsAdded,
-    ServiceAdded,
-    ServiceErrorAdded,
-    ServiceDepsAdded,
-    Event
+  onFatal: <ResFatal2>(
+    transformFatal: Transform<Event, ResFatal2>
+  ) => Creator<
+    Event,
+    ResOk1,
+    ResErr1,
+    ResFatal2,
+    Options1,
+    Service1,
+    ServiceError1,
+    Data1,
+    Error1,
+    FailureData1,
+    FailureError1,
+    ExceptionData1,
+    ExceptionError1,
+    ServiceDeps
   >;
 
-  options: () => OptionsAdded;
+  md: () => Middleware<Service1, ServiceError1, ServiceDeps, Event>;
 
-  handle: () => Handler<ServiceAdded, DataAdded, ErrorAdded, Event>;
+  cr: () => MiddlewareCreator<Options1, Service1, ServiceError1, ServiceDeps, Event>;
 
-  errorHandle: () => HandlerError<ServiceErrorAdded, FailureDataAdded, FailureErrorAdded, Event>;
+  options: () => Options1;
 
-  exception: () => HandlerException<ExceptionDataAdded, ExceptionErrorAdded, Event>;
-
-  req: () => AwsHandler<Event, ResponseOk | ResponseErr>;
+  req: () => AwsHandler<Event, ResOk1 | ResErr1 | ResFatal1>;
 }
 
 export type GetService<Crt> = Crt extends Creator<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -255,6 +289,8 @@ export type GetEvent<Crt> = Crt extends Creator<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   any
 >
   ? Event
@@ -263,6 +299,8 @@ export type GetEvent<Crt> = Crt extends Creator<
 export type PickService<Crt, Srv extends keyof GetService<Crt>> = Pick<GetService<Crt>, Srv>;
 
 export type GetError<Crt> = Crt extends Creator<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -294,38 +332,41 @@ export type GetError<Crt> = Crt extends Creator<
 
 export const creatorHelper = <
   Event extends AwsEvent,
-  ResponseOk,
-  ResponseErr,
+  ResOk1,
+  ResErr1,
+  ResFatal1,
   Options1 extends ServiceOptions,
   Service1 extends ServiceContainer,
   ServiceError1,
-  DataAdded1,
-  ErrorAdded1,
-  FailureDataAdded1,
-  FailureErrorAdded1,
-  ExceptionDataAdded1,
-  ExceptionErrorAdded1
+  Data1,
+  Error1,
+  FailureData1,
+  FailureError1,
+  ExceptionData1,
+  ExceptionError1
 >(
   creator1: MiddlewareCreator<Options1, Service1, ServiceError1, ServiceContainer, Event>,
   options1: Options1,
-  success1: Handler<Service1, DataAdded1, ErrorAdded1, Event>,
-  error1: HandlerError<ServiceError1, FailureDataAdded1, FailureErrorAdded1, Event>,
-  exception1: HandlerException<ExceptionDataAdded1, ExceptionErrorAdded1, Event>,
-  transform1: Transform<Event, ResponseOk>,
-  transformError1: Transform<Event, ResponseErr>
+  success1: Handler<Service1, Data1, Error1, Event>,
+  error1: HandlerError<ServiceError1, FailureData1, FailureError1, Event>,
+  exception1: HandlerException<ExceptionData1, ExceptionError1, Event>,
+  transform1: Transform<Event, ResOk1>,
+  transformError1: Transform<Event, ResErr1>,
+  transformException1: Transform<Event, ResFatal1>
 ): Creator<
   Event,
-  ResponseOk,
-  ResponseErr,
+  ResOk1,
+  ResErr1,
+  ResFatal1,
   Options1,
   Service1,
   ServiceError1,
-  DataAdded1,
-  ErrorAdded1,
-  FailureDataAdded1,
-  FailureErrorAdded1,
-  ExceptionDataAdded1,
-  ExceptionErrorAdded1,
+  Data1,
+  Error1,
+  FailureData1,
+  FailureError1,
+  ExceptionData1,
+  ExceptionError1,
   Service1
 > => {
   return {
@@ -338,13 +379,13 @@ export const creatorHelper = <
 
       const success12 = join(
         success1,
-        idHandler<Event, Service2, DataAdded1, ErrorAdded1>((undefined as unknown) as DataAdded1)
+        idHandler<Event, Service2, Data1, Error1>((undefined as unknown) as Data1)
       );
 
       const error12 = joinFailure(
         error1,
-        idHandlerFailure<Event, ServiceError2, FailureDataAdded1, FailureErrorAdded1>(
-          (undefined as unknown) as FailureDataAdded1
+        idHandlerFailure<Event, ServiceError2, FailureData1, FailureError1>(
+          (undefined as unknown) as FailureData1
         )
       );
 
@@ -355,7 +396,8 @@ export const creatorHelper = <
         error12,
         exception1,
         transform1,
-        transformError1
+        transformError1,
+        transformException1
       );
     },
 
@@ -367,11 +409,40 @@ export const creatorHelper = <
         error1,
         exception1,
         transform1,
-        transformError1
+        transformError1,
+        transformException1
       );
     },
 
-    ok: <DataAdded2, ErrorAdded2>(success2: Handler<Service1, DataAdded2, ErrorAdded2, Event>) => {
+    ctx: <Event2 extends AwsEvent = AwsEvent>() => {
+      return (creatorHelper(
+        creator1,
+        options1,
+        success1,
+        error1,
+        exception1,
+        transform1,
+        transformError1,
+        transformException1
+      ) as unknown) as Creator<
+        Event2,
+        ResOk1,
+        ResErr1,
+        ResFatal1,
+        Options1,
+        Service1,
+        ServiceError1,
+        Data1,
+        Error1,
+        FailureData1,
+        FailureError1,
+        ExceptionData1,
+        ExceptionError1,
+        Service1
+      >;
+    },
+
+    ok: <Data2, Error2>(success2: Handler<Service1, Data2, Error2, Event>) => {
       const success12 = join(success1, success2);
 
       return creatorHelper(
@@ -381,12 +452,13 @@ export const creatorHelper = <
         error1,
         exception1,
         transform1,
-        transformError1
+        transformError1,
+        transformException1
       );
     },
 
-    fail: <FailureData, FailureError>(
-      error2: HandlerError<ServiceError1, FailureData, FailureError, Event>
+    fail: <FailureData2, FailureError2>(
+      error2: HandlerError<ServiceError1, FailureData2, FailureError2, Event>
     ) => {
       const error12 = joinFailure(error1, error2);
 
@@ -397,14 +469,15 @@ export const creatorHelper = <
         error12,
         exception1,
         transform1,
-        transformError1
+        transformError1,
+        transformException1
       );
     },
 
-    onUnexpected: <ExceptionData, ExceptionError>(
-      exception2: HandlerException<ExceptionData, ExceptionError, Event>
+    fatal: <ExceptionData2, ExceptionError2>(
+      exception2: HandlerException<ExceptionData2, ExceptionError2, Event>
     ) => {
-      const exception12 = joinUnexpected(exception1, exception2);
+      const exception12 = joinFatal(exception1, exception2);
 
       return creatorHelper(
         creator1,
@@ -413,11 +486,12 @@ export const creatorHelper = <
         error1,
         exception12,
         transform1,
-        transformError1
+        transformError1,
+        transformException1
       );
     },
 
-    onOk: <NewResponse>(transform2: Transform<Event, NewResponse>) => {
+    onOk: <ResOk2>(transform2: Transform<Event, ResOk2>) => {
       return creatorHelper(
         creator1,
         options1,
@@ -425,11 +499,12 @@ export const creatorHelper = <
         error1,
         exception1,
         transform2,
-        transformError1
+        transformError1,
+        transformException1
       );
     },
 
-    onFail: <NewResponse>(transformError2: Transform<Event, NewResponse>) => {
+    onFail: <ResErr2>(transformError2: Transform<Event, ResErr2>) => {
       return creatorHelper(
         creator1,
         options1,
@@ -437,7 +512,21 @@ export const creatorHelper = <
         error1,
         exception1,
         transform1,
-        transformError2
+        transformError2,
+        transformException1
+      );
+    },
+
+    onFatal: <ResFatal2>(transformFatal2: Transform<Event, ResFatal2>) => {
+      return creatorHelper(
+        creator1,
+        options1,
+        success1,
+        error1,
+        exception1,
+        transform1,
+        transformError1,
+        transformFatal2
       );
     },
 
@@ -455,22 +544,18 @@ export const creatorHelper = <
       return middleware;
     },
 
-    handle: () => {
-      return success1;
-    },
-
-    errorHandle: () => {
-      return error1;
-    },
-
-    exception: () => {
-      return exception1;
-    },
-
     req: () => {
       const middleware = creator1(options1);
 
-      return lambda(middleware, exception1, error1, success1, transform1, transformError1);
+      return lambda(
+        middleware,
+        exception1,
+        error1,
+        success1,
+        transform1,
+        transformError1,
+        transformException1
+      );
     },
   };
 };
@@ -479,8 +564,20 @@ export const success1: Handler<ServiceContainer, never, Err> = () => {
   return Promise.resolve(fail('Not implemented', { order: -1 }));
 };
 
-export const error1: HandlerError<Err, never, Err> = (request) => {
-  return Promise.resolve(fail(request.error.type, { order: -1, ...request.error }));
+export const error1: HandlerError<unknown, never, Err> = (request) => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { error } = request;
+
+  if (typeof error === 'object' && error !== null) {
+    const type =
+      typeof (error as { type: unknown }).type === 'string'
+        ? (error as { type: string }).type
+        : 'Unknown';
+
+    return Promise.resolve(fail(type, { order: -1, ...error }));
+  }
+
+  return Promise.resolve(fail(typeof error === 'string' ? error : 'Unknown', { order: -1 }));
 };
 
 export const exception1: HandlerException<never, Err> = ({ exception }) => {
@@ -496,6 +593,7 @@ export const exception1: HandlerException<never, Err> = ({ exception }) => {
 
 const transform1: Transform<AwsEvent, APIGatewayProxyResult> = json;
 const transformError1: Transform<AwsEvent, APIGatewayProxyResult> = json;
+const transformException1: Transform<AwsEvent, APIGatewayProxyResult> = json;
 
 export const creator = <
   Event extends AwsEvent,
@@ -514,7 +612,8 @@ export const creator = <
     error1,
     exception1,
     transform1,
-    transformError1
+    transformError1,
+    transformException1
   );
 
   return creatorType;
