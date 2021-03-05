@@ -24,12 +24,12 @@ export const json = async (result: Result<unknown, unknown>): Promise<APIGateway
   if (result.code) {
     code = result.code;
   } else {
-    code = result.status === 'success' ? 200 : 400;
+    code = result.isOk() ? 200 : 400;
   }
 
-  if (result.status === 'success' && result.data === undefined) {
+  if (result.isOk() && result.ok() === undefined) {
     delete result.data;
-  } else if (result.status === 'error' && result.error === undefined) {
+  } else if (result.isErr() && result.err() === undefined) {
     delete result.error;
   }
 
@@ -38,7 +38,7 @@ export const json = async (result: Result<unknown, unknown>): Promise<APIGateway
 
   let body: string;
 
-  if (result.status === 'success') {
+  if (result.isOk()) {
     body = result.data !== undefined ? JSON.stringify(result) : '';
   } else {
     body =
@@ -195,7 +195,7 @@ export const lambda = <
         service: {} as Service,
       });
 
-      if (request.status === 'error') {
+      if (request.isErr()) {
         response = await failure({
           event,
           context,
