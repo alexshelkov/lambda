@@ -6,6 +6,7 @@ export {
   Handler,
   HandlerError,
   Transform,
+  TransformError,
   Request,
   RequestError,
   AwsEvent,
