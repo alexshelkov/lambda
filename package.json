@@ -1,7 +1,7 @@
 {
   "name": "@alexshelkov/lambda",
   "description": "Type-safe middleware for AWS Lambda",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "author": "Alex Shelkovskiy <alexshelkov@gmail.com>",
   "repository": "https://github.com/alexshelkov/lambda",
   "license": "MIT",
@@ -29,27 +29,27 @@
     "prepublishOnly": "rm -rf dist && npm run build"
   },
   "dependencies": {
-    "@alexshelkov/result": "^1.0.4",
+    "@alexshelkov/result": "^1.0.5",
     "@types/aws-lambda": "^8.10.72"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^4.15.0",
-    "@typescript-eslint/parser": "^4.15.0",
+    "@typescript-eslint/eslint-plugin": "^4.19.0",
+    "@typescript-eslint/parser": "^4.19.0",
+    "@types/jest": "^26.0.21",
     "coveralls": "^3.1.0",
-    "eslint": "7.20.0",
+    "eslint": "^7.22.0",
     "eslint-config-airbnb": "^18.2.1",
     "eslint-config-airbnb-typescript": "^12.3.1",
-    "eslint-config-prettier": "^7.2.0",
-    "eslint-import-resolver-typescript": "^2.3.0",
+    "eslint-import-resolver-typescript": "^2.4.0",
     "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-jest": "^24.1.3",
+    "eslint-plugin-jest": "^24.3.2",
     "eslint-plugin-prettier": "^3.3.1",
     "husky": "^4.3.8",
     "jest": "^26.6.3",
     "lint-staged": "^10.5.4",
     "prettier": "^2.2.1",
-    "ts-jest": "^26.5.1",
-    "typescript": "^4.1.5",
+    "ts-jest": "^26.5.4",
+    "typescript": "^4.2.3",
     "typescript-docs-verifier": "^1.1.3"
   }
 }

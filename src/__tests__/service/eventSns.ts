@@ -61,8 +61,8 @@ describe('eventSns', () => {
           ],
         } as SNSEvent),
         createContext(),
-        () => {}
-      )
+        () => {},
+      ),
     ).toBeUndefined();
 
     expect(
@@ -78,8 +78,8 @@ describe('eventSns', () => {
           ],
         } as SNSEvent),
         createContext(),
-        () => {}
-      )
+        () => {},
+      ),
     ).toBeUndefined();
   });
 });

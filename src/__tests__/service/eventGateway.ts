@@ -39,8 +39,8 @@ describe('eventGateway', () => {
       await handle(
         createEvent({ httpMethod: 'GET', resource: 'test' } as APIGatewayProxyEvent),
         createContext(),
-        () => {}
-      )
+        () => {},
+      ),
     ).toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"success"}',

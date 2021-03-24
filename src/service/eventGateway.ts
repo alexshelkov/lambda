@@ -14,17 +14,17 @@ export type EventGatewayErrors = EventGatewayRequestError;
 
 const isApiGatewayEvent = (event: unknown): event is APIGatewayProxyEvent => {
   return (
-    event !== null &&
-    typeof event === 'object' &&
-    typeof (event as { httpMethod: unknown }).httpMethod === 'string' &&
-    typeof (event as { resource: unknown }).resource === 'string'
+    event !== null
+    && typeof event === 'object'
+    && typeof (event as { httpMethod: unknown }).httpMethod === 'string'
+    && typeof (event as { resource: unknown }).resource === 'string'
   );
 };
 
 const eventGateway: MiddlewareCreator<
-  EventGatewayOptions,
-  EventGatewayService,
-  EventGatewayErrors
+EventGatewayOptions,
+EventGatewayService,
+EventGatewayErrors
 > = () => {
   // eslint-disable-next-line @typescript-eslint/require-await
   return async (request) => {

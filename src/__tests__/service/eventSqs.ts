@@ -58,8 +58,8 @@ describe('eventSqs', () => {
           ],
         } as SQSEvent),
         createContext(),
-        () => {}
-      )
+        () => {},
+      ),
     ).toBeUndefined();
 
     expect(
@@ -73,8 +73,8 @@ describe('eventSqs', () => {
           ],
         } as SQSEvent),
         createContext(),
-        () => {}
-      )
+        () => {},
+      ),
     ).toBeUndefined();
   });
 });

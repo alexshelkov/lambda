@@ -15,17 +15,17 @@ export type EventSqsErrors = EventSqsRequestError;
 
 const isHaveSqsProps = (input: unknown): input is { eventSource: string } => {
   return (
-    typeof input === 'object' &&
-    input !== null &&
-    typeof (input as { eventSource: unknown }).eventSource === 'string'
+    typeof input === 'object'
+    && input !== null
+    && typeof (input as { eventSource: unknown }).eventSource === 'string'
   );
 };
 
 const isSqsEvent = (event: unknown): event is SQSEvent => {
   return (
-    isHaveRecords(event) &&
-    isHaveSqsProps(event.Records[0]) &&
-    event.Records[0].eventSource === 'aws:sqs'
+    isHaveRecords(event)
+    && isHaveSqsProps(event.Records[0])
+    && event.Records[0].eventSource === 'aws:sqs'
   );
 };
 

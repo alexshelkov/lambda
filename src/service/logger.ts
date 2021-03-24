@@ -41,10 +41,10 @@ const createLogger = (transport: Transport): Logger => {
 };
 
 const logger: MiddlewareCreator<
-  LoggerOptions,
-  LoggerService,
-  LoggerErrors,
-  TransportService
+LoggerOptions,
+LoggerService,
+LoggerErrors,
+TransportService
 > = () => {
   // eslint-disable-next-line @typescript-eslint/require-await
   return async (request) => {

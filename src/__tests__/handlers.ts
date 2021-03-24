@@ -2,7 +2,9 @@ import { DefineAuthChallengeTriggerHandler, DefineAuthChallengeTriggerEvent } fr
 
 import { Err, fail, ok } from '@alexshelkov/result';
 
-import { creator, GetError, GetService, Handler, HandlerError, GetEvent } from '../index';
+import {
+  creator, GetError, GetService, Handler, HandlerError, GetEvent,
+} from '../index';
 
 import { creatorTest1, createEvent, createContext } from '../__stubs__';
 
@@ -100,7 +102,7 @@ describe('custom handlers', () => {
 
       const response = await handle(
         createEvent(({ badEvent: 'no' } as unknown) as DefineAuthChallengeTriggerEvent),
-        createContext()
+        createContext(),
       );
 
       expect(response).toMatchObject({

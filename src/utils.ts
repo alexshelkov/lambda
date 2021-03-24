@@ -1,5 +1,7 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
-import { compare, FailureException, ok, Result, Success } from '@alexshelkov/result';
+import {
+  compare, FailureException, ok, Result, Success,
+} from '@alexshelkov/result';
 
 import {
   Handler,
@@ -13,6 +15,7 @@ import {
   ServiceContainer,
   ServiceOptions,
   Transform,
+  TransformError,
   AwsHandler,
   AwsEvent,
 } from './types';
@@ -41,10 +44,14 @@ export const json = async (result: Result<unknown, unknown>): Promise<APIGateway
   if (result.isOk()) {
     body = result.data !== undefined ? JSON.stringify(result) : '';
   } else {
-    body =
-      result.error !== undefined
-        ? JSON.stringify({ ...result, message: undefined, name: undefined, stack: undefined })
-        : '';
+    body = result.error !== undefined
+      ? JSON.stringify({
+        ...result,
+        message: undefined,
+        name: undefined,
+        stack: undefined,
+      })
+      : '';
   }
 
   return {
@@ -62,18 +69,18 @@ export const connect = <
   Event extends AwsEvent,
   Options1 extends ServiceOptions,
   Service1 extends ServiceContainer,
-  Error1
+  Error1,
 >(
-  c1: MiddlewareCreator<Options1, Service1, Error1, ServiceContainer, Event>
-) => {
+    c1: MiddlewareCreator<Options1, Service1, Error1, ServiceContainer, Event>,
+  ) => {
   return <Options2 extends ServiceOptions, Service2 extends ServiceContainer, Error2>(
-    c2: MiddlewareCreator<Options2, Service2, Error2, Service1, Event>
+    c2: MiddlewareCreator<Options2, Service2, Error2, Service1, Event>,
   ): MiddlewareCreator<
-    Options1 & Options2,
-    Service1 & Service2,
-    Error1 | Error2,
-    ServiceContainer,
-    Event
+  Options1 & Options2,
+  Service1 & Service2,
+  Error1 | Error2,
+  ServiceContainer,
+  Event
   > => {
     return (options) => {
       const m1 = c1(options);
@@ -99,11 +106,11 @@ export const join = <
   Data1,
   Error1,
   Data2,
-  Error2
+  Error2,
 >(
-  c1: Handler<Service1, Data1, Error1, Event>,
-  c2: Handler<Service2, Data2, Error2, Event>
-): Handler<Service1 & Service2, Data1 | Data2, Error1 | Error2, Event> => {
+    c1: Handler<Service1, Data1, Error1, Event>,
+    c2: Handler<Service2, Data2, Error2, Event>,
+  ): Handler<Service1 & Service2, Data1 | Data2, Error1 | Error2, Event> => {
   return async (request: Request<Event, Service1 & Service2>) => {
     const r1 = await c1(request);
     const r2 = await c2(request);
@@ -119,11 +126,11 @@ export const joinFailure = <
   Data1,
   Error1,
   Data2,
-  Error2
+  Error2,
 >(
-  c1: HandlerError<ServiceError1, Data1, Error1, Event>,
-  c2: HandlerError<ServiceError2, Data2, Error2, Event>
-): HandlerError<ServiceError1 | ServiceError2, Data1 | Data2, Error1 | Error2, Event> => {
+    c1: HandlerError<ServiceError1, Data1, Error1, Event>,
+    c2: HandlerError<ServiceError2, Data2, Error2, Event>,
+  ): HandlerError<ServiceError1 | ServiceError2, Data1 | Data2, Error1 | Error2, Event> => {
   return async (request: RequestError<Event, ServiceError1 | ServiceError2>) => {
     const r1 = await c1(request as RequestError<Event, ServiceError1>);
     const r2 = await c2(request as RequestError<Event, ServiceError2>);
@@ -134,7 +141,7 @@ export const joinFailure = <
 
 export const joinFatal = <Event extends AwsEvent, Data1, Error1, Data2, Error2>(
   c1: HandlerException<Data1, Error1, Event>,
-  c2: HandlerException<Data2, Error2, Event>
+  c2: HandlerException<Data2, Error2, Event>,
 ): HandlerException<Data1 | Data2, Error1 | Error2, Event> => {
   return async (request: RequestException<Event>) => {
     const r1 = await c1(request);
@@ -147,11 +154,11 @@ export const joinFatal = <Event extends AwsEvent, Data1, Error1, Data2, Error2>(
 export const addService = <
   Event extends AwsEvent,
   Service1 extends ServiceContainer,
-  Service2 extends ServiceContainer
+  Service2 extends ServiceContainer,
 >(
-  request: Request<Event, Service1>,
-  addedService: Service2
-): Success<Request<Event, Service1 & Service2>> => {
+    request: Request<Event, Service1>,
+    addedService: Service2,
+  ): Success<Request<Event, Service1 & Service2>> => {
   return ok({
     ...request,
     service: {
@@ -173,16 +180,16 @@ export const lambda = <
   FailureData,
   FailureError,
   ExceptionData,
-  ExceptionError
+  ExceptionError,
 >(
-  middleware: Middleware<Service, ServiceError, ServiceContainer, Event>,
-  exception: HandlerException<ExceptionData, ExceptionError, Event>,
-  failure: HandlerError<ServiceError, FailureData, FailureError, Event>,
-  success: Handler<Service, Data, Error, Event>,
-  transform: Transform<Event, ResOk>,
-  transformError: Transform<Event, ResErr>,
-  transformException: Transform<Event, ResFatal>
-): AwsHandler<Event, ResOk | ResErr | ResFatal> => {
+    middleware: Middleware<Service, ServiceError, ServiceContainer, Event>,
+    exception: HandlerException<ExceptionData, ExceptionError, Event>,
+    failure: HandlerError<ServiceError, FailureData, FailureError, Event>,
+    success: Handler<Service, Data, Error, Event>,
+    transform: Transform<Event, Service, ResOk>,
+    transformError: TransformError<Event, ResErr>,
+    transformException: TransformError<Event, ResFatal>,
+  ): AwsHandler<Event, ResOk | ResErr | ResFatal> => {
   return async (event: Event['event'], context: Event['context']) => {
     const evObj = { event, context } as Event;
 
@@ -206,7 +213,7 @@ export const lambda = <
       } else {
         try {
           response = await success(request.data);
-          response = await transform(response, evObj);
+          response = await transform(response, request.data);
         } catch (err) {
           if (err instanceof FailureException) {
             response = await failure({
@@ -224,8 +231,8 @@ export const lambda = <
     } catch (err: unknown) {
       // check if error is failed Jest assertion and throw it immediately
       if (
-        err instanceof Error &&
-        typeof ((err as unknown) as { matcherResult: unknown }).matcherResult !== 'undefined'
+        err instanceof Error
+        && typeof ((err as unknown) as { matcherResult: unknown }).matcherResult !== 'undefined'
       ) {
         throw err;
       }

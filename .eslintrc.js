@@ -2,11 +2,11 @@ const path = require('path');
 
 module.exports = {
   root: true,
-  plugins: ['prettier', '@typescript-eslint', 'import', 'jest'],
+  plugins: ['prettier', 'import', 'jest'],
   overrides: [
     {
       files: '*.js',
-      extends: ['eslint-config-airbnb/base', 'prettier'],
+      extends: ['eslint-config-airbnb/base'],
     },
     {
       files: '*.ts',
@@ -39,8 +39,6 @@ module.exports = {
         'plugin:import/errors',
         'plugin:import/warnings',
         'plugin:import/typescript',
-        'prettier/@typescript-eslint',
-        'prettier',
       ],
       rules: {
         'no-param-reassign': 'off',

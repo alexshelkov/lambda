@@ -190,11 +190,11 @@ describe('creator', () => {
     expect.assertions(1);
 
     const cr: MiddlewareCreator<
-      ServiceOptions,
-      ServiceContainer,
-      never,
-      ServiceContainer,
-      { event: string; context: number }
+    ServiceOptions,
+    ServiceContainer,
+    never,
+    ServiceContainer,
+    { event: string; context: number }
     > = () => {
       return async (request) => {
         return ok(request);
@@ -284,10 +284,10 @@ describe('creator', () => {
     type Deps = { test2: string; test3: string };
 
     type DependentMiddleware = MiddlewareCreator<
-      { opDependent: string },
-      { testDependent: Deps },
-      Err & { type: 'errDependent' },
-      Deps
+    { opDependent: string },
+    { testDependent: Deps },
+    Err & { type: 'errDependent' },
+    Deps
     >;
 
     const dependentMiddleware: DependentMiddleware = (_options) => {
@@ -310,10 +310,10 @@ describe('creator', () => {
     type Deps2 = PickService<typeof res2, 'testDependent'>;
 
     type DependentMiddleware2 = MiddlewareCreator<
-      { opDependent: string },
-      { testDependent2: Deps2 },
-      Err & { type: 'errDependent' },
-      Deps2
+    { opDependent: string },
+    { testDependent2: Deps2 },
+    Err & { type: 'errDependent' },
+    Deps2
     >;
 
     const dependentMiddleware2: DependentMiddleware2 = (_options) => {
@@ -354,9 +354,9 @@ describe('creator', () => {
 
   describe('handles exceptions', () => {
     const exceptionCreator: MiddlewareCreator<
-      { throwError?: boolean },
-      { error: () => void },
-      Err
+    { throwError?: boolean },
+    { error: () => void },
+    Err
     > = () => {
       return async (r) => {
         return ok({
@@ -424,7 +424,7 @@ describe('creator', () => {
 
       const resExc = resOk.fatal(async (request) => {
         expect((request.exception as Error).message).toStrictEqual(
-          'Unhandled exception in middleware'
+          'Unhandled exception in middleware',
         );
 
         return ok(true);
@@ -451,7 +451,7 @@ describe('creator', () => {
 
       const res1Exc = res1Ok.fatal(async (request) => {
         expect((request.exception as Error).message).toStrictEqual(
-          'Unhandled exception in callback'
+          'Unhandled exception in callback',
         );
 
         return ok(false);
@@ -484,9 +484,9 @@ describe('creator', () => {
     let dbLogs: string[] = [];
 
     const dbLoggerCreator: MiddlewareCreator<
-      TransportOptions,
-      { transport: Transport },
-      TransportErrors
+    TransportOptions,
+    { transport: Transport },
+    TransportErrors
     > = (options) => {
       dbLogs = [];
 
@@ -518,17 +518,17 @@ describe('creator', () => {
     type LoggerError = DummyError;
 
     const loggerCreator: MiddlewareCreator<
-      // eslint-disable-next-line @typescript-eslint/ban-types
-      {},
-      { logger: Logger },
-      LoggerError,
-      { transport: Transport }
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    {},
+    { logger: Logger },
+    LoggerError,
+    { transport: Transport }
     > = () => {
       return async (request) => {
         const logger: Logger = {
           log: (message: string) => {
             return request.service.transport.send(
-              `${new Date().toISOString().split('T')[0]}: ${message}`
+              `${new Date().toISOString().split('T')[0]}: ${message}`,
             );
           },
         };
@@ -567,10 +567,10 @@ describe('creator', () => {
     const res2 = creator(dbLoggerCreator).srv(loggerCreator).opt({ throwError: true });
 
     const handle: Handler<
-      GetService<typeof res2>,
-      boolean,
-      number,
-      GetEvent<typeof res2>
+    GetService<typeof res2>,
+    boolean,
+    number,
+    GetEvent<typeof res2>
     > = async ({ service: { logger } }) => {
       logger.log('test message 2');
 
@@ -605,16 +605,16 @@ describe('creator', () => {
         return ok('success');
       });
 
-      const resTrans = resOk.onOk(async () => {
+      const resTrans = resOk.onOk(async (_r, request) => {
         return {
           statusCode: 123,
-          body: 'Test 1',
+          body: `Test 1 ${request.service.test1}`,
         };
       });
 
       expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
         statusCode: 123,
-        body: 'Test 1',
+        body: 'Test 1 1',
       });
     });
 
@@ -627,16 +627,16 @@ describe('creator', () => {
         return fail<TestError<'error'>>('error');
       });
 
-      const resTrans = resErr.onOk(async () => {
+      const resTrans = resErr.onOk(async (_r, request) => {
         return {
           statusCode: 456,
-          body: 'Test 2',
+          body: `Test 2 ${request.service.test1}`,
         };
       });
 
       expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
         statusCode: 456,
-        body: 'Test 2',
+        body: 'Test 2 1',
       });
     });
 

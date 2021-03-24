@@ -41,11 +41,11 @@ export interface Middleware<
   ServiceAdded extends ServiceContainer,
   ServiceError,
   ServiceDeps extends ServiceContainer = ServiceContainer,
-  Event extends AwsEvent = AwsEvent
+  Event extends AwsEvent = AwsEvent,
 > {
   <Service extends ServiceContainer>(request: Request<Event, Service & ServiceDeps>): Response<
-    Request<Event, Service & ServiceAdded>,
-    ServiceError
+  Request<Event, Service & ServiceAdded>,
+  ServiceError
   >;
 }
 
@@ -54,13 +54,13 @@ export interface MiddlewareCreator<
   ServiceAdded extends ServiceContainer,
   ServiceError,
   ServiceDeps extends ServiceContainer = ServiceContainer,
-  Event extends AwsEvent = AwsEvent
+  Event extends AwsEvent = AwsEvent,
 > {
   <Options extends ServiceOptions>(options: OptionsAdded & Options): Middleware<
-    ServiceAdded,
-    ServiceError,
-    ServiceDeps,
-    Event
+  ServiceAdded,
+  ServiceError,
+  ServiceDeps,
+  Event
   >;
 }
 
@@ -68,7 +68,7 @@ export interface Handler<
   Service extends ServiceContainer,
   Data,
   Error,
-  Event extends AwsEvent = AwsEvent
+  Event extends AwsEvent = AwsEvent,
 > {
   (request: Request<Event, Service>): Response<Data, Error>;
 }
@@ -81,6 +81,10 @@ export interface HandlerException<Data, Error, Event extends AwsEvent = AwsEvent
   (request: RequestException<Event>): Response<Data, Error>;
 }
 
-export interface Transform<Event extends AwsEvent, Res> {
+export interface Transform<Event extends AwsEvent, Service extends ServiceContainer, Res> {
+  (response: Result<unknown, unknown>, request: Request<Event, Service>): Promise<Res>;
+}
+
+export interface TransformError<Event extends AwsEvent, Res> {
   (response: Result<unknown, unknown>, event: Event): Promise<Res>;
 }

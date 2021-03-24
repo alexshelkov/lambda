@@ -15,17 +15,17 @@ export type EventSnsErrors = EventSnsRequestError;
 
 const isHaveSnsProps = (input: unknown): input is { EventSource: string } => {
   return (
-    typeof input === 'object' &&
-    input !== null &&
-    typeof (input as { EventSource: unknown }).EventSource === 'string'
+    typeof input === 'object'
+    && input !== null
+    && typeof (input as { EventSource: unknown }).EventSource === 'string'
   );
 };
 
 const isSnsEvent = (event: unknown): event is SNSEvent => {
   return (
-    isHaveRecords(event) &&
-    isHaveSnsProps(event.Records[0]) &&
-    event.Records[0].EventSource === 'aws:sns'
+    isHaveRecords(event)
+    && isHaveSnsProps(event.Records[0])
+    && event.Records[0].EventSource === 'aws:sns'
   );
 };
 
