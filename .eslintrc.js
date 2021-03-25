@@ -39,6 +39,7 @@ module.exports = {
         'plugin:import/errors',
         'plugin:import/warnings',
         'plugin:import/typescript',
+        'prettier',
       ],
       rules: {
         'no-param-reassign': 'off',
