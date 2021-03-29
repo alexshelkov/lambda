@@ -1,9 +1,9 @@
 import { Err, fail, ok } from '@alexshelkov/result';
 
 import {
-  creator,
-  GetError,
+  GetOpt,
   GetService,
+  GetError,
   PickService,
   Handler,
   HandlerError,
@@ -11,9 +11,10 @@ import {
   ServiceContainer,
   ServiceOptions,
   GetEvent,
-  addService,
   RequestError,
   AwsEvent,
+  creator,
+  addService,
 } from '../index';
 
 import { error1 } from '../creator';
@@ -190,11 +191,11 @@ describe('creator', () => {
     expect.assertions(1);
 
     const cr: MiddlewareCreator<
-    ServiceOptions,
-    ServiceContainer,
-    never,
-    ServiceContainer,
-    { event: string; context: number }
+      ServiceOptions,
+      ServiceContainer,
+      never,
+      ServiceContainer,
+      { event: string; context: number }
     > = () => {
       return async (request) => {
         return ok(request);
@@ -209,11 +210,12 @@ describe('creator', () => {
     type ErrorType = GetError<typeof res>;
     type ServiceType = GetService<typeof res>;
     type EventType = GetEvent<typeof res>;
+    type ServiceOpt = GetOpt<typeof res>;
 
-    const h1: Handler<ServiceType, string, Err, EventType> = async () => {
+    const h1: Handler<ServiceType, string, Err, EventType, ServiceOpt> = async () => {
       return ok('success');
     };
-    const e1: HandlerError<ErrorType, string, Err, EventType> = async () => {
+    const e1: HandlerError<ErrorType, string, Err, EventType, ServiceOpt> = async () => {
       return fail('error');
     };
 
@@ -226,54 +228,190 @@ describe('creator', () => {
     });
   });
 
-  it('create middleware lazily and in correct order', async () => {
-    expect.assertions(7);
+  describe('create middleware lazily and in correct order', () => {
+    let step = '';
 
-    let called = 0;
+    it('ok handlers order is reversed', async () => {
+      expect.assertions(8);
 
-    const m1: MiddlewareCreator<ServiceOptions, ServiceContainer, Err> = (_options) => {
-      expect(called).toStrictEqual(0);
+      step = 'start';
 
-      called += 1;
+      const m1: MiddlewareCreator<ServiceOptions, ServiceContainer, Err> = () => {
+        expect(step).toStrictEqual('start');
 
-      return async (request) => {
-        expect(called).toStrictEqual(2);
+        step = 'm1 created';
 
-        called += 1;
+        return async (request) => {
+          expect(step).toStrictEqual('m2 created');
 
-        return ok(request);
+          step = 'm1 request';
+
+          return ok(request);
+        };
       };
-    };
 
-    const m2: MiddlewareCreator<ServiceOptions, ServiceContainer, Err> = (_options) => {
-      expect(called).toStrictEqual(1);
+      const m2: MiddlewareCreator<ServiceOptions, ServiceContainer, Err> = () => {
+        expect(step).toStrictEqual('m1 created');
 
-      called += 1;
+        step = 'm2 created';
 
-      return async (request) => {
-        expect(called).toStrictEqual(3);
+        return async (request) => {
+          expect(step).toStrictEqual('m1 request');
 
-        called += 1;
+          step = 'm2 request';
 
-        return ok(request);
+          return ok(request);
+        };
       };
-    };
 
-    const res = creator(m1).srv(m2);
+      const res = creator(m1).srv(m2);
 
-    const resOk = res.ok(async () => {
-      expect(called).toStrictEqual(4);
+      const resOk = res
+        .ok(async () => {
+          // called second
+          expect(step).toStrictEqual('ok1');
 
-      called += 1;
+          step = 'ok2';
 
-      return ok(true);
+          return ok(true);
+        })
+        .ok(async () => {
+          // called first
+          expect(step).toStrictEqual('m2 request');
+
+          step = 'ok1';
+
+          return ok(true);
+        });
+
+      expect(step).toStrictEqual('start');
+
+      await resOk.req()(createEvent(), createContext());
+
+      expect(step).toStrictEqual('ok2');
     });
 
-    expect(called).toStrictEqual(0);
+    it('fail handlers order is reversed', async () => {
+      expect.assertions(8);
 
-    await resOk.req()(createEvent(), createContext());
+      step = 'start';
 
-    expect(called).toStrictEqual(5);
+      const m1: MiddlewareCreator<ServiceOptions, ServiceContainer, Err> = () => {
+        expect(step).toStrictEqual('start');
+
+        step = 'm1 created';
+
+        return async (request) => {
+          expect(step).toStrictEqual('m2 created');
+
+          step = 'm1 request';
+
+          return ok(request);
+        };
+      };
+
+      const m2: MiddlewareCreator<ServiceOptions, ServiceContainer, Err> = () => {
+        expect(step).toStrictEqual('m1 created');
+
+        step = 'm2 created';
+
+        return async () => {
+          expect(step).toStrictEqual('m1 request');
+
+          step = 'm2 request';
+
+          return fail('Err');
+        };
+      };
+
+      const res = creator(m1).srv(m2);
+
+      const resOk = res
+        .fail(async () => {
+          // called second
+          expect(step).toStrictEqual('fail1');
+
+          step = 'fail2';
+
+          return ok(true);
+        })
+        .fail(async () => {
+          // called first
+          expect(step).toStrictEqual('m2 request');
+
+          step = 'fail1';
+
+          return ok(true);
+        });
+
+      expect(step).toStrictEqual('start');
+
+      await resOk.req()(createEvent(), createContext());
+
+      expect(step).toStrictEqual('fail2');
+    });
+
+    it('fatal handlers order is reversed', async () => {
+      expect.assertions(8);
+
+      step = 'start';
+
+      const m1: MiddlewareCreator<ServiceOptions, ServiceContainer, Err> = () => {
+        expect(step).toStrictEqual('start');
+
+        step = 'm1 created';
+
+        return async (request) => {
+          expect(step).toStrictEqual('m2 created');
+
+          step = 'm1 request';
+
+          return ok(request);
+        };
+      };
+
+      const m2: MiddlewareCreator<ServiceOptions, ServiceContainer, Err> = () => {
+        expect(step).toStrictEqual('m1 created');
+
+        step = 'm2 created';
+
+        return async (request) => {
+          expect(step).toStrictEqual('m1 request');
+
+          step = 'm2 request';
+
+          throw new Error('Fatal error');
+
+          return ok(request);
+        };
+      };
+
+      const res = creator(m1).srv(m2);
+
+      const resOk = res
+        .fatal(async () => {
+          // called second
+          expect(step).toStrictEqual('fatal1');
+
+          step = 'fatal2';
+
+          return ok(true);
+        })
+        .fatal(async () => {
+          // called first
+          expect(step).toStrictEqual('m2 request');
+
+          step = 'fatal1';
+
+          return ok(true);
+        });
+
+      expect(step).toStrictEqual('start');
+
+      await resOk.req()(createEvent(), createContext());
+
+      expect(step).toStrictEqual('fatal2');
+    });
   });
 
   it('dependent middleware works with declared dependencies', async () => {
@@ -284,10 +422,10 @@ describe('creator', () => {
     type Deps = { test2: string; test3: string };
 
     type DependentMiddleware = MiddlewareCreator<
-    { opDependent: string },
-    { testDependent: Deps },
-    Err & { type: 'errDependent' },
-    Deps
+      { opDependent: string },
+      { testDependent: Deps },
+      Err & { type: 'errDependent' },
+      Deps
     >;
 
     const dependentMiddleware: DependentMiddleware = (_options) => {
@@ -310,10 +448,10 @@ describe('creator', () => {
     type Deps2 = PickService<typeof res2, 'testDependent'>;
 
     type DependentMiddleware2 = MiddlewareCreator<
-    { opDependent: string },
-    { testDependent2: Deps2 },
-    Err & { type: 'errDependent' },
-    Deps2
+      { opDependent: string },
+      { testDependent2: Deps2 },
+      Err & { type: 'errDependent' },
+      Deps2
     >;
 
     const dependentMiddleware2: DependentMiddleware2 = (_options) => {
@@ -354,9 +492,9 @@ describe('creator', () => {
 
   describe('handles exceptions', () => {
     const exceptionCreator: MiddlewareCreator<
-    { throwError?: boolean },
-    { error: () => void },
-    Err
+      { throwError?: boolean },
+      { error: () => void },
+      Err
     > = () => {
       return async (r) => {
         return ok({
@@ -424,7 +562,7 @@ describe('creator', () => {
 
       const resExc = resOk.fatal(async (request) => {
         expect((request.exception as Error).message).toStrictEqual(
-          'Unhandled exception in middleware',
+          'Unhandled exception in middleware'
         );
 
         return ok(true);
@@ -451,7 +589,7 @@ describe('creator', () => {
 
       const res1Exc = res1Ok.fatal(async (request) => {
         expect((request.exception as Error).message).toStrictEqual(
-          'Unhandled exception in callback',
+          'Unhandled exception in callback'
         );
 
         return ok(false);
@@ -462,137 +600,48 @@ describe('creator', () => {
         body: '{"status":"success","data":false}',
       });
     });
-  });
 
-  it('works with dummy logger', async () => {
-    expect.assertions(4);
+    it('exception in fatal handler', async () => {
+      expect.assertions(2);
 
-    type TransportOptions = {
-      throwError?: boolean;
-    };
+      const res = creator(creatorTest1);
 
-    type Transport = {
-      send: (message: string) => void;
-    };
+      const resOk = res.ok(async () => {
+        if (Math.random() !== -1) {
+          throw new Error('Unhandled exception in callback');
+        }
 
-    interface DbWriteError extends Err {
-      type: 'DbWriteError';
-    }
+        return ok(true);
+      });
 
-    type TransportErrors = DbWriteError;
+      const resExc = resOk.fatal(async () => {
+        if (Math.random() !== -1) {
+          throw new Error('Unhandled exception in callback');
+        }
 
-    let dbLogs: string[] = [];
+        return ok(false);
+      });
 
-    const dbLoggerCreator: MiddlewareCreator<
-    TransportOptions,
-    { transport: Transport },
-    TransportErrors
-    > = (options) => {
-      dbLogs = [];
+      const resExc1 = resOk.fatal(async () => {
+        if (Math.random() !== -1) {
+          // eslint-disable-next-line @typescript-eslint/no-throw-literal
+          throw { error: true };
+        }
 
-      return async (request) => {
-        const transport: Transport = {
-          send: (message: string) => {
-            if (options.throwError) {
-              throw fail<DbWriteError>('DbWriteError');
-            }
+        return ok(false);
+      });
 
-            dbLogs.push(message);
-          },
-        };
+      expect(await resExc.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body:
+          '{"status":"error","error":{"type":"FatalException","message":"Error\\nUnhandled exception in callback"}}',
+      });
 
-        return addService(request, {
-          transport,
-        });
-      };
-    };
-
-    type Logger = {
-      log: (message: string) => void;
-    };
-
-    interface DummyError extends Err {
-      type: 'DummyError';
-    }
-
-    type LoggerError = DummyError;
-
-    const loggerCreator: MiddlewareCreator<
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    {},
-    { logger: Logger },
-    LoggerError,
-    { transport: Transport }
-    > = () => {
-      return async (request) => {
-        const logger: Logger = {
-          log: (message: string) => {
-            return request.service.transport.send(
-              `${new Date().toISOString().split('T')[0]}: ${message}`,
-            );
-          },
-        };
-
-        return addService(request, {
-          logger,
-        });
-      };
-    };
-
-    const res = creator(dbLoggerCreator).srv(loggerCreator);
-
-    const resOk = res.ok(async ({ service: { logger } }) => {
-      logger.log('test message 1');
-
-      return ok(true);
+      expect(await resExc1.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body: '{"status":"error","error":{"type":"FatalException"}}',
+      });
     });
-
-    let error: null | 'Error: DbWriteError' | 'Error: DummyError' = null;
-
-    const resFail = resOk.fail(async ({ error: { type } }) => {
-      if (type === 'DbWriteError') {
-        error = 'Error: DbWriteError';
-      } else if (type === 'DummyError') {
-        error = 'Error: DummyError';
-      }
-
-      return ok(true);
-    });
-
-    await resFail.req()(createEvent(), createContext());
-
-    expect(error).toBeNull();
-    expect(dbLogs).toContain(`${new Date().toISOString().split('T')[0]}: test message 1`);
-
-    const res2 = creator(dbLoggerCreator).srv(loggerCreator).opt({ throwError: true });
-
-    const handle: Handler<
-    GetService<typeof res2>,
-    boolean,
-    number,
-    GetEvent<typeof res2>
-    > = async ({ service: { logger } }) => {
-      logger.log('test message 2');
-
-      return ok(true);
-    };
-
-    const res2Ok = res2.ok(handle);
-
-    const res2Fail = res2Ok.fail(async ({ error: { type } }) => {
-      if (type === 'DbWriteError') {
-        error = 'Error: DbWriteError';
-      } else if (type === 'DummyError') {
-        error = 'Error: DummyError';
-      }
-
-      return ok(true);
-    });
-
-    await res2Fail.req()(createEvent(), createContext());
-
-    expect(error).toStrictEqual('Error: DbWriteError');
-    expect(dbLogs).toHaveLength(0);
   });
 
   describe('works with custom transform', () => {
@@ -667,9 +716,12 @@ describe('creator', () => {
     it('will be Unknown for non-string types', async () => {
       expect.assertions(1);
 
-      const err1 = await error1({
-        error: 1,
-      } as RequestError<AwsEvent, number>);
+      const err1 = await error1(
+        {
+          error: 1,
+        } as RequestError<AwsEvent, number>,
+        {}
+      );
 
       expect(err1.err().type).toStrictEqual('Unknown');
     });
@@ -677,9 +729,12 @@ describe('creator', () => {
     it('will return error type for string', async () => {
       expect.assertions(1);
 
-      const err1 = await error1({
-        error: 'test',
-      } as RequestError<AwsEvent, string>);
+      const err1 = await error1(
+        {
+          error: 'test',
+        } as RequestError<AwsEvent, string>,
+        {}
+      );
 
       expect(err1.err().type).toStrictEqual('test');
     });
@@ -687,11 +742,14 @@ describe('creator', () => {
     it('will be Unknown for non-string Err types', async () => {
       expect.assertions(1);
 
-      const err1 = await error1({
-        error: {
-          type: (1 as unknown) as string,
-        },
-      } as RequestError<AwsEvent, Err>);
+      const err1 = await error1(
+        {
+          error: {
+            type: (1 as unknown) as string,
+          },
+        } as RequestError<AwsEvent, Err>,
+        {}
+      );
 
       expect(err1.err().type).toStrictEqual('Unknown');
     });

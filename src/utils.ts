@@ -1,13 +1,10 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
-import {
-  compare, FailureException, ok, Result, Success,
-} from '@alexshelkov/result';
+import { compare, Err, fail, FailureException, ok, Result, Success } from '@alexshelkov/result';
 
 import {
   Handler,
   HandlerError,
   HandlerException,
-  Middleware,
   MiddlewareCreator,
   Request,
   RequestError,
@@ -44,14 +41,15 @@ export const json = async (result: Result<unknown, unknown>): Promise<APIGateway
   if (result.isOk()) {
     body = result.data !== undefined ? JSON.stringify(result) : '';
   } else {
-    body = result.error !== undefined
-      ? JSON.stringify({
-        ...result,
-        message: undefined,
-        name: undefined,
-        stack: undefined,
-      })
-      : '';
+    body =
+      result.error !== undefined
+        ? JSON.stringify({
+            ...result,
+            message: undefined,
+            name: undefined,
+            stack: undefined,
+          })
+        : '';
   }
 
   return {
@@ -69,18 +67,18 @@ export const connect = <
   Event extends AwsEvent,
   Options1 extends ServiceOptions,
   Service1 extends ServiceContainer,
-  Error1,
+  Error1
 >(
-    c1: MiddlewareCreator<Options1, Service1, Error1, ServiceContainer, Event>,
-  ) => {
+  c1: MiddlewareCreator<Options1, Service1, Error1, ServiceContainer, Event>
+) => {
   return <Options2 extends ServiceOptions, Service2 extends ServiceContainer, Error2>(
-    c2: MiddlewareCreator<Options2, Service2, Error2, Service1, Event>,
+    c2: MiddlewareCreator<Options2, Service2, Error2, Service1, Event>
   ): MiddlewareCreator<
-  Options1 & Options2,
-  Service1 & Service2,
-  Error1 | Error2,
-  ServiceContainer,
-  Event
+    Options1 & Options2,
+    Service1 & Service2,
+    Error1 | Error2,
+    ServiceContainer,
+    Event
   > => {
     return (options) => {
       const m1 = c1(options);
@@ -101,19 +99,20 @@ export const connect = <
 
 export const join = <
   Event extends AwsEvent,
+  Options extends ServiceOptions,
   Service1 extends ServiceContainer,
   Service2 extends ServiceContainer,
   Data1,
   Error1,
   Data2,
-  Error2,
+  Error2
 >(
-    c1: Handler<Service1, Data1, Error1, Event>,
-    c2: Handler<Service2, Data2, Error2, Event>,
-  ): Handler<Service1 & Service2, Data1 | Data2, Error1 | Error2, Event> => {
-  return async (request: Request<Event, Service1 & Service2>) => {
-    const r1 = await c1(request);
-    const r2 = await c2(request);
+  c1: Handler<Service1, Data1, Error1, Event, Options>,
+  c2: Handler<Service2, Data2, Error2, Event, Options>
+): Handler<Service1 & Service2, Data1 | Data2, Error1 | Error2, Event, Options> => {
+  return async (request: Request<Event, Service1 & Service2>, options: Partial<Options>) => {
+    const r2 = await c2(request, options);
+    const r1 = await c1(request, options);
 
     return compare(r1, r2);
   };
@@ -121,31 +120,42 @@ export const join = <
 
 export const joinFailure = <
   Event extends AwsEvent,
+  Options extends ServiceOptions,
   ServiceError1,
   ServiceError2,
   Data1,
   Error1,
   Data2,
-  Error2,
+  Error2
 >(
-    c1: HandlerError<ServiceError1, Data1, Error1, Event>,
-    c2: HandlerError<ServiceError2, Data2, Error2, Event>,
-  ): HandlerError<ServiceError1 | ServiceError2, Data1 | Data2, Error1 | Error2, Event> => {
-  return async (request: RequestError<Event, ServiceError1 | ServiceError2>) => {
-    const r1 = await c1(request as RequestError<Event, ServiceError1>);
-    const r2 = await c2(request as RequestError<Event, ServiceError2>);
+  c1: HandlerError<ServiceError1, Data1, Error1, Event, Options>,
+  c2: HandlerError<ServiceError2, Data2, Error2, Event, Options>
+): HandlerError<ServiceError1 | ServiceError2, Data1 | Data2, Error1 | Error2, Event, Options> => {
+  return async (
+    request: RequestError<Event, ServiceError1 | ServiceError2>,
+    options: Partial<Options>
+  ) => {
+    const r2 = await c2(request as RequestError<Event, ServiceError2>, options);
+    const r1 = await c1(request as RequestError<Event, ServiceError1>, options);
 
     return compare(r1, r2);
   };
 };
 
-export const joinFatal = <Event extends AwsEvent, Data1, Error1, Data2, Error2>(
-  c1: HandlerException<Data1, Error1, Event>,
-  c2: HandlerException<Data2, Error2, Event>,
-): HandlerException<Data1 | Data2, Error1 | Error2, Event> => {
-  return async (request: RequestException<Event>) => {
-    const r1 = await c1(request);
-    const r2 = await c2(request);
+export const joinFatal = <
+  Event extends AwsEvent,
+  Options extends ServiceOptions,
+  Data1,
+  Error1,
+  Data2,
+  Error2
+>(
+  c1: HandlerException<Data1, Error1, Event, Options>,
+  c2: HandlerException<Data2, Error2, Event, Options>
+): HandlerException<Data1 | Data2, Error1 | Error2, Event, Options> => {
+  return async (request: RequestException<Event>, options: Partial<Options>) => {
+    const r2 = await c2(request, options);
+    const r1 = await c1(request, options);
 
     return compare(r1, r2);
   };
@@ -154,11 +164,11 @@ export const joinFatal = <Event extends AwsEvent, Data1, Error1, Data2, Error2>(
 export const addService = <
   Event extends AwsEvent,
   Service1 extends ServiceContainer,
-  Service2 extends ServiceContainer,
+  Service2 extends ServiceContainer
 >(
-    request: Request<Event, Service1>,
-    addedService: Service2,
-  ): Success<Request<Event, Service1 & Service2>> => {
+  request: Request<Event, Service1>,
+  addedService: Service2
+): Success<Request<Event, Service1 & Service2>> => {
   return ok({
     ...request,
     service: {
@@ -170,6 +180,7 @@ export const addService = <
 
 export const lambda = <
   Event extends AwsEvent,
+  Options extends ServiceOptions,
   ResOk,
   ResErr,
   ResFatal,
@@ -180,22 +191,25 @@ export const lambda = <
   FailureData,
   FailureError,
   ExceptionData,
-  ExceptionError,
+  ExceptionError
 >(
-    middleware: Middleware<Service, ServiceError, ServiceContainer, Event>,
-    exception: HandlerException<ExceptionData, ExceptionError, Event>,
-    failure: HandlerError<ServiceError, FailureData, FailureError, Event>,
-    success: Handler<Service, Data, Error, Event>,
-    transform: Transform<Event, Service, ResOk>,
-    transformError: TransformError<Event, ResErr>,
-    transformException: TransformError<Event, ResFatal>,
-  ): AwsHandler<Event, ResOk | ResErr | ResFatal> => {
+  options: Options,
+  creator: MiddlewareCreator<Options, Service, ServiceError, ServiceContainer, Event>,
+  exception: HandlerException<ExceptionData, ExceptionError, Event, Options>,
+  failure: HandlerError<ServiceError, FailureData, FailureError, Event, Options>,
+  success: Handler<Service, Data, Error, Event, Options>,
+  transform: Transform<ResOk, Event, Options, Service>,
+  transformError: TransformError<ResErr, Event, Options>,
+  transformException: TransformError<ResFatal, Event, Options>
+): AwsHandler<Event, ResOk | ResErr | ResFatal> => {
   return async (event: Event['event'], context: Event['context']) => {
     const evObj = { event, context } as Event;
 
     let response;
 
     try {
+      const middleware = creator(options);
+
       const request = await middleware({
         event,
         context,
@@ -203,26 +217,32 @@ export const lambda = <
       });
 
       if (request.isErr()) {
-        response = await failure({
-          event,
-          context,
-          error: request.error,
-        });
+        response = await failure(
+          {
+            event,
+            context,
+            error: request.error,
+          },
+          options
+        );
 
-        response = await transformError(response, evObj);
+        response = await transformError(response, evObj, options);
       } else {
         try {
-          response = await success(request.data);
-          response = await transform(response, request.data);
+          response = await success(request.data, options);
+          response = await transform(response, request.data, options);
         } catch (err) {
           if (err instanceof FailureException) {
-            response = await failure({
-              event,
-              context,
-              error: err.error as ServiceError,
-            });
+            response = await failure(
+              {
+                event,
+                context,
+                error: err.error as ServiceError,
+              },
+              options
+            );
 
-            response = await transformError(response, evObj);
+            response = await transformError(response, evObj, options);
           } else {
             throw err;
           }
@@ -231,19 +251,28 @@ export const lambda = <
     } catch (err: unknown) {
       // check if error is failed Jest assertion and throw it immediately
       if (
-        err instanceof Error
-        && typeof ((err as unknown) as { matcherResult: unknown }).matcherResult !== 'undefined'
+        err instanceof Error &&
+        typeof ((err as unknown) as { matcherResult: unknown }).matcherResult !== 'undefined'
       ) {
         throw err;
       }
 
-      response = await exception({
-        event,
-        context,
-        exception: err,
-      });
+      try {
+        response = await exception(
+          {
+            event,
+            context,
+            exception: err,
+          },
+          options
+        );
+      } catch (fatal) {
+        response = fail<Err>('FatalException', {
+          message: fatal instanceof Error ? `${fatal.name}\n${fatal.message}` : undefined,
+        });
+      }
 
-      response = await transformException(response, evObj);
+      response = await transformException(response, evObj, options);
     }
 
     return response;

@@ -79,12 +79,12 @@ describe('handlers utils', () => {
         },
         async (_r) => {
           return ok('1');
-        },
+        }
       ),
       async (_r) => {
         return ok(2);
-      },
-    )(createRequest({}));
+      }
+    )(createRequest({}), {});
 
     expect(handlers).toMatchObject({ status: 'success', data: 2 });
   });
@@ -98,8 +98,8 @@ describe('handlers utils', () => {
       },
       async (_r) => {
         return ok(2);
-      },
-    )(createRequest({}));
+      }
+    )(createRequest({}), {});
 
     expect(handlers).toMatchObject({ status: 'error', error: { type: 'err' } });
   });

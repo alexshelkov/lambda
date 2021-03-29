@@ -38,30 +38,25 @@ export interface RequestException<Event extends AwsEvent> extends RequestBase<Ev
 }
 
 export interface Middleware<
-  ServiceAdded extends ServiceContainer,
+  Service2 extends ServiceContainer,
   ServiceError,
   ServiceDeps extends ServiceContainer = ServiceContainer,
-  Event extends AwsEvent = AwsEvent,
+  Event extends AwsEvent = AwsEvent
 > {
-  <Service extends ServiceContainer>(request: Request<Event, Service & ServiceDeps>): Response<
-  Request<Event, Service & ServiceAdded>,
-  ServiceError
+  <Service1 extends ServiceContainer>(request: Request<Event, Service1 & ServiceDeps>): Response<
+    Request<Event, Service1 & Service2>,
+    ServiceError
   >;
 }
 
 export interface MiddlewareCreator<
-  OptionsAdded extends ServiceOptions,
-  ServiceAdded extends ServiceContainer,
+  Options extends ServiceOptions,
+  Service extends ServiceContainer,
   ServiceError,
   ServiceDeps extends ServiceContainer = ServiceContainer,
-  Event extends AwsEvent = AwsEvent,
+  Event extends AwsEvent = AwsEvent
 > {
-  <Options extends ServiceOptions>(options: OptionsAdded & Options): Middleware<
-  ServiceAdded,
-  ServiceError,
-  ServiceDeps,
-  Event
-  >;
+  (options: Partial<Options>): Middleware<Service, ServiceError, ServiceDeps, Event>;
 }
 
 export interface Handler<
@@ -69,22 +64,47 @@ export interface Handler<
   Data,
   Error,
   Event extends AwsEvent = AwsEvent,
+  Options extends ServiceOptions = ServiceOptions
 > {
-  (request: Request<Event, Service>): Response<Data, Error>;
+  (request: Request<Event, Service>, options: Partial<Options>): Response<Data, Error>;
 }
 
-export interface HandlerError<ServiceError, Data, Error, Event extends AwsEvent = AwsEvent> {
-  (request: RequestError<Event, ServiceError>): Response<Data, Error>;
+export interface HandlerError<
+  ServiceError,
+  Data,
+  Error,
+  Event extends AwsEvent = AwsEvent,
+  Options extends ServiceOptions = ServiceOptions
+> {
+  (request: RequestError<Event, ServiceError>, options: Partial<Options>): Response<Data, Error>;
 }
 
-export interface HandlerException<Data, Error, Event extends AwsEvent = AwsEvent> {
-  (request: RequestException<Event>): Response<Data, Error>;
+export interface HandlerException<
+  Data,
+  Error,
+  Event extends AwsEvent = AwsEvent,
+  Options extends ServiceOptions = ServiceOptions
+> {
+  (request: RequestException<Event>, options: Partial<Options>): Response<Data, Error>;
 }
 
-export interface Transform<Event extends AwsEvent, Service extends ServiceContainer, Res> {
-  (response: Result<unknown, unknown>, request: Request<Event, Service>): Promise<Res>;
+export interface Transform<
+  Res,
+  Event extends AwsEvent = AwsEvent,
+  Options extends ServiceOptions = ServiceOptions,
+  Service extends ServiceContainer = ServiceContainer
+> {
+  (
+    response: Result<unknown, unknown>,
+    request: Request<Event, Service>,
+    options: Partial<Options>
+  ): Promise<Res>;
 }
 
-export interface TransformError<Event extends AwsEvent, Res> {
-  (response: Result<unknown, unknown>, event: Event): Promise<Res>;
+export interface TransformError<
+  Res,
+  Event extends AwsEvent = AwsEvent,
+  Options extends ServiceOptions = ServiceOptions
+> {
+  (response: Result<unknown, unknown>, event: Event, options: Partial<Options>): Promise<Res>;
 }

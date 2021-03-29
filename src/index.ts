@@ -13,13 +13,9 @@ export {
   AwsHandler,
 } from './types';
 
-export {
-  Creator, creator, GetService, PickService, GetError, GetEvent,
-} from './creator';
+export { Creator, GetOpt, GetService, PickService, GetError, GetEvent, creator } from './creator';
 
-export {
-  json, connect, lambda, join, joinFailure, joinFatal, addService,
-} from './utils';
+export { json, connect, lambda, join, joinFailure, joinFatal, addService } from './utils';
 
 export { route, Router, SkippedError } from './router';
 
@@ -58,7 +54,10 @@ export {
 } from './service/eventSqs';
 
 export {
-  default as loggerService,
+  default as logger,
+  resetLogger,
+  createLogger,
+  loggerService,
   Logger,
   LoggerOptions,
   LoggerService,
@@ -66,7 +65,10 @@ export {
 } from './service/logger';
 
 export {
-  default as transportService,
+  default as transport,
+  resetTransport,
+  createTransport,
+  transportService,
   Transport,
   TransportOptions,
   TransportService,

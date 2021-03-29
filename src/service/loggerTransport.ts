@@ -7,7 +7,7 @@ export type MessageType = string;
 export type TransportOptions = {};
 
 export interface Transport {
-  send: (type: MessageType, data: unknown[]) => void;
+  send: (type: MessageType, data: unknown[], meta: Record<string, unknown>) => void;
 }
 
 export type TransportService = {
@@ -16,9 +16,9 @@ export type TransportService = {
 
 export type TransportErrors = never;
 
-const createTransport = (): Transport => {
+export const createTransport = (): Transport => {
   return {
-    send(type: MessageType, data: unknown[]) {
+    send(type, data) {
       if (type === 'error') {
         // eslint-disable-next-line no-console
         console.error(...data);
@@ -28,6 +28,9 @@ const createTransport = (): Transport => {
       } else if (type === 'debug') {
         // eslint-disable-next-line no-console
         console.debug(...data);
+      } else if (type === 'info') {
+        // eslint-disable-next-line no-console
+        console.info(...data);
       } else {
         // eslint-disable-next-line no-console
         console.log(...data);
@@ -36,13 +39,33 @@ const createTransport = (): Transport => {
   };
 };
 
-const transport: MiddlewareCreator<TransportOptions, TransportService, TransportErrors> = () => {
+let service: Transport;
+
+const getTransport = (): Transport => {
+  if (!service) {
+    service = createTransport();
+  }
+
+  return service;
+};
+
+export const resetTransport = (
+  transport: Transport = (undefined as unknown) as Transport
+): void => {
+  service = transport;
+};
+
+export const transportService: MiddlewareCreator<
+  TransportOptions,
+  TransportService,
+  TransportErrors
+> = () => {
   // eslint-disable-next-line @typescript-eslint/require-await
   return async (request) => {
     return addService(request, {
-      transport: createTransport(),
+      transport: getTransport(),
     });
   };
 };
 
-export default transport;
+export default getTransport;

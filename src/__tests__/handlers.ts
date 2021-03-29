@@ -2,9 +2,7 @@ import { DefineAuthChallengeTriggerHandler, DefineAuthChallengeTriggerEvent } fr
 
 import { Err, fail, ok } from '@alexshelkov/result';
 
-import {
-  creator, GetError, GetService, Handler, HandlerError, GetEvent,
-} from '../index';
+import { creator, GetError, GetService, Handler, HandlerError, GetEvent, GetOpt } from '../index';
 
 import { creatorTest1, createEvent, createContext } from '../__stubs__';
 
@@ -40,16 +38,17 @@ describe('custom handlers', () => {
     const res = creator(creatorTest1).ctx<Event>().opt({ op1: '1' });
 
     type ErrorType = GetError<typeof res>;
+    type ServiceOpts = GetOpt<typeof res>;
     type ServiceType = GetService<typeof res>;
     type EventType = GetEvent<typeof res>;
 
     type Session = DefineAuthChallengeTriggerEvent['request']['session'][0] | undefined;
 
-    const h1: Handler<ServiceType, Session, Err, EventType> = async (request) => {
+    const h1: Handler<ServiceType, Session, Err, EventType, ServiceOpts> = async (request) => {
       return ok(request.event.request.session[0]);
     };
 
-    const e1: HandlerError<ErrorType, string, Err, EventType> = async () => {
+    const e1: HandlerError<ErrorType, string, Err, EventType, ServiceOpts> = async () => {
       return fail('error');
     };
 
@@ -102,7 +101,7 @@ describe('custom handlers', () => {
 
       const response = await handle(
         createEvent(({ badEvent: 'no' } as unknown) as DefineAuthChallengeTriggerEvent),
-        createContext(),
+        createContext()
       );
 
       expect(response).toMatchObject({

@@ -50,7 +50,7 @@ describe('router', () => {
       return Promise.resolve(ok('will not be triggered'));
     });
 
-    const res1 = await h1(createRequest({ a: { a1: '1' } }));
+    const res1 = await h1(createRequest({ a: { a1: '1' } }), {});
 
     expect(res1).toMatchObject({ status: 'error', error: { type: 'Skipped' } });
 
@@ -58,7 +58,7 @@ describe('router', () => {
       return Promise.resolve(ok(`will be triggered: ${request.service.a.a2 ? 'ok' : 'bad'}`));
     });
 
-    const res2 = await h2(createRequest({ a: { a2: true } }));
+    const res2 = await h2(createRequest({ a: { a2: true } }), {});
 
     expect(res2).toMatchObject({ status: 'success', data: 'will be triggered: ok' });
   });
