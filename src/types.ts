@@ -37,18 +37,6 @@ export interface RequestException<Event extends AwsEvent> extends RequestBase<Ev
   exception: unknown;
 }
 
-export interface Middleware<
-  Service2 extends ServiceContainer,
-  ServiceError,
-  ServiceDeps extends ServiceContainer = ServiceContainer,
-  Event extends AwsEvent = AwsEvent
-> {
-  <Service1 extends ServiceContainer>(request: Request<Event, Service1 & ServiceDeps>): Response<
-    Request<Event, Service1 & Service2>,
-    ServiceError
-  >;
-}
-
 export interface MiddlewareEvents {
   destroy: () => Promise<void>;
 }
@@ -57,6 +45,17 @@ export interface MiddlewareLifecycle {
   destroy: (cb: MiddlewareEvents['destroy']) => void;
 }
 
+export interface Middleware<
+  Service2 extends ServiceContainer,
+  ServiceError,
+  ServiceDeps extends ServiceContainer = ServiceContainer,
+  Event extends AwsEvent = AwsEvent
+> {
+  <Service1 extends ServiceContainer>(
+    request: Request<Event, Service1 & ServiceDeps>,
+    lifecycle: MiddlewareLifecycle
+  ): Response<Request<Event, Service1 & Service2>, ServiceError>;
+}
 export interface MiddlewareCreator<
   Options extends ServiceOptions,
   Service extends ServiceContainer,
@@ -64,12 +63,7 @@ export interface MiddlewareCreator<
   ServiceDeps extends ServiceContainer = ServiceContainer,
   Event extends AwsEvent = AwsEvent
 > {
-  (options: Partial<Options>, lifecycle: MiddlewareLifecycle): Middleware<
-    Service,
-    ServiceError,
-    ServiceDeps,
-    Event
-  >;
+  (options: Partial<Options>): Middleware<Service, ServiceError, ServiceDeps, Event>;
 }
 
 export interface Handler<

@@ -497,14 +497,14 @@ describe('creator', () => {
     let destroyed = 0;
     let requests = 0;
 
-    const m1: MiddlewareCreator<ServiceOptions, { test1: string }, never> = (_o, lc) => {
-      lc.destroy(async () => {
-        destroyed += 1;
-      });
-
+    const m1: MiddlewareCreator<ServiceOptions, { test1: string }, never> = (_o) => {
       created += 1;
 
-      return async (r) => {
+      return async (r, lc) => {
+        lc.destroy(async () => {
+          destroyed += 1;
+        });
+
         requests += 1;
 
         return addService(r, {
@@ -531,23 +531,23 @@ describe('creator', () => {
     expect(requests).toStrictEqual(3);
   });
 
-  it('connect lifecycles first failed middleware error', async () => {
+  it('lifecycles called in the right order', async () => {
     expect.assertions(10);
 
     let step = 'start';
 
-    const m1: MiddlewareCreator<ServiceOptions, { test1: string }, never> = (_o, lc) => {
-      lc.destroy(async () => {
-        expect(step).toStrictEqual('ok1');
-
-        step = 'm1 destroyed';
-      });
-
+    const m1: MiddlewareCreator<ServiceOptions, { test1: string }, never> = () => {
       expect(step).toStrictEqual('start');
 
       step = 'm1 created';
 
-      return async (r) => {
+      return async (r, lc) => {
+        lc.destroy(async () => {
+          expect(step).toStrictEqual('m2 destroyed');
+
+          step = 'm1 destroyed';
+        });
+
         expect(step).toStrictEqual('m2 created');
 
         step = 'm1 request';
@@ -558,18 +558,18 @@ describe('creator', () => {
       };
     };
 
-    const m2: MiddlewareCreator<ServiceOptions, { test2: string }, never> = (_o, lc) => {
-      lc.destroy(async () => {
-        expect(step).toStrictEqual('m1 destroyed');
-
-        step = 'm2 destroyed';
-      });
-
+    const m2: MiddlewareCreator<ServiceOptions, { test2: string }, never> = () => {
       expect(step).toStrictEqual('m1 created');
 
       step = 'm2 created';
 
-      return async (r) => {
+      return async (r, lc) => {
+        lc.destroy(async () => {
+          expect(step).toStrictEqual('ok1');
+
+          step = 'm2 destroyed';
+        });
+
         expect(step).toStrictEqual('m1 request');
 
         step = 'm2 request';
@@ -597,7 +597,91 @@ describe('creator', () => {
       body: '{"status":"success","data":"1 & 2"}',
     });
 
-    expect(step).toStrictEqual('m2 destroyed');
+    expect(step).toStrictEqual('m1 destroyed');
+  });
+
+  it('lifecycles may be called in parallel', async () => {
+    expect.assertions(7);
+
+    let destroyed = 0;
+    let requests = 0;
+    let creates = 0;
+
+    const wait = (w: number) => {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(w);
+        }, w);
+      });
+    };
+
+    const m0: MiddlewareCreator<ServiceOptions, { test0: () => string }, never> = () => {
+      return async (request) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const e = request.event.e as number;
+
+        return addService(request, {
+          test0: () => {
+            return `test0: ${e}`;
+          },
+        });
+      };
+    };
+
+    const m1: MiddlewareCreator<
+      ServiceOptions,
+      { test1: string },
+      never,
+      { test0: () => string }
+    > = () => {
+      return async (request, lc) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const e = request.event.e as number;
+
+        lc.destroy(async () => {
+          destroyed += 1;
+          expect(request.service.test0()).toStrictEqual(`test0: ${e}`);
+        });
+
+        if (e === 1) {
+          await wait(1350);
+        }
+
+        creates += 1;
+
+        return addService(request, {
+          test1: '1',
+        });
+      };
+    };
+
+    const res = creator(m0)
+      .srv(m1)
+      .ok(async ({ event, service: { test1 } }) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const e = event.e as number;
+
+        if (e === 1) {
+          await wait(1250);
+        }
+
+        requests += 1;
+
+        return ok(test1);
+      });
+
+    const req = res.req();
+
+    await Promise.all([
+      req(createEvent({ e: 1 }), createContext()),
+      req(createEvent({ e: 2 }), createContext()),
+      req(createEvent({ e: 3 }), createContext()),
+      req(createEvent({ e: 4 }), createContext()),
+    ]);
+
+    expect(creates).toStrictEqual(4);
+    expect(destroyed).toStrictEqual(4);
+    expect(requests).toStrictEqual(4);
   });
 
   it('handle failure and exceptions in lifecycle', async () => {
@@ -605,12 +689,12 @@ describe('creator', () => {
 
     type DestroyError = { type: 'ImpossibleToDestroy' };
 
-    const m1: MiddlewareCreator<ServiceOptions, { test1: string }, DestroyError> = (_o, lc) => {
-      lc.destroy(async () => {
-        throw fail<DestroyError>('ImpossibleToDestroy');
-      });
+    const m1: MiddlewareCreator<ServiceOptions, { test1: string }, DestroyError> = () => {
+      return async (r, lc) => {
+        lc.destroy(async () => {
+          throw fail<DestroyError>('ImpossibleToDestroy');
+        });
 
-      return async (r) => {
         return addService(r, {
           test1: '1',
         });

@@ -20,10 +20,9 @@ describe('middleware utils', () => {
 
     const creatorTest12 = connect(creatorTest1)(creatorTest2);
 
-    const response = await creatorTest12(
-      { op1: '1', op2: '2' },
-      { destroy: () => {} }
-    )(createRequest({}));
+    const response = await creatorTest12({ op1: '1', op2: '2' })(createRequest({}), {
+      destroy: () => {},
+    });
 
     expect(response.isOk()).toStrictEqual(true);
 
@@ -37,10 +36,9 @@ describe('middleware utils', () => {
 
     const creatorTest123 = connect(connect(creatorTest1)(creatorTest2))(creatorTest3);
 
-    const response = await creatorTest123(
-      { op1: '1', op2: '2', op3: '3' },
-      { destroy: () => {} }
-    )(createRequest({}));
+    const response = await creatorTest123({ op1: '1', op2: '2', op3: '3' })(createRequest({}), {
+      destroy: () => {},
+    });
 
     expect(response.isOk()).toStrictEqual(true);
 
@@ -54,10 +52,9 @@ describe('middleware utils', () => {
 
     const creatorTest12 = connect(creatorTest1)(creatorTest4Error);
 
-    const response = await creatorTest12(
-      { op1: '1', op4: '1' },
-      { destroy: () => {} }
-    )(createRequest({}));
+    const response = await creatorTest12({ op1: '1', op4: '1' })(createRequest({}), {
+      destroy: () => {},
+    });
 
     expect(response.status).toStrictEqual('error');
 
@@ -69,10 +66,9 @@ describe('middleware utils', () => {
 
     const creatorTest12 = connect(creatorTest4Error)(creatorTest5Error);
 
-    const response = await creatorTest12(
-      { op4: '1', op5: '1' },
-      { destroy: () => {} }
-    )(createRequest({}));
+    const response = await creatorTest12({ op4: '1', op5: '1' })(createRequest({}), {
+      destroy: () => {},
+    });
 
     expect(response.status).toStrictEqual('error');
 

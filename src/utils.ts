@@ -79,8 +79,8 @@ export const connectLifecycles = (
   };
 
   lifecycle.destroy(async () => {
-    await e1.destroy();
     await e2.destroy();
+    await e1.destroy();
   });
 
   const l1: MiddlewareLifecycle = {
@@ -115,17 +115,17 @@ export const connect = <
     ServiceContainer,
     Event
   > => {
-    return (options, lifecycle) => {
-      const [l1, l2] = connectLifecycles(lifecycle);
+    return (options) => {
+      const m1 = c1(options);
+      const m2 = c2(options);
 
-      const m1 = c1(options, l1);
-      const m2 = c2(options, l2);
+      return async (request, lifecycle) => {
+        const [l1, l2] = connectLifecycles(lifecycle);
 
-      return async (request) => {
-        const r1 = await m1(request);
+        const r1 = await m1(request, l1);
 
         if (r1.isOk()) {
-          return m2<typeof r1.data.service>(r1.data);
+          return m2<typeof r1.data.service>(r1.data, l2);
         }
 
         return r1;
@@ -239,40 +239,45 @@ export const lambda = <
   transformError: TransformError<ResErr, Event, Options>,
   transformException: TransformError<ResFatal, Event, Options>
 ): AwsHandler<Event, ResOk | ResErr | ResFatal> => {
-  const events: MiddlewareEvents = {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    async destroy() {},
-  };
-
-  const lifecycle: MiddlewareLifecycle = {
-    destroy(cb) {
-      events.destroy = cb;
-    },
-  };
-
-  const middleware = creator(options, lifecycle);
+  const middleware = creator(options);
 
   return async (event: Event['event'], context: Event['context']) => {
+    const events: MiddlewareEvents = {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      async destroy() {},
+    };
+
+    const lifecycle: MiddlewareLifecycle = {
+      destroy(cb) {
+        events.destroy = cb;
+      },
+    };
+
     const evObj = { event, context } as Event;
-    let executed = false;
+
+    const executed = {
+      destroyed: false,
+    };
 
     let response;
 
     const lifecycles = async () => {
-      if (executed) {
+      if (executed.destroyed) {
         return;
       }
-
-      executed = true;
+      executed.destroyed = true;
       await events.destroy();
     };
 
     try {
-      const service = await middleware({
-        event,
-        context,
-        service: {} as Service,
-      });
+      const service = await middleware(
+        {
+          event,
+          context,
+          service: {} as Service,
+        },
+        lifecycle
+      );
 
       if (service.isErr()) {
         response = await failure(

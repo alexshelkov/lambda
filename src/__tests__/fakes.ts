@@ -236,18 +236,17 @@ describe('fake services', () => {
       | DbServiceDestroyTryDisconnectError;
 
     const dbService: MiddlewareCreator<DbServiceOptions, DbService, DbServiceErrors> = (
-      options,
-      { destroy }
+      options
     ) => {
-      destroy(async () => {
-        if (!options.db) {
-          return;
-        }
+      return async (request, { destroy }) => {
+        destroy(async () => {
+          if (!options.db) {
+            return;
+          }
 
-        await options.db.disconnect();
-      });
+          await options.db.disconnect();
+        });
 
-      return async (request) => {
         if (!options.db) {
           return fail('DbServiceConnectNoDbError');
         }
