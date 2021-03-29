@@ -236,8 +236,17 @@ describe('fake services', () => {
       | DbServiceDestroyTryDisconnectError;
 
     const dbService: MiddlewareCreator<DbServiceOptions, DbService, DbServiceErrors> = (
-      options
+      options,
+      { destroy }
     ) => {
+      destroy(async () => {
+        if (!options.db) {
+          return;
+        }
+
+        await options.db.disconnect();
+      });
+
       return async (request) => {
         if (!options.db) {
           return fail('DbServiceConnectNoDbError');
@@ -255,39 +264,11 @@ describe('fake services', () => {
       };
     };
 
-    const dbServiceDestroy = async (_r: unknown, options: Partial<DbServiceOptions>) => {
-      if (!options.db) {
-        return fail<Err>('Skipped', { skip: true });
-      }
-
-      const disRes = await options.db.disconnect();
-
-      if (disRes.isErr()) {
-        const err = disRes.err();
-
-        if (err.type === 'NotConnected') {
-          return fail<Err>('Skipped', { skip: true });
-        }
-
-        return fail<DbServiceDestroyTryDisconnectError>('DbServiceDestroyTryDisconnectError', {
-          message: disRes.err().type,
-        });
-      }
-
-      return fail<Err>('Skipped', { skip: true });
-    };
-
     const out = async (result: Result<unknown, unknown>) => {
       return result.isOk() ? result.ok() : result.err();
     };
 
-    const res = creator(dbService)
-      .ok(dbServiceDestroy)
-      .fail(dbServiceDestroy)
-      .fatal(dbServiceDestroy)
-      .onOk(out)
-      .onFail(out)
-      .onFatal(out);
+    const res = creator(dbService).onOk(out).onFail(out).onFatal(out);
 
     const res1 = res.ok(async ({ service: { getConnection } }) => {
       const connection = getConnection();

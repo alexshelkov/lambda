@@ -49,6 +49,14 @@ export interface Middleware<
   >;
 }
 
+export interface MiddlewareEvents {
+  destroy: () => Promise<void>;
+}
+
+export interface MiddlewareLifecycle {
+  destroy: (cb: MiddlewareEvents['destroy']) => void;
+}
+
 export interface MiddlewareCreator<
   Options extends ServiceOptions,
   Service extends ServiceContainer,
@@ -56,7 +64,12 @@ export interface MiddlewareCreator<
   ServiceDeps extends ServiceContainer = ServiceContainer,
   Event extends AwsEvent = AwsEvent
 > {
-  (options: Partial<Options>): Middleware<Service, ServiceError, ServiceDeps, Event>;
+  (options: Partial<Options>, lifecycle: MiddlewareLifecycle): Middleware<
+    Service,
+    ServiceError,
+    ServiceDeps,
+    Event
+  >;
 }
 
 export interface Handler<

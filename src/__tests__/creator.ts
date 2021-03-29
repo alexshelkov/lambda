@@ -490,6 +490,142 @@ describe('creator', () => {
     await res3Ok.req()(createEvent(), createContext());
   });
 
+  it('create middleware only once', async () => {
+    expect.assertions(4);
+
+    let created = 0;
+    let destroyed = 0;
+    let requests = 0;
+
+    const m1: MiddlewareCreator<ServiceOptions, { test1: string }, never> = (_o, lc) => {
+      lc.destroy(async () => {
+        destroyed += 1;
+      });
+
+      created += 1;
+
+      return async (r) => {
+        requests += 1;
+
+        return addService(r, {
+          test1: '1',
+        });
+      };
+    };
+    const res = creator(m1).ok(async ({ service: { test1 } }) => {
+      return ok(test1);
+    });
+
+    const req = res.req();
+
+    await req(createEvent(), createContext());
+    await req(createEvent(), createContext());
+
+    expect(await req(createEvent(), createContext())).toMatchObject({
+      statusCode: 200,
+      body: '{"status":"success","data":"1"}',
+    });
+
+    expect(created).toStrictEqual(1);
+    expect(destroyed).toStrictEqual(3);
+    expect(requests).toStrictEqual(3);
+  });
+
+  it('connect lifecycles first failed middleware error', async () => {
+    expect.assertions(10);
+
+    let step = 'start';
+
+    const m1: MiddlewareCreator<ServiceOptions, { test1: string }, never> = (_o, lc) => {
+      lc.destroy(async () => {
+        expect(step).toStrictEqual('ok1');
+
+        step = 'm1 destroyed';
+      });
+
+      expect(step).toStrictEqual('start');
+
+      step = 'm1 created';
+
+      return async (r) => {
+        expect(step).toStrictEqual('m2 created');
+
+        step = 'm1 request';
+
+        return addService(r, {
+          test1: '1',
+        });
+      };
+    };
+
+    const m2: MiddlewareCreator<ServiceOptions, { test2: string }, never> = (_o, lc) => {
+      lc.destroy(async () => {
+        expect(step).toStrictEqual('m1 destroyed');
+
+        step = 'm2 destroyed';
+      });
+
+      expect(step).toStrictEqual('m1 created');
+
+      step = 'm2 created';
+
+      return async (r) => {
+        expect(step).toStrictEqual('m1 request');
+
+        step = 'm2 request';
+
+        return addService(r, {
+          test2: '2',
+        });
+      };
+    };
+
+    const res = creator(m1)
+      .srv(m2)
+      .ok(async ({ service: { test1, test2 } }) => {
+        expect(step).toStrictEqual('m2 request');
+
+        step = 'ok1';
+
+        return ok(`${test1} & ${test2}`);
+      });
+
+    expect(step).toStrictEqual('start');
+
+    expect(await res.req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 200,
+      body: '{"status":"success","data":"1 & 2"}',
+    });
+
+    expect(step).toStrictEqual('m2 destroyed');
+  });
+
+  it('handle failure and exceptions in lifecycle', async () => {
+    expect.assertions(1);
+
+    type DestroyError = { type: 'ImpossibleToDestroy' };
+
+    const m1: MiddlewareCreator<ServiceOptions, { test1: string }, DestroyError> = (_o, lc) => {
+      lc.destroy(async () => {
+        throw fail<DestroyError>('ImpossibleToDestroy');
+      });
+
+      return async (r) => {
+        return addService(r, {
+          test1: '1',
+        });
+      };
+    };
+    const res = creator(m1).ok(async ({ service: { test1 } }) => {
+      return ok(test1);
+    });
+
+    expect(await res.req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 400,
+      body: '{"status":"error","error":{"type":"ImpossibleToDestroy"}}',
+    });
+  });
+
   describe('handles exceptions', () => {
     const exceptionCreator: MiddlewareCreator<
       { throwError?: boolean },
@@ -756,7 +892,7 @@ describe('creator', () => {
   });
 
   it('ensure equivalence', async () => {
-    expect.assertions(3);
+    expect.assertions(2);
 
     const options = { op1: '1' };
 
@@ -764,7 +900,6 @@ describe('creator', () => {
 
     expect(res.options()).toStrictEqual(options);
     expect(res.cr()).toStrictEqual(creatorTest1);
-    expect(res.md()).not.toBeUndefined();
   });
 
   it('ignore jest assertions', async () => {

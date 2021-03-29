@@ -1,6 +1,8 @@
 export {
   ServiceOptions,
   ServiceContainer,
+  MiddlewareEvents,
+  MiddlewareLifecycle,
   MiddlewareCreator,
   Middleware,
   Handler,

@@ -5,6 +5,8 @@ import {
   Handler,
   HandlerError,
   HandlerException,
+  MiddlewareEvents,
+  MiddlewareLifecycle,
   MiddlewareCreator,
   Request,
   RequestError,
@@ -63,6 +65,39 @@ export const json = async (result: Result<unknown, unknown>): Promise<APIGateway
   };
 };
 
+export const connectLifecycles = (
+  lifecycle: MiddlewareLifecycle
+): [MiddlewareLifecycle, MiddlewareLifecycle] => {
+  const e1: MiddlewareEvents = {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    async destroy() {},
+  };
+
+  const e2: MiddlewareEvents = {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    async destroy() {},
+  };
+
+  lifecycle.destroy(async () => {
+    await e1.destroy();
+    await e2.destroy();
+  });
+
+  const l1: MiddlewareLifecycle = {
+    destroy(cb) {
+      e1.destroy = cb;
+    },
+  };
+
+  const l2: MiddlewareLifecycle = {
+    destroy(cb) {
+      e2.destroy = cb;
+    },
+  };
+
+  return [l1, l2];
+};
+
 export const connect = <
   Event extends AwsEvent,
   Options1 extends ServiceOptions,
@@ -80,9 +115,11 @@ export const connect = <
     ServiceContainer,
     Event
   > => {
-    return (options) => {
-      const m1 = c1(options);
-      const m2 = c2(options);
+    return (options, lifecycle) => {
+      const [l1, l2] = connectLifecycles(lifecycle);
+
+      const m1 = c1(options, l1);
+      const m2 = c2(options, l2);
 
       return async (request) => {
         const r1 = await m1(request);
@@ -202,35 +239,60 @@ export const lambda = <
   transformError: TransformError<ResErr, Event, Options>,
   transformException: TransformError<ResFatal, Event, Options>
 ): AwsHandler<Event, ResOk | ResErr | ResFatal> => {
+  const events: MiddlewareEvents = {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    async destroy() {},
+  };
+
+  const lifecycle: MiddlewareLifecycle = {
+    destroy(cb) {
+      events.destroy = cb;
+    },
+  };
+
+  const middleware = creator(options, lifecycle);
+
   return async (event: Event['event'], context: Event['context']) => {
     const evObj = { event, context } as Event;
+    let executed = false;
 
     let response;
 
-    try {
-      const middleware = creator(options);
+    const lifecycles = async () => {
+      if (executed) {
+        return;
+      }
 
-      const request = await middleware({
+      executed = true;
+      await events.destroy();
+    };
+
+    try {
+      const service = await middleware({
         event,
         context,
         service: {} as Service,
       });
 
-      if (request.isErr()) {
+      if (service.isErr()) {
         response = await failure(
           {
             event,
             context,
-            error: request.error,
+            error: service.error,
           },
           options
         );
 
         response = await transformError(response, evObj, options);
+
+        await lifecycles();
       } else {
         try {
-          response = await success(request.data, options);
-          response = await transform(response, request.data, options);
+          response = await success(service.data, options);
+          response = await transform(response, service.data, options);
+
+          await lifecycles();
         } catch (err) {
           if (err instanceof FailureException) {
             response = await failure(
@@ -243,6 +305,8 @@ export const lambda = <
             );
 
             response = await transformError(response, evObj, options);
+
+            await lifecycles();
           } else {
             throw err;
           }
@@ -273,6 +337,8 @@ export const lambda = <
       }
 
       response = await transformException(response, evObj, options);
+
+      await lifecycles();
     }
 
     return response;

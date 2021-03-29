@@ -5,7 +5,6 @@ import {
   ServiceOptions,
   ServiceContainer,
   MiddlewareCreator,
-  Middleware,
   Handler,
   HandlerError,
   HandlerException,
@@ -207,8 +206,6 @@ export interface Creator<
     ExceptionError1,
     ServiceDeps
   >;
-
-  md: () => Middleware<Service1, ServiceError1, ServiceDeps, Event>;
 
   cr: () => MiddlewareCreator<Options1, Service1, ServiceError1, ServiceDeps, Event>;
 
@@ -548,12 +545,6 @@ export const creatorHelper = <
 
     options: () => {
       return options1;
-    },
-
-    md: () => {
-      const middleware = creator1(options1);
-
-      return middleware;
     },
 
     req: () => {

@@ -20,9 +20,12 @@ describe('middleware utils', () => {
 
     const creatorTest12 = connect(creatorTest1)(creatorTest2);
 
-    const response = await creatorTest12({ op1: '1', op2: '2' })(createRequest({}));
+    const response = await creatorTest12(
+      { op1: '1', op2: '2' },
+      { destroy: () => {} }
+    )(createRequest({}));
 
-    expect(response.isOk()).toBe(true);
+    expect(response.isOk()).toStrictEqual(true);
 
     expect(response.ok()).toMatchObject({
       service: { test2: '2', test1: '1' },
@@ -34,9 +37,12 @@ describe('middleware utils', () => {
 
     const creatorTest123 = connect(connect(creatorTest1)(creatorTest2))(creatorTest3);
 
-    const response = await creatorTest123({ op1: '1', op2: '2', op3: '3' })(createRequest({}));
+    const response = await creatorTest123(
+      { op1: '1', op2: '2', op3: '3' },
+      { destroy: () => {} }
+    )(createRequest({}));
 
-    expect(response.isOk()).toBe(true);
+    expect(response.isOk()).toStrictEqual(true);
 
     expect(response.isOk() ? response.data : {}).toMatchObject({
       service: { test2: '2', test1: '1', test3: '3' },
@@ -48,9 +54,12 @@ describe('middleware utils', () => {
 
     const creatorTest12 = connect(creatorTest1)(creatorTest4Error);
 
-    const response = await creatorTest12({ op1: '1', op4: '1' })(createRequest({}));
+    const response = await creatorTest12(
+      { op1: '1', op4: '1' },
+      { destroy: () => {} }
+    )(createRequest({}));
 
-    expect(response.status).toBe('error');
+    expect(response.status).toStrictEqual('error');
 
     expect(response.status === 'error' ? response.error.type : null).toStrictEqual('err4');
   });
@@ -60,9 +69,12 @@ describe('middleware utils', () => {
 
     const creatorTest12 = connect(creatorTest4Error)(creatorTest5Error);
 
-    const response = await creatorTest12({ op4: '1', op5: '1' })(createRequest({}));
+    const response = await creatorTest12(
+      { op4: '1', op5: '1' },
+      { destroy: () => {} }
+    )(createRequest({}));
 
-    expect(response.status).toBe('error');
+    expect(response.status).toStrictEqual('error');
 
     expect(response.status === 'error' ? response.error.type : {}).toStrictEqual('err4');
   });
