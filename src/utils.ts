@@ -215,6 +215,31 @@ export const addService = <
   });
 };
 
+type Executed = { [k in keyof MiddlewareEvents]: boolean };
+
+const createLifecycleEvents = (): {
+  events: MiddlewareEvents;
+  lifecycle: MiddlewareLifecycle;
+  executed: Executed;
+} => {
+  const events: MiddlewareEvents = {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    async destroy() {},
+  };
+
+  const lifecycle: MiddlewareLifecycle = {
+    destroy(cb) {
+      events.destroy = cb;
+    },
+  };
+
+  const executed = {
+    destroy: false,
+  };
+
+  return { events, lifecycle, executed };
+};
+
 export const lambda = <
   Event extends AwsEvent,
   Options extends ServiceOptions,
@@ -242,30 +267,17 @@ export const lambda = <
   const middleware = creator(options);
 
   return async (event: Event['event'], context: Event['context']) => {
-    const events: MiddlewareEvents = {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      async destroy() {},
-    };
-
-    const lifecycle: MiddlewareLifecycle = {
-      destroy(cb) {
-        events.destroy = cb;
-      },
-    };
+    const { events, lifecycle, executed } = createLifecycleEvents();
 
     const evObj = { event, context } as Event;
-
-    const executed = {
-      destroyed: false,
-    };
 
     let response;
 
     const lifecycles = async () => {
-      if (executed.destroyed) {
+      if (executed.destroy) {
         return;
       }
-      executed.destroyed = true;
+      executed.destroy = true;
       await events.destroy();
     };
 
@@ -280,7 +292,7 @@ export const lambda = <
       );
 
       if (service.isErr()) {
-        response = await failure(
+        const result = await failure(
           {
             event,
             context,
@@ -289,18 +301,19 @@ export const lambda = <
           options
         );
 
-        response = await transformError(response, evObj, options);
+        response = await transformError(result, evObj, options);
 
         await lifecycles();
       } else {
         try {
-          response = await success(service.data, options);
-          response = await transform(response, service.data, options);
+          const result = await success(service.data, options);
+
+          response = await transform(result, service.data, options);
 
           await lifecycles();
         } catch (err) {
           if (err instanceof FailureException) {
-            response = await failure(
+            const result = await failure(
               {
                 event,
                 context,
@@ -309,7 +322,7 @@ export const lambda = <
               options
             );
 
-            response = await transformError(response, evObj, options);
+            response = await transformError(result, evObj, options);
 
             await lifecycles();
           } else {
@@ -326,8 +339,10 @@ export const lambda = <
         throw err;
       }
 
+      let result;
+
       try {
-        response = await exception(
+        result = await exception(
           {
             event,
             context,
@@ -336,14 +351,28 @@ export const lambda = <
           options
         );
       } catch (fatal) {
-        response = fail<Err>('FatalException', {
+        result = fail<Err>('FatalException', {
           message: fatal instanceof Error ? `${fatal.name}\n${fatal.message}` : undefined,
         });
       }
 
-      response = await transformException(response, evObj, options);
+      try {
+        response = await transformException(result, evObj, options);
+      } catch (fatal) {
+        result = fail<Err>('FatalTransformException', {
+          message: fatal instanceof Error ? `${fatal.name}\n${fatal.message}` : undefined,
+        });
+        response = ((await json(result)) as unknown) as Promise<ResFatal>;
+      }
 
-      await lifecycles();
+      try {
+        await lifecycles();
+      } catch (fatal) {
+        result = fail<Err>('FatalLifecycleException', {
+          message: fatal instanceof Error ? `${fatal.name}\n${fatal.message}` : undefined,
+        });
+        response = await transformException(result, evObj, options);
+      }
     }
 
     return response;

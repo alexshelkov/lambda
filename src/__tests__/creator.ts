@@ -684,14 +684,51 @@ describe('creator', () => {
     expect(requests).toStrictEqual(4);
   });
 
+  it('handle fatal exception in exception transform', async () => {
+    expect.assertions(2);
+
+    const res = creator(creatorTest1).ok(async () => {
+      throw new Error('Fatal error');
+    });
+
+    const resTrans = res.onFatal(() => {
+      throw new Error('Double fatal error');
+    });
+
+    const resTrans1 = res.onFatal(() => {
+      // eslint-disable-next-line @typescript-eslint/no-throw-literal
+      throw { error: true };
+    });
+
+    expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 400,
+      body:
+        '{"status":"error","error":{"type":"FatalTransformException","message":"Error\\nDouble fatal error"}}',
+    });
+
+    expect(await resTrans1.req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 400,
+      body: '{"status":"error","error":{"type":"FatalTransformException"}}',
+    });
+  });
+
   it('handle failure and exceptions in lifecycle', async () => {
-    expect.assertions(1);
+    expect.assertions(7);
 
     type DestroyError = { type: 'ImpossibleToDestroy' };
 
-    const m1: MiddlewareCreator<ServiceOptions, { test1: string }, DestroyError> = () => {
+    const m1: MiddlewareCreator<{ errorType: number }, { test1: string }, DestroyError> = (
+      options
+    ) => {
       return async (r, lc) => {
         lc.destroy(async () => {
+          if (options.errorType === 1) {
+            throw Error('Fatal lifecycle error');
+          } else if (options.errorType === 2) {
+            // eslint-disable-next-line @typescript-eslint/no-throw-literal
+            throw { error: true };
+          }
+
           throw fail<DestroyError>('ImpossibleToDestroy');
         });
 
@@ -700,13 +737,51 @@ describe('creator', () => {
         });
       };
     };
-    const res = creator(m1).ok(async ({ service: { test1 } }) => {
+    const res1 = creator(m1).ok(async ({ service: { test1 } }) => {
       return ok(test1);
     });
 
-    expect(await res.req()(createEvent(), createContext())).toMatchObject({
+    const res2 = res1.ok(async () => {
+      throw new Error('Fatal exception');
+    });
+
+    expect(await res1.req()(createEvent(), createContext())).toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"ImpossibleToDestroy"}}',
+    });
+
+    expect(await res1.opt({ errorType: 1 }).req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 400,
+      body:
+        '{"status":"error","error":{"type":"Uncaught exception: Error","message":"Fatal lifecycle error"}}',
+    });
+
+    expect(await res1.opt({ errorType: 2 }).req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 400,
+      body: '{"status":"error","error":{"type":"Uncaught exception: unknown"}}',
+    });
+
+    expect(await res2.req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 400,
+      body:
+        '{"status":"error","error":{"type":"FatalLifecycleException","message":"FailureException\\nImpossibleToDestroy"}}',
+    });
+
+    expect(await res2.req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 400,
+      body:
+        '{"status":"error","error":{"type":"FatalLifecycleException","message":"FailureException\\nImpossibleToDestroy"}}',
+    });
+
+    expect(await res2.opt({ errorType: 1 }).req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 400,
+      body:
+        '{"status":"error","error":{"type":"FatalLifecycleException","message":"Error\\nFatal lifecycle error"}}',
+    });
+
+    expect(await res2.opt({ errorType: 2 }).req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 400,
+      body: '{"status":"error","error":{"type":"FatalLifecycleException"}}',
     });
   });
 
