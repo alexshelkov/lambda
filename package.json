@@ -1,7 +1,7 @@
 {
   "name": "@alexshelkov/lambda",
   "description": "Type-safe middleware for AWS Lambda",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "author": "Alex Shelkovskiy <alexshelkov@gmail.com>",
   "repository": "https://github.com/alexshelkov/lambda",
   "license": "MIT",
@@ -29,7 +29,7 @@
     "prepublishOnly": "rm -rf dist && npm run build"
   },
   "dependencies": {
-    "@alexshelkov/result": "^1.1.0",
+    "@alexshelkov/result": "^1.1.1",
     "@types/aws-lambda": "^8.10.72"
   },
   "devDependencies": {

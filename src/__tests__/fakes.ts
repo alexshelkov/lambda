@@ -317,7 +317,8 @@ describe('fake services', () => {
 
         expect(await res2.req()(createEvent(), createContext())).toMatchObject({
           message: 'Fatal connection error',
-          type: 'Uncaught exception: Error',
+          cause: 'Error',
+          type: 'UncaughtError',
         });
 
         expect(db.connectionId).toStrictEqual(0);

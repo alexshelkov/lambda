@@ -15,6 +15,9 @@ import {
   AwsEvent,
   creator,
   addService,
+  raw,
+  json,
+  resetFallBackTransform,
 } from '../index';
 
 import { error1 } from '../creator';
@@ -491,7 +494,7 @@ describe('creator', () => {
   });
 
   it('create middleware only once', async () => {
-    expect.assertions(4);
+    expect.assertions(3);
 
     let created = 0;
     let destroyed = 0;
@@ -521,10 +524,7 @@ describe('creator', () => {
     await req(createEvent(), createContext());
     await req(createEvent(), createContext());
 
-    expect(await req(createEvent(), createContext())).toMatchObject({
-      statusCode: 200,
-      body: '{"status":"success","data":"1"}',
-    });
+    await req(createEvent(), createContext());
 
     expect(created).toStrictEqual(1);
     expect(destroyed).toStrictEqual(3);
@@ -687,9 +687,15 @@ describe('creator', () => {
   it('handle fatal exception in exception transform', async () => {
     expect.assertions(2);
 
-    const res = creator(creatorTest1).ok(async () => {
-      throw new Error('Fatal error');
-    });
+    resetFallBackTransform(raw);
+
+    const res = creator(creatorTest1)
+      .ok(async () => {
+        throw new Error('Fatal error');
+      })
+      .onOk(raw)
+      .onFail(raw)
+      .onFatal(raw);
 
     const resTrans = res.onFatal(() => {
       throw new Error('Double fatal error');
@@ -701,20 +707,26 @@ describe('creator', () => {
     });
 
     expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body:
-        '{"status":"error","error":{"type":"FatalTransformException","message":"Error\\nDouble fatal error"}}',
+      status: 'error',
+      error: {
+        type: 'UncaughtTransformError',
+        cause: 'Error',
+        message: 'Double fatal error',
+      },
     });
 
     expect(await resTrans1.req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body: '{"status":"error","error":{"type":"FatalTransformException"}}',
+      status: 'error',
+      error: {
+        type: 'UncaughtTransformError',
+        cause: 'Unknown',
+      },
     });
+
+    resetFallBackTransform(json);
   });
 
-  it('handle failure and exceptions in lifecycle', async () => {
-    expect.assertions(7);
-
+  describe('handle failure and exceptions in lifecycle', () => {
     type DestroyError = { type: 'ImpossibleToDestroy' };
 
     const m1: MiddlewareCreator<{ errorType: number }, { test1: string }, DestroyError> = (
@@ -737,51 +749,67 @@ describe('creator', () => {
         });
       };
     };
+
     const res1 = creator(m1).ok(async ({ service: { test1 } }) => {
       return ok(test1);
     });
 
     const res2 = res1.ok(async () => {
-      throw new Error('Fatal exception');
+      throw new Error('Fatal ok exception');
     });
 
-    expect(await res1.req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body: '{"status":"error","error":{"type":"ImpossibleToDestroy"}}',
+    const res3 = res2.fail(async () => {
+      throw new Error('Fatal fail exception');
     });
 
-    expect(await res1.opt({ errorType: 1 }).req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body:
-        '{"status":"error","error":{"type":"Uncaught exception: Error","message":"Fatal lifecycle error"}}',
+    it('exception happens in lifecycle', async () => {
+      expect.assertions(3);
+
+      expect(await res1.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body: '{"status":"error","error":{"type":"ImpossibleToDestroy"}}',
+      });
+
+      expect(await res1.opt({ errorType: 1 }).req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body:
+          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal lifecycle error"}}',
+      });
+
+      expect(await res1.opt({ errorType: 2 }).req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
+      });
     });
 
-    expect(await res1.opt({ errorType: 2 }).req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body: '{"status":"error","error":{"type":"Uncaught exception: unknown"}}',
+    it('exception happens in callback and after in lifecycle', async () => {
+      expect.assertions(3);
+
+      expect(await res2.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body: '{"status":"error","error":{"type":"ImpossibleToDestroy"}}',
+      });
+
+      expect(await res2.opt({ errorType: 1 }).req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body:
+          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal lifecycle error"}}',
+      });
+
+      expect(await res2.opt({ errorType: 2 }).req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
+      });
     });
 
-    expect(await res2.req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body:
-        '{"status":"error","error":{"type":"FatalLifecycleException","message":"FailureException\\nImpossibleToDestroy"}}',
-    });
+    it('exception happens in callback and after in lifecycle and in fail handler', async () => {
+      expect.assertions(1);
 
-    expect(await res2.req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body:
-        '{"status":"error","error":{"type":"FatalLifecycleException","message":"FailureException\\nImpossibleToDestroy"}}',
-    });
-
-    expect(await res2.opt({ errorType: 1 }).req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body:
-        '{"status":"error","error":{"type":"FatalLifecycleException","message":"Error\\nFatal lifecycle error"}}',
-    });
-
-    expect(await res2.opt({ errorType: 2 }).req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body: '{"status":"error","error":{"type":"FatalLifecycleException"}}',
+      expect(await res3.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body:
+          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal fail exception"}}',
+      });
     });
   });
 
@@ -820,7 +848,7 @@ describe('creator', () => {
       expect(await res2Ok.req()(createEvent(), createContext())).toMatchObject({
         statusCode: 400,
         body:
-          '{"status":"error","error":{"type":"Uncaught exception: Error","message":"Test error"}}',
+          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Test error"}}',
       });
     });
 
@@ -840,7 +868,7 @@ describe('creator', () => {
 
       expect(await res3Ok.req()(createEvent(), createContext())).toMatchObject({
         statusCode: 400,
-        body: '{"status":"error","error":{"type":"Uncaught exception: unknown"}}',
+        body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
       });
     });
 
@@ -929,12 +957,12 @@ describe('creator', () => {
       expect(await resExc.req()(createEvent(), createContext())).toMatchObject({
         statusCode: 400,
         body:
-          '{"status":"error","error":{"type":"FatalException","message":"Error\\nUnhandled exception in callback"}}',
+          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Unhandled exception in callback"}}',
       });
 
       expect(await resExc1.req()(createEvent(), createContext())).toMatchObject({
         statusCode: 400,
-        body: '{"status":"error","error":{"type":"FatalException"}}',
+        body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
       });
     });
   });

@@ -2,23 +2,22 @@ import { SNSHandler, SNSEvent } from 'aws-lambda';
 
 import { ok } from '@alexshelkov/result';
 
-import { eventSnsService, creator } from '../../index';
+import { eventSnsService, creator, none } from '../../index';
 import { createContext, createEvent } from '../../__stubs__';
 
 describe('eventSns', () => {
   it('returns 400 EventSnsRequestError for malformed input', async () => {
     expect.assertions(1);
 
-    const res = creator(eventSnsService);
+    const res = creator(eventSnsService).onOk(none).onFail(none).onFatal(none);
 
     const resOk = res.ok(() => {
       return Promise.resolve(ok('success'));
     });
 
-    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body: '{"status":"error","error":{"type":"EventSnsRequestError"}}',
-    });
+    const handle: SNSHandler = resOk.req();
+
+    expect(await handle(createEvent(), createContext(), () => {})).toBeUndefined();
   });
 
   it('parse SNSEvent event', async () => {
@@ -47,7 +46,7 @@ describe('eventSns', () => {
     });
 
     // eslint-disable-next-line @typescript-eslint/require-await
-    const resTransFatal = resTransFail.onFatal(async () => {});
+    const resTransFatal = resTransFail.onFatal(none);
 
     const handle: SNSHandler = resTransFatal.req();
 
@@ -61,8 +60,8 @@ describe('eventSns', () => {
           ],
         } as SNSEvent),
         createContext(),
-        () => {},
-      ),
+        () => {}
+      )
     ).toBeUndefined();
 
     expect(
@@ -78,8 +77,8 @@ describe('eventSns', () => {
           ],
         } as SNSEvent),
         createContext(),
-        () => {},
-      ),
+        () => {}
+      )
     ).toBeUndefined();
   });
 });

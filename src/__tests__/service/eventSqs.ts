@@ -1,23 +1,23 @@
+import { SQSHandler, SQSEvent } from 'aws-lambda';
+
 import { ok } from '@alexshelkov/result';
 
-import { SQSHandler, SQSEvent } from 'aws-lambda';
-import { eventSqsService, creator } from '../../index';
+import { eventSqsService, creator, none } from '../../index';
 import { createContext, createEvent } from '../../__stubs__';
 
 describe('eventSqs', () => {
   it('returns 400 EventSqsRequestError for malformed input', async () => {
     expect.assertions(1);
 
-    const res = creator(eventSqsService);
+    const res = creator(eventSqsService).onOk(none).onFail(none).onFatal(none);
 
     const resOk = res.ok(() => {
       return Promise.resolve(ok('success'));
     });
 
-    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body: '{"status":"error","error":{"type":"EventSqsRequestError"}}',
-    });
+    const handle: SQSHandler = resOk.req();
+
+    expect(await handle(createEvent(), createContext(), () => {})).toBeUndefined();
   });
 
   it('parse SQSEvent event', async () => {
@@ -44,7 +44,7 @@ describe('eventSqs', () => {
     });
 
     // eslint-disable-next-line @typescript-eslint/require-await
-    const resTransFatal = resTransFail.onFatal(async () => {});
+    const resTransFatal = resTransFail.onFatal(none);
 
     const handle: SQSHandler = resTransFatal.req();
 
@@ -58,8 +58,8 @@ describe('eventSqs', () => {
           ],
         } as SQSEvent),
         createContext(),
-        () => {},
-      ),
+        () => {}
+      )
     ).toBeUndefined();
 
     expect(
@@ -73,8 +73,8 @@ describe('eventSqs', () => {
           ],
         } as SQSEvent),
         createContext(),
-        () => {},
-      ),
+        () => {}
+      )
     ).toBeUndefined();
   });
 });

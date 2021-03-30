@@ -16,9 +16,9 @@ export type JsonBodyErrors = JsonRequestError | JsonBodyParseError;
 
 const isHaveBody = (event: unknown): event is { body: string } => {
   return (
-    typeof event === 'object'
-    && event !== null
-    && typeof (event as { body: unknown }).body === 'string'
+    typeof event === 'object' &&
+    event !== null &&
+    typeof (event as { body: unknown }).body === 'string'
   );
 };
 

@@ -14,7 +14,11 @@ import {
   AwsEvent,
 } from './types';
 
-import { join, joinFailure, joinFatal, connect, json, lambda } from './utils';
+import { join, joinFailure, joinFatal, connect } from './utils';
+
+import { lambda, convertToFailure } from './lambda';
+
+import { json } from './transform';
 
 export interface Creator<
   Event extends AwsEvent,
@@ -583,14 +587,7 @@ export const error1: HandlerError<unknown, never, Err> = (request) => {
 };
 
 export const exception1: HandlerException<never, Err> = ({ exception }) => {
-  const name = exception instanceof Error ? exception.name : 'unknown';
-  const message = exception instanceof Error ? exception.message : undefined;
-
-  const error = fail<Err>(`Uncaught exception: ${name}`, { order: -1, message });
-
-  error.stack = exception instanceof Error ? exception.stack : error.stack;
-
-  return Promise.resolve(error);
+  return Promise.resolve(convertToFailure('UncaughtError', exception));
 };
 
 const transform1: Transform<APIGatewayProxyResult> = json;

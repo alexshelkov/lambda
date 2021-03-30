@@ -17,7 +17,11 @@ export {
 
 export { Creator, GetOpt, GetService, PickService, GetError, GetEvent, creator } from './creator';
 
-export { json, connect, lambda, join, joinFailure, joinFatal, addService } from './utils';
+export { json, raw, none } from './transform';
+
+export { connect, join, joinFailure, joinFatal, addService } from './utils';
+
+export { lambda, resetFallBackTransform, getFallBackTransform } from './lambda';
 
 export { route, Router, SkippedError } from './router';
 

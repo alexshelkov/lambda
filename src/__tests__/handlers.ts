@@ -106,7 +106,8 @@ describe('custom handlers', () => {
 
       expect(response).toMatchObject({
         badEvent: {
-          type: 'Uncaught exception: TypeError',
+          type: 'UncaughtError',
+          cause: 'TypeError',
           message: "Cannot read property 'session' of undefined",
         },
       });
