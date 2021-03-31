@@ -727,22 +727,36 @@ describe('creator', () => {
   });
 
   describe('handle failure and exceptions in lifecycle', () => {
-    type DestroyError = { type: 'ImpossibleToDestroy' };
+    type DestroyError = { type: 'ImpossibleToDestroy' } & Err;
+    type CreateError = { type: 'ImpossibleToCreate' } & Err;
+    type MiddlewareErrors = DestroyError | CreateError;
 
-    const m1: MiddlewareCreator<{ errorType: number }, { test1: string }, DestroyError> = (
-      options
-    ) => {
+    const m1: MiddlewareCreator<
+      { errorType: number; createError: boolean },
+      { test1: string },
+      MiddlewareErrors
+    > = (options) => {
       return async (r, lc) => {
         lc.destroy(async () => {
           if (options.errorType === 1) {
-            throw Error('Fatal lifecycle error');
+            throw Error(
+              !options.createError
+                ? 'Fatal lifecycle error'
+                : 'Fatal lifecycle error during middleware create'
+            );
           } else if (options.errorType === 2) {
             // eslint-disable-next-line @typescript-eslint/no-throw-literal
             throw { error: true };
           }
 
-          throw fail<DestroyError>('ImpossibleToDestroy');
+          throw fail<DestroyError>('ImpossibleToDestroy', {
+            message: options.createError ? 'CreateError' : undefined,
+          });
         });
+
+        if (options.createError) {
+          return fail('ImpossibleToCreate');
+        }
 
         return addService(r, {
           test1: '1',
@@ -761,6 +775,8 @@ describe('creator', () => {
     const res3 = res2.fail(async () => {
       throw new Error('Fatal fail exception');
     });
+
+    const res4 = res1.opt({ createError: true });
 
     it('exception happens in lifecycle', async () => {
       expect.assertions(3);
@@ -782,7 +798,7 @@ describe('creator', () => {
       });
     });
 
-    it('exception happens in callback and after in lifecycle', async () => {
+    it('exception happens in callback and after that in the lifecycle', async () => {
       expect.assertions(3);
 
       expect(await res2.req()(createEvent(), createContext())).toMatchObject({
@@ -802,13 +818,33 @@ describe('creator', () => {
       });
     });
 
-    it('exception happens in callback and after in lifecycle and in fail handler', async () => {
+    it('exception happens in callback and after that in the lifecycle and in the fail handler', async () => {
       expect.assertions(1);
 
       expect(await res3.req()(createEvent(), createContext())).toMatchObject({
         statusCode: 400,
         body:
           '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal fail exception"}}',
+      });
+    });
+
+    it('exception happens during middleware creation', async () => {
+      expect.assertions(3);
+
+      expect(await res4.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body: '{"status":"error","error":{"type":"ImpossibleToDestroy","message":"CreateError"}}',
+      });
+
+      expect(await res4.opt({ errorType: 1 }).req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body:
+          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal lifecycle error during middleware create"}}',
+      });
+
+      expect(await res4.opt({ errorType: 2 }).req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
       });
     });
   });

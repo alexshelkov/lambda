@@ -107,19 +107,11 @@ export const lambda = <
   const middleware = creator(options);
 
   return async (event: Event['event'], context: Event['context']) => {
-    const { events, lifecycle, executed } = createLifecycleEvents();
+    const { events, lifecycle } = createLifecycleEvents();
 
     const evObj = { event, context } as Event;
 
     let response;
-
-    const lifecycles = async () => {
-      if (executed.destroy) {
-        return;
-      }
-      executed.destroy = true;
-      await events.destroy();
-    };
 
     const handleServiceError = async (error: ServiceError) => {
       const result = await failure(
@@ -191,6 +183,14 @@ export const lambda = <
       return handleFatalError(err);
     };
 
+    const tryDestroyAndNeverThrow = async () => {
+      try {
+        await events.destroy();
+      } catch (fatal: unknown) {
+        response = await handleFatalLifecycleError(fatal);
+      }
+    };
+
     try {
       const service = await middleware(
         {
@@ -203,15 +203,15 @@ export const lambda = <
 
       if (service.isErr()) {
         response = await handleServiceError(service.error);
-        await lifecycles();
+        await tryDestroyAndNeverThrow();
       } else {
         try {
           response = await handleHandler(service.data);
-          await lifecycles();
+          await tryDestroyAndNeverThrow();
         } catch (err) {
           if (err instanceof FailureException) {
             response = await handleHandlerError(err);
-            await lifecycles();
+            await tryDestroyAndNeverThrow();
           } else {
             throw err;
           }
@@ -226,13 +226,9 @@ export const lambda = <
         throw err;
       }
 
-      response = handleFatalError(err);
+      response = await handleFatalError(err);
 
-      try {
-        await lifecycles();
-      } catch (fatal: unknown) {
-        response = handleFatalLifecycleError(fatal);
-      }
+      await tryDestroyAndNeverThrow();
     }
 
     return response;
