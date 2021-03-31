@@ -233,10 +233,7 @@ describe('creator', () => {
       };
     };
 
-    const res = creator(cr)
-      .srv(creatorTest1)
-      .srv(creatorTest3)
-      .opt({ op1: '1', op2: '1', op3: '1' });
+    const res = creator(cr).srv(creatorTest1).srv(creatorTest3).opt({ op1: '1', op3: '1' }).opt({});
 
     type ErrorType = GetError<typeof res>;
     type ServiceType = GetService<typeof res>;
@@ -446,27 +443,27 @@ describe('creator', () => {
   });
 
   it('dependent middleware works with declared dependencies', async () => {
-    expect.assertions(1);
+    expect.assertions(3);
 
-    const res = creator(creatorTest1).srv(creatorTest2).srv(creatorTest3);
+    const res1 = creator(creatorTest1).srv(creatorTest2).srv(creatorTest3);
 
-    type Deps = { test2: string; test3: string };
+    type Deps1 = { test2: string; test3: string };
 
     type DependentMiddleware = MiddlewareCreator<
-      { opDependent: string },
-      { testDependent: Deps },
+      ServiceOptions,
+      { testDependent1: Deps1 },
       Err & { type: 'errDependent' },
-      Deps
+      Deps1
     >;
 
-    const dependentMiddleware: DependentMiddleware = (_options) => {
+    const dependentMiddleware1: DependentMiddleware = (_options) => {
       return async (request) => {
         if (Math.random() === -1) {
           return fail('errDependent');
         }
 
         return addService(request, {
-          testDependent: {
+          testDependent1: {
             test2: request.service.test2,
             test3: request.service.test3,
           },
@@ -474,12 +471,12 @@ describe('creator', () => {
       };
     };
 
-    const res2 = res.srv(dependentMiddleware);
+    const res1dep = res1.srv(dependentMiddleware1);
 
-    type Deps2 = PickService<typeof res2, 'testDependent'>;
+    type Deps2 = PickService<typeof res1dep, 'testDependent1'>;
 
     type DependentMiddleware2 = MiddlewareCreator<
-      { opDependent: string },
+      ServiceOptions,
       { testDependent2: Deps2 },
       Err & { type: 'errDependent' },
       Deps2
@@ -493,22 +490,22 @@ describe('creator', () => {
 
         return addService(request, {
           testDependent2: {
-            testDependent: request.service.testDependent,
+            testDependent1: request.service.testDependent1,
           },
         });
       };
     };
 
-    const res3 = res2.srv(dependentMiddleware2);
+    const res2dep = res1dep.srv(dependentMiddleware2);
 
-    const res3Ok = res3.ok(async (request) => {
+    const res2Ok = res2dep.ok(async (request) => {
       expect(request.service).toMatchObject({
-        testDependent: {
+        testDependent1: {
           test2: '2',
           test3: '3',
         },
         testDependent2: {
-          testDependent: {
+          testDependent1: {
             test2: '2',
             test3: '3',
           },
@@ -518,7 +515,72 @@ describe('creator', () => {
       return ok('1');
     });
 
+    await res2Ok.req()(createEvent(), createContext());
+
+    type Deps3 = { test2: string } | { test3: string };
+
+    type DependentMiddleware3 = MiddlewareCreator<
+      ServiceOptions,
+      { testDependent3: Deps3 },
+      Err & { type: 'errDependent' },
+      Deps3
+    >;
+
+    const dependentMiddleware3: DependentMiddleware3 = (_options) => {
+      return async (request) => {
+        if (Math.random() === -1) {
+          return fail('errDependent');
+        }
+
+        if ('test2' in request.service) {
+          return addService(request, {
+            testDependent3: {
+              test2: request.service.test2,
+            },
+          });
+        }
+        if ('test3' in request.service) {
+          return addService(request, {
+            testDependent3: {
+              test3: request.service.test3,
+            },
+          });
+        }
+
+        // also typesafe, may replace 2 returns above
+        return addService(request, {
+          testDependent3: request.service,
+        });
+      };
+    };
+
+    const res3 = creator(creatorTest2).srv(dependentMiddleware3);
+
+    const res3Ok = res3.ok(async (request) => {
+      expect(request.service).toMatchObject({
+        testDependent3: {
+          test2: '2',
+        },
+      });
+
+      return ok('1');
+    });
+
     await res3Ok.req()(createEvent(), createContext());
+
+    const res4 = creator(creatorTest3).srv(dependentMiddleware3);
+
+    const res4Ok = res4.ok(async (request) => {
+      expect(request.service).toMatchObject({
+        testDependent3: {
+          test3: '3',
+        },
+      });
+
+      return ok('1');
+    });
+
+    await res4Ok.req()(createEvent(), createContext());
   });
 
   it('create middleware only once', async () => {

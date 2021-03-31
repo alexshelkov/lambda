@@ -1,12 +1,10 @@
 import { Response, Result } from '@alexshelkov/result';
 
-export interface ServiceContainer {
-  [K: string]: unknown;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface ServiceContainer {}
 
-export interface ServiceOptions {
-  [K: string]: unknown;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface ServiceOptions {}
 
 export interface AwsEvent {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
