@@ -15,7 +15,20 @@ export {
   AwsHandler,
 } from './types';
 
-export { Creator, GetOpt, GetService, PickService, GetError, GetEvent, creator } from './creator';
+export { Creator, creator } from './creator';
+
+export {
+  GetOpt,
+  GetService,
+  PickService,
+  GetError,
+  GetEvent,
+  GetHandler,
+  GetHandlerError,
+  GetHandlerException,
+  GetTransform,
+  GetTransformError,
+} from './infer';
 
 export { json, raw, none } from './transform';
 

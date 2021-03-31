@@ -1,16 +1,21 @@
 import { Err, fail, ok } from '@alexshelkov/result';
 
 import {
+  GetEvent,
   GetOpt,
   GetService,
   GetError,
+  GetHandler,
+  GetHandlerError,
+  GetHandlerException,
+  GetTransform,
+  GetTransformError,
   PickService,
   Handler,
   HandlerError,
   MiddlewareCreator,
   ServiceContainer,
   ServiceOptions,
-  GetEvent,
   RequestError,
   AwsEvent,
   creator,
@@ -164,7 +169,7 @@ describe('creator', () => {
   });
 
   it('will correctly works with handler types', async () => {
-    expect.assertions(1);
+    expect.assertions(2);
 
     const res = creator(creatorTest1)
       .srv(creatorTest2)
@@ -181,10 +186,33 @@ describe('creator', () => {
       return fail('error');
     };
 
-    const resOk = res.ok(h1);
-    const resFail = resOk.fail(e1);
+    h1 as GetHandler<typeof res, string, number>;
 
-    expect(await resFail.req()(createEvent(), createContext())).toMatchObject({
+    e1 as GetHandlerError<typeof res, string, number>;
+
+    const resOk1 = res.ok(h1);
+    const resFail1 = resOk1.fail(e1);
+
+    expect(await resFail1.req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 200,
+      body: '{"status":"success","data":"success"}',
+    });
+
+    const h2: GetHandler<typeof res, string, number> = async () => {
+      return ok('success');
+    };
+    const e2: GetHandlerError<typeof res, string, Err> = async () => {
+      return fail('error');
+    };
+    const f2: GetHandlerException<typeof res, string, Err> = async () => {
+      return fail('error');
+    };
+
+    const resOk2 = res.ok(h2);
+    const resFail2 = resOk2.fail(e2);
+    const resFatal2 = resFail2.fatal(f2);
+
+    expect(await resFatal2.req()(createEvent(), createContext())).toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"success"}',
     });
@@ -1005,7 +1033,7 @@ describe('creator', () => {
 
   describe('works with custom transform', () => {
     it('everything success', async () => {
-      expect.assertions(1);
+      expect.assertions(2);
 
       const res = creator(creatorTest1).opt({ op1: '1' });
 
@@ -1024,6 +1052,14 @@ describe('creator', () => {
         statusCode: 123,
         body: 'Test 1 1',
       });
+
+      const trans1: GetTransform<typeof res, string> = async (_r, request) => {
+        return `Test 1 ${request.service.test1}`;
+      };
+
+      expect(await resOk.onOk(trans1).req()(createEvent(), createContext())).toStrictEqual(
+        'Test 1 1'
+      );
     });
 
     it('callback fail', async () => {
@@ -1049,7 +1085,7 @@ describe('creator', () => {
     });
 
     it('middleware fail', async () => {
-      expect.assertions(1);
+      expect.assertions(2);
 
       const res = creator(creatorTest4Error).opt({ op4: '1' });
 
@@ -1068,6 +1104,14 @@ describe('creator', () => {
         statusCode: 789,
         body: 'Test 3',
       });
+
+      const trans1: GetTransformError<typeof res, string> = async (_r) => {
+        return `Test 3`;
+      };
+
+      expect(await resOk.onFail(trans1).req()(createEvent(), createContext())).toStrictEqual(
+        'Test 3'
+      );
     });
   });
 
