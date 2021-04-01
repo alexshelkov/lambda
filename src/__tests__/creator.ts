@@ -940,11 +940,23 @@ describe('creator', () => {
   });
 
   describe('handles exceptions', () => {
+    type CreationError = { type: 'CreationError' } & Err;
+    type ExceptionCreatorErrors = CreationError;
+
     const exceptionCreator: MiddlewareCreator<
-      { throwError?: boolean },
+      { throwCreatorError?: number },
       { error: () => void },
-      Err
-    > = () => {
+      ExceptionCreatorErrors
+    > = (options) => {
+      if (options.throwCreatorError === 1) {
+        throw fail<CreationError>('CreationError');
+      } else if (options.throwCreatorError === 2) {
+        throw new Error('Unhandled exception in creator');
+      } else if (options.throwCreatorError === 3) {
+        // eslint-disable-next-line @typescript-eslint/no-throw-literal
+        throw { error: true };
+      }
+
       return async (r) => {
         return ok({
           ...r,
@@ -1020,6 +1032,47 @@ describe('creator', () => {
       expect(await resExc.req()(createEvent(), createContext())).toMatchObject({
         statusCode: 200,
         body: '{"status":"success","data":true}',
+      });
+    });
+
+    it('exception in creator', async () => {
+      expect.assertions(4);
+
+      const res = creator(exceptionCreator);
+
+      expect(
+        await res.opt({ throwCreatorError: 1 }).req()(createEvent(), createContext())
+      ).toMatchObject({
+        statusCode: 400,
+        body: '{"status":"error","error":{"type":"CreationError"}}',
+      });
+
+      expect(
+        await res
+          .opt({ throwCreatorError: 1 })
+          .fail(async () => {
+            throw new Error('Double error');
+          })
+          .req()(createEvent(), createContext())
+      ).toMatchObject({
+        statusCode: 400,
+        body:
+          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Double error"}}',
+      });
+
+      expect(
+        await res.opt({ throwCreatorError: 2 }).req()(createEvent(), createContext())
+      ).toMatchObject({
+        statusCode: 400,
+        body:
+          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Unhandled exception in creator"}}',
+      });
+
+      expect(
+        await res.opt({ throwCreatorError: 3 }).req()(createEvent(), createContext())
+      ).toMatchObject({
+        statusCode: 400,
+        body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
       });
     });
 
