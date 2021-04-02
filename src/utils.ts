@@ -98,8 +98,8 @@ export const join = <
   c2: Handler<Service2, Data2, Error2, Event, Options>
 ): Handler<Service1 & Service2, Data1 | Data2, Error1 | Error2, Event, Options> => {
   return async (request: Request<Event, Service1 & Service2>, options: Partial<Options>) => {
-    const r2 = await c2(request, options);
     const r1 = await c1(request, options);
+    const r2 = await c2(request, options);
 
     return compare(r1, r2);
   };
@@ -122,8 +122,8 @@ export const joinFailure = <
     request: RequestError<Event, ServiceError1 | ServiceError2>,
     options: Partial<Options>
   ) => {
-    const r2 = await c2(request as RequestError<Event, ServiceError2>, options);
     const r1 = await c1(request as RequestError<Event, ServiceError1>, options);
+    const r2 = await c2(request as RequestError<Event, ServiceError2>, options);
 
     return compare(r1, r2);
   };
@@ -141,8 +141,8 @@ export const joinFatal = <
   c2: HandlerException<Data2, Error2, Event, Options>
 ): HandlerException<Data1 | Data2, Error1 | Error2, Event, Options> => {
   return async (request: RequestException<Event>, options: Partial<Options>) => {
-    const r2 = await c2(request, options);
     const r1 = await c1(request, options);
+    const r2 = await c2(request, options);
 
     return compare(r1, r2);
   };

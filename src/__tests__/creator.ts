@@ -265,7 +265,7 @@ describe('creator', () => {
   describe('create middleware lazily and in correct order', () => {
     let step = '';
 
-    it('ok handlers order is reversed', async () => {
+    it('ok handlers order', async () => {
       expect.assertions(8);
 
       step = 'start';
@@ -302,18 +302,16 @@ describe('creator', () => {
 
       const resOk = res
         .ok(async () => {
-          // called second
-          expect(step).toStrictEqual('ok1');
+          expect(step).toStrictEqual('m2 request');
 
-          step = 'ok2';
+          step = 'ok1';
 
           return ok(true);
         })
         .ok(async () => {
-          // called first
-          expect(step).toStrictEqual('m2 request');
+          expect(step).toStrictEqual('ok1');
 
-          step = 'ok1';
+          step = 'ok2';
 
           return ok(true);
         });
@@ -325,7 +323,7 @@ describe('creator', () => {
       expect(step).toStrictEqual('ok2');
     });
 
-    it('fail handlers order is reversed', async () => {
+    it('fail handlers order', async () => {
       expect.assertions(8);
 
       step = 'start';
@@ -362,18 +360,16 @@ describe('creator', () => {
 
       const resOk = res
         .fail(async () => {
-          // called second
-          expect(step).toStrictEqual('fail1');
+          expect(step).toStrictEqual('m2 request');
 
-          step = 'fail2';
+          step = 'fail1';
 
           return ok(true);
         })
         .fail(async () => {
-          // called first
-          expect(step).toStrictEqual('m2 request');
+          expect(step).toStrictEqual('fail1');
 
-          step = 'fail1';
+          step = 'fail2';
 
           return ok(true);
         });
@@ -385,7 +381,7 @@ describe('creator', () => {
       expect(step).toStrictEqual('fail2');
     });
 
-    it('fatal handlers order is reversed', async () => {
+    it('fatal handlers order', async () => {
       expect.assertions(8);
 
       step = 'start';
@@ -424,18 +420,16 @@ describe('creator', () => {
 
       const resOk = res
         .fatal(async () => {
-          // called second
-          expect(step).toStrictEqual('fatal1');
+          expect(step).toStrictEqual('m2 request');
 
-          step = 'fatal2';
+          step = 'fatal1';
 
           return ok(true);
         })
         .fatal(async () => {
-          // called first
-          expect(step).toStrictEqual('m2 request');
+          expect(step).toStrictEqual('fatal1');
 
-          step = 'fatal1';
+          step = 'fatal2';
 
           return ok(true);
         });
