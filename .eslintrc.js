@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports = {
   root: true,
-  plugins: ['prettier', 'import', 'jest'],
+  plugins: ['tsc', 'prettier', 'import', 'jest'],
   overrides: [
     {
       files: '*.js',
