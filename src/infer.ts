@@ -1,4 +1,11 @@
-import { Handler, HandlerError, HandlerException, Transform, TransformError } from './types';
+import {
+  Handler,
+  HandlerError,
+  HandlerException,
+  Transform,
+  TransformError,
+  MiddlewareCreator,
+} from './types';
 import { Creator } from './creator';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -174,4 +181,24 @@ export type GetTransformError<Crt, Res> = Crt extends Creator<
   any
 >
   ? TransformError<Res, Event, Options>
+  : never;
+
+export type GetOptionMdl<Mdl> = Mdl extends MiddlewareCreator<infer Option, any, any, any, any>
+  ? Option
+  : never;
+
+export type GetServiceMdl<Mdl> = Mdl extends MiddlewareCreator<any, infer Service, any, any, any>
+  ? Service
+  : never;
+
+export type GetErrorMdl<Mdl> = Mdl extends MiddlewareCreator<any, any, infer Error, any, any>
+  ? Error
+  : never;
+
+export type GetDepsMdl<Mdl> = Mdl extends MiddlewareCreator<any, any, any, infer Deps, any>
+  ? Deps
+  : never;
+
+export type GetEventMdl<Mdl> = Mdl extends MiddlewareCreator<any, any, any, any, infer Event>
+  ? Event
   : never;

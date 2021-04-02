@@ -18,6 +18,12 @@ import {
   ServiceOptions,
   RequestError,
   AwsEvent,
+  GetOptionMdl,
+  GetServiceMdl,
+  GetErrorMdl,
+  GetDepsMdl,
+  GetEventMdl,
+  Request,
   creator,
   addService,
   raw,
@@ -439,6 +445,53 @@ describe('creator', () => {
       await resOk.req()(createEvent(), createContext());
 
       expect(step).toStrictEqual('fatal2');
+    });
+  });
+
+  it('infer types from middleware', async () => {
+    expect.assertions(1);
+
+    type InferMiddleware = MiddlewareCreator<
+      { op1: string },
+      { srv1: string },
+      { type: 'errInfer' } & Err,
+      { dep1: number }
+    >;
+
+    const dep1: MiddlewareCreator<ServiceOptions, GetDepsMdl<InferMiddleware>, Err> = () => {
+      return async (request) => {
+        return addService(request, {
+          dep1: 1,
+        });
+      };
+    };
+
+    const inferMiddleware: InferMiddleware = (_o: Partial<GetOptionMdl<InferMiddleware>>) => {
+      return async (request) => {
+        return addService(request, {
+          srv1: '1',
+        });
+      };
+    };
+
+    type InferredEvent = GetEventMdl<InferMiddleware>;
+    type InferredService = GetServiceMdl<InferMiddleware> & GetServiceMdl<typeof dep1>;
+
+    const res = creator(dep1)
+      .srv(inferMiddleware)
+      .ok(async (_r: Request<InferredEvent, InferredService>) => {
+        return ok('success');
+      });
+
+    type InferredError = GetErrorMdl<InferMiddleware> | GetErrorMdl<typeof dep1>;
+
+    const resErr = res.fail(async (_r: RequestError<InferredEvent, InferredError>) => {
+      return ok('error');
+    });
+
+    expect(await resErr.req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 200,
+      body: '{"status":"success","data":"success"}',
     });
   });
 
