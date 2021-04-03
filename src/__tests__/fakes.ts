@@ -36,14 +36,14 @@ describe('fake services', () => {
       TransportOptions,
       { transport: Transport },
       TransportErrors
-    > = (options) => {
+    > = (options, lc) => {
       dbLogs = [];
 
       return async (request) => {
         const transport: Transport = {
           send: (message: string) => {
             if (options.throwError) {
-              throw fail<DbWriteError>('DbWriteError');
+              lc.throws<DbWriteError>('DbWriteError');
             }
 
             dbLogs.push(message);
@@ -151,9 +151,9 @@ describe('fake services', () => {
       query: () => unknown;
     };
 
-    type DbNoConnection = { type: 'NoConnection' } & Err;
-    type DbConnectionErrors = ({ type: 'WrongPassword' } & Err) | DbNoConnection;
-    type DbDisconnectionErrors = { type: 'NotConnected' } & Err;
+    type DbNoConnection = Err<'NoConnection'>;
+    type DbConnectionErrors = Err<'WrongPassword'> | DbNoConnection;
+    type DbDisconnectionErrors = Err<'NotConnected'>;
 
     class FakeDb {
       connectionId = 0;
@@ -169,7 +169,7 @@ describe('fake services', () => {
           if (this.throwFatal) {
             throw new Error('Fatal connection error');
           } else {
-            throw fail<DbNoConnection>('NoConnection');
+            throw new Error('NoConnection');
           }
         }
 
@@ -227,16 +227,17 @@ describe('fake services', () => {
       getConnection: () => Connection;
     };
 
-    type DbServiceConnectNoDbError = { type: 'DbServiceConnectNoDbError' } & Err;
-    type DbServiceTryConnectError = { type: 'DbServiceTryConnectError' } & Err;
-    type DbServiceDestroyTryDisconnectError = { type: 'DbServiceDestroyTryDisconnectError' } & Err;
+    type DbServiceConnectNoDbError = Err<'DbServiceConnectNoDbError'>;
+    type DbServiceTryConnectError = Err<'DbServiceTryConnectError'>;
+    type DbServiceDestroyTryDisconnectError = Err<'DbServiceDestroyTryDisconnectError'>;
     type DbServiceErrors =
       | DbServiceConnectNoDbError
       | DbServiceTryConnectError
       | DbServiceDestroyTryDisconnectError;
 
     const dbService: MiddlewareCreator<DbServiceOptions, DbService, DbServiceErrors> = (
-      options
+      options,
+      { throws }
     ) => {
       return async (request, { destroy }) => {
         destroy(async () => {
@@ -258,7 +259,21 @@ describe('fake services', () => {
         }
 
         return addService(request, {
-          getConnection: options.db.getConnection,
+          getConnection: () => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const get = options.db!.getConnection;
+
+            try {
+              return get();
+            } catch (err) {
+              if ((err as Error).message === 'NoConnection') {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                throws<Err>('NoConnection');
+              }
+
+              throw err;
+            }
+          },
         });
       };
     };

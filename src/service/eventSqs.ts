@@ -10,7 +10,7 @@ export type EventSqsOptions = {};
 
 export type EventSqsService = { eventSqs: SQSEvent; eventSqsRecord: SQSRecord };
 
-export type EventSqsRequestError = { type: 'EventSqsRequestError' } & Err;
+export type EventSqsRequestError = Err<'EventSqsRequestError'>;
 export type EventSqsErrors = EventSqsRequestError;
 
 const isHaveSqsProps = (input: unknown): input is { eventSource: string } => {

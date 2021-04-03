@@ -1,18 +1,19 @@
 export {
   ServiceOptions,
   ServiceContainer,
-  MiddlewareEvents,
   MiddlewareLifecycle,
   MiddlewareCreator,
   Middleware,
   Handler,
   HandlerError,
+  HandlerException,
   Transform,
   TransformError,
   Request,
   RequestError,
   AwsEvent,
   AwsHandler,
+  SkippedError,
 } from './types';
 
 export { Creator, creator } from './creator';
@@ -27,7 +28,8 @@ export {
   GetHandlerError,
   GetHandlerException,
   GetTransform,
-  GetTransformError,
+  GetTransformFailure,
+  GetTransformException,
   GetOptionMdl,
   GetServiceMdl,
   GetErrorMdl,
@@ -37,11 +39,25 @@ export {
 
 export { json, raw, none } from './transform';
 
-export { connect, join, joinFailure, joinFatal, addService } from './utils';
+export {
+  join,
+  glue,
+  glueFailure,
+  joinFatal,
+  addService,
+  createLifecycle,
+  createMiddlewareLifecycle,
+  createHandlerLifecycle,
+  disconnectMiddlewareLifecycle,
+  disconnectLifecycle,
+  disconnectHandlerLifecycle,
+} from './utils';
 
 export { lambda, resetFallBackTransform, getFallBackTransform } from './lambda';
 
-export { route, Router, SkippedError } from './router';
+export { route, routeError, Router, RouterError } from './router';
+
+export { default as empty, EmptyOptions, EmptyService, EmptyErrors } from './service/empty';
 
 export {
   default as jsonBodyService,

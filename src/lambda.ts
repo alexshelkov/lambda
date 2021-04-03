@@ -7,44 +7,19 @@ import {
   HandlerException,
   Middleware,
   MiddlewareCreator,
-  MiddlewareEvents,
-  MiddlewareLifecycle,
   Request,
   ServiceContainer,
   ServiceOptions,
   Transform,
   TransformError,
+  MiddlewareFail,
 } from './types';
 import { json } from './transform';
+import { createLifecycle, createHandlerLifecycle, createMiddlewareLifecycle } from './utils';
 
-type Executed = { [k in keyof MiddlewareEvents]: boolean };
-
-const createLifecycleEvents = (): {
-  events: MiddlewareEvents;
-  lifecycle: MiddlewareLifecycle;
-  executed: Executed;
-} => {
-  const events: MiddlewareEvents = {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    async destroy() {},
-  };
-
-  const lifecycle: MiddlewareLifecycle = {
-    destroy(cb) {
-      events.destroy = cb;
-    },
-  };
-
-  const executed = {
-    destroy: false,
-  };
-
-  return { events, lifecycle, executed };
-};
-
-export type UnhandledError = Err & { cause?: string };
-export type UncaughtError = { type: 'UncaughtError' } & UnhandledError;
-export type UncaughtErrorTransform = { type: 'UncaughtTransformError' } & UnhandledError;
+export type UnhandledError = { cause?: string };
+export type UncaughtError = Err<'UncaughtError', UnhandledError>;
+export type UncaughtErrorTransform = Err<'UncaughtTransformError', UnhandledError>;
 export type UnhandledErrors = UncaughtError | UncaughtErrorTransform;
 
 export const convertToFailure = (
@@ -93,67 +68,98 @@ export const lambda = <
   Error,
   FailureData,
   FailureError,
+  HandledError,
   ExceptionData,
   ExceptionError
 >(
   options: Options,
   creator: MiddlewareCreator<Options, Service, ServiceError, ServiceContainer, Event>,
   exception: HandlerException<ExceptionData, ExceptionError, Event, Options>,
-  failure: HandlerError<ServiceError, FailureData, FailureError, Event, Options>,
+  failure: HandlerError<ServiceError, FailureData, FailureError, HandledError, Event, Options>,
   success: Handler<Service, Data, Error, Event, Options>,
-  transform: Transform<ResOk, Event, Options, Service>,
-  transformError: TransformError<ResErr, Event, Options>,
-  transformException: TransformError<ResFatal, Event, Options>
+  transform: Transform<ResOk, Data, Error, Event, Options, Service>,
+  transformError: TransformError<ResErr, FailureData, FailureError, Event, Options>,
+  transformException: TransformError<ResFatal, ExceptionData, ExceptionError, Event, Options>
 ): AwsHandler<Event, ResOk | ResErr | ResFatal> => {
   let middleware: Middleware<Service, ServiceError, ServiceContainer, Event> | undefined;
   let middlewareError: unknown;
 
+  const middlewareLifecycle = createMiddlewareLifecycle();
+
   try {
-    middleware = creator(options);
+    middleware = creator(options, middlewareLifecycle);
   } catch (err: unknown) {
     middlewareError = err;
   }
 
   return async (event: Event['event'], context: Event['context']) => {
-    const { events, lifecycle } = createLifecycleEvents();
+    const lifecycle = createLifecycle();
 
     const evObj = { event, context } as Event;
 
     let response;
 
     const handleServiceError = async (err: ServiceError) => {
+      const handlerLifecycle = createHandlerLifecycle();
+
       const result = await failure(
         {
           event,
           context,
           error: err,
         },
-        options
+        options,
+        handlerLifecycle,
+        lifecycle
       );
 
       return transformError(result, evObj, options);
     };
 
     const handleHandler = async (data: Request<Event, Service>) => {
-      const result = await success(data, options);
+      const handlerLifecycle = createHandlerLifecycle();
+
+      const result = await success(data, options, handlerLifecycle, lifecycle);
 
       return transform(result, data, options);
     };
 
-    const handleFailureError = async (err: FailureException<ServiceError>) => {
+    const isHandleFailureError = (
+      err: unknown
+    ): err is FailureException<MiddlewareFail<ServiceError>> => {
+      if (!(err instanceof FailureException)) {
+        return false;
+      }
+
+      const error = err.err() as Failure<ServiceError>;
+
+      return err !== null && typeof err === 'object' && 'gen' in error;
+    };
+
+    const handleFailureError = async (err: FailureException<MiddlewareFail<ServiceError>>) => {
+      const error = err.err();
+
+      lifecycle.threw(error.gen);
+
+      const handlerLifecycle = createHandlerLifecycle();
+
       const result = await failure(
         {
           event,
           context,
-          error: err.error,
+          error: error.inner.err(),
         },
-        options
+        options,
+        handlerLifecycle,
+        lifecycle
       );
 
       return transformError(result, evObj, options);
     };
 
     const handleFatalError = async (err: unknown) => {
+      const handlerLifecycle = createHandlerLifecycle();
+
       let result;
 
       try {
@@ -163,14 +169,20 @@ export const lambda = <
             context,
             exception: err,
           },
-          options
+          options,
+          handlerLifecycle,
+          lifecycle
         );
       } catch (fatal) {
         result = convertToFailure('UncaughtError', fatal);
       }
 
       try {
-        response = await transformException(result, evObj, options);
+        response = await transformException(
+          (result as unknown) as Failure<ExceptionError>,
+          evObj,
+          options
+        );
       } catch (fatal) {
         result = convertToFailure('UncaughtTransformError', fatal);
         response = (await getFallBackTransform()(result)) as Promise<ResFatal>;
@@ -180,7 +192,7 @@ export const lambda = <
     };
 
     const handleFatalLifecycleError = async (err: unknown) => {
-      if (err instanceof FailureException) {
+      if (isHandleFailureError(err)) {
         try {
           return await handleFailureError(err);
         } catch (fatal: unknown) {
@@ -192,7 +204,7 @@ export const lambda = <
     };
 
     const handleCreationError = async (err: unknown) => {
-      if (err instanceof FailureException) {
+      if (isHandleFailureError(err)) {
         try {
           return await handleFailureError(err);
         } catch (fatal: unknown) {
@@ -205,7 +217,7 @@ export const lambda = <
 
     const tryDestroyAndNeverThrow = async () => {
       try {
-        await events.destroy();
+        await lifecycle.finish();
       } catch (fatal: unknown) {
         response = await handleFatalLifecycleError(fatal);
       }
@@ -227,20 +239,11 @@ export const lambda = <
 
       if (service.isErr()) {
         response = await handleServiceError(service.error);
-        await tryDestroyAndNeverThrow();
       } else {
-        try {
-          response = await handleHandler(service.data);
-          await tryDestroyAndNeverThrow();
-        } catch (err) {
-          if (err instanceof FailureException) {
-            response = await handleFailureError(err);
-            await tryDestroyAndNeverThrow();
-          } else {
-            throw err;
-          }
-        }
+        response = await handleHandler(service.data);
       }
+
+      await tryDestroyAndNeverThrow();
     } catch (err: unknown) {
       // check if error is failed Jest assertion and throw it immediately
       if (
@@ -250,7 +253,15 @@ export const lambda = <
         throw err;
       }
 
-      response = await handleFatalError(err);
+      if (isHandleFailureError(err)) {
+        try {
+          response = await handleFailureError(err);
+        } catch (fatal) {
+          response = await handleFatalError(fatal);
+        }
+      } else {
+        response = await handleFatalError(err);
+      }
 
       await tryDestroyAndNeverThrow();
     }

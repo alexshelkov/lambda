@@ -1,12 +1,22 @@
-import { fail, Err } from '@alexshelkov/result';
-import { MiddlewareCreator, Request, ServiceContainer, AwsEvent } from '../types';
-import { addService } from '../utils';
+import { fail, Err, ok } from '@alexshelkov/result';
+import {
+  MiddlewareCreator,
+  Request,
+  ServiceContainer,
+  AwsEvent,
+  RequestError,
+  MiddlewareLifecycle,
+  HandlerError,
+  addService,
+} from '../index';
 
-type MiddlewareError1 = Err & { type: 'err1' };
-type MiddlewareError2 = Err & { type: 'err2' };
-type MiddlewareError3 = Err & { type: 'err3' };
-type MiddlewareError4 = Err & { type: 'err4' };
-type MiddlewareError5 = Err & { type: 'err5' };
+/* eslint-disable @typescript-eslint/require-await */
+
+export type MiddlewareError1 = Err<'err1'>;
+type MiddlewareError2 = Err<'err2'>;
+type MiddlewareError3 = Err<'err3'>;
+type MiddlewareError4 = Err<'err4'>;
+type MiddlewareError5 = Err<'err5'>;
 
 export type TestError<T extends string> = Err & {
   type: T;
@@ -125,4 +135,100 @@ export const createRequest = <Service extends ServiceContainer>(
     context: createContext(),
     service,
   };
+};
+
+export const createErrorRequest = <Error>(error: Error): RequestError<AwsEvent, Error> => {
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    event: createEvent(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    context: createContext(),
+    error,
+  };
+};
+
+export const createMdl = (
+  name: string,
+  steps: string[]
+): MiddlewareCreator<
+  {
+    throwError: string;
+    throwMdl: boolean;
+    throwService: boolean;
+    throwCreator: boolean;
+    destroyThrow: boolean;
+  },
+  { [k: string]: () => void },
+  Err
+> => {
+  return (options, { throws }) => {
+    if (name === options.throwError && options.throwCreator) {
+      steps.push(`${name} create fail`);
+      throws<Err>(name);
+    }
+
+    return async <Service1 extends ServiceContainer>(
+      request: Request<AwsEvent, Service1 & ServiceContainer>,
+      { destroy }: MiddlewareLifecycle
+    ) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
+      const serviceFail: string = request.event?.throwError || options.throwError;
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions,@typescript-eslint/no-unsafe-member-access
+      const currentName = `${request.event?.name || ''}${name}`;
+
+      if (name === serviceFail && options.destroyThrow) {
+        destroy(async () => {
+          steps.push(`${currentName} destroy`);
+
+          throws<Err>(name);
+        });
+      }
+
+      steps.push(`${currentName} req`);
+
+      if (name === serviceFail && options.throwMdl) {
+        steps.push(`${currentName} throws`);
+
+        throws<Err>(name);
+      }
+
+      if (
+        name === serviceFail &&
+        !options.throwService &&
+        !options.throwCreator &&
+        !options.throwMdl &&
+        !options.destroyThrow
+      ) {
+        steps.push(`${currentName} fail`);
+
+        return fail(name);
+      }
+
+      return addService(request, {
+        [`${name}Throws`]: () => {
+          if (name === serviceFail && options.throwService) {
+            steps.push(`${currentName} service fail`);
+            throws<Err>(name);
+          }
+        },
+      });
+    };
+  };
+};
+
+export const createFail = <ServiceError, Data, Error, Event extends AwsEvent>(
+  name: string,
+  steps: string[]
+): HandlerError<ServiceError, Data, Error, never, Event> => {
+  return async (request) => {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    steps.push(`${request.event?.name || ''}${name} runs`);
+
+    return ok((name as unknown) as Data);
+  };
+};
+
+export const reset = (steps: string[]): void => {
+  // eslint-disable-next-line no-empty
+  while (steps.pop()) {}
 };

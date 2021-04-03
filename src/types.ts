@@ -1,4 +1,4 @@
-import { Response, Result } from '@alexshelkov/result';
+import { Response, Result, fail, Failure, Err } from '@alexshelkov/result';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ServiceContainer {}
@@ -6,11 +6,10 @@ export interface ServiceContainer {}
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ServiceOptions {}
 
-export interface AwsEvent {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  event: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface AwsEvent<Event = any, Context = any> {
+  event: Event;
+  context: Context;
 }
 
 export interface AwsHandler<Event extends AwsEvent, Response> {
@@ -35,13 +34,21 @@ export interface RequestException<Event extends AwsEvent> extends RequestBase<Ev
   exception: unknown;
 }
 
-export interface MiddlewareEvents {
-  destroy: () => Promise<void>;
-}
+export type MiddlewareFail<Error> = { type: 'MiddlewareFail'; gen: number; inner: Failure<Error> };
 
-export interface MiddlewareLifecycle {
-  destroy: (cb: MiddlewareEvents['destroy']) => void;
-}
+export type MiddlewareCreatorLifecycle = {
+  gen: (gen: number) => void;
+  throws: typeof fail;
+};
+
+export type MiddlewareLifecycle = {
+  threw: (threw: number | undefined) => void;
+  throws: () => number | undefined;
+  finish: () => Promise<void>;
+  error: (err: number) => void;
+  errored: () => number;
+  destroy: (cb: () => Promise<void>) => void;
+};
 
 export interface Middleware<
   Service2 extends ServiceContainer,
@@ -54,6 +61,7 @@ export interface Middleware<
     lifecycle: MiddlewareLifecycle
   ): Response<Request<Event, Service1 & Service2>, ServiceError>;
 }
+
 export interface MiddlewareCreator<
   Options extends ServiceOptions,
   Service extends ServiceContainer,
@@ -61,7 +69,17 @@ export interface MiddlewareCreator<
   ServiceDeps extends ServiceContainer = ServiceContainer,
   Event extends AwsEvent = AwsEvent
 > {
-  (options: Partial<Options>): Middleware<Service, ServiceError, ServiceDeps, Event>;
+  (options: Partial<Options>, lifecycle: MiddlewareCreatorLifecycle): Middleware<
+    Service,
+    ServiceError,
+    ServiceDeps,
+    Event
+  >;
+}
+
+export interface HandlerLifecycle {
+  returns: (cb: () => boolean) => void;
+  stops: () => boolean;
 }
 
 export interface Handler<
@@ -71,17 +89,29 @@ export interface Handler<
   Event extends AwsEvent = AwsEvent,
   Options extends ServiceOptions = ServiceOptions
 > {
-  (request: Request<Event, Service>, options: Partial<Options>): Response<Data, Error>;
+  (
+    request: Request<Event, Service>,
+    options: Partial<Options>,
+    handlerLifecycle: HandlerLifecycle,
+    lifecycle: MiddlewareLifecycle
+  ): Response<Data, Error>;
 }
 
 export interface HandlerError<
   ServiceError,
   Data,
   Error,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  HandledError = never,
   Event extends AwsEvent = AwsEvent,
   Options extends ServiceOptions = ServiceOptions
 > {
-  (request: RequestError<Event, ServiceError>, options: Partial<Options>): Response<Data, Error>;
+  (
+    request: RequestError<Event, ServiceError>,
+    options: Partial<Options>,
+    handlerLifecycle: HandlerLifecycle,
+    lifecycle: MiddlewareLifecycle
+  ): Response<Data, Error>;
 }
 
 export interface HandlerException<
@@ -90,17 +120,24 @@ export interface HandlerException<
   Event extends AwsEvent = AwsEvent,
   Options extends ServiceOptions = ServiceOptions
 > {
-  (request: RequestException<Event>, options: Partial<Options>): Response<Data, Error>;
+  (
+    request: RequestException<Event>,
+    options: Partial<Options>,
+    handlerLifecycle: HandlerLifecycle,
+    lifecycle: MiddlewareLifecycle
+  ): Response<Data, Error>;
 }
 
 export interface Transform<
   Res,
+  Data = never,
+  Error = never,
   Event extends AwsEvent = AwsEvent,
   Options extends ServiceOptions = ServiceOptions,
   Service extends ServiceContainer = ServiceContainer
 > {
   (
-    response: Result<unknown, unknown>,
+    response: Result<Data, Error>,
     request: Request<Event, Service>,
     options: Partial<Options>
   ): Promise<Res>;
@@ -108,8 +145,12 @@ export interface Transform<
 
 export interface TransformError<
   Res,
+  Data = never,
+  Error = never,
   Event extends AwsEvent = AwsEvent,
   Options extends ServiceOptions = ServiceOptions
 > {
-  (response: Result<unknown, unknown>, event: Event, options: Partial<Options>): Promise<Res>;
+  (response: Result<Data, Error>, event: Event, options: Partial<Options>): Promise<Res>;
 }
+
+export type SkippedError = Err<'Skipped'>;

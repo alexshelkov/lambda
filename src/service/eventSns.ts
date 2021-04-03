@@ -10,7 +10,7 @@ export type EventSnsOptions = {};
 
 export type EventSnsService = { eventSns: SNSEvent; eventSnsMessage: SNSMessage };
 
-export type EventSnsRequestError = { type: 'EventSnsRequestError' } & Err;
+export type EventSnsRequestError = Err<'EventSnsRequestError'>;
 export type EventSnsErrors = EventSnsRequestError;
 
 const isHaveSnsProps = (input: unknown): input is { EventSource: string } => {

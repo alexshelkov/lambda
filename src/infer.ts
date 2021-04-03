@@ -1,3 +1,4 @@
+import { Err } from '@alexshelkov/result';
 import {
   Handler,
   HandlerError,
@@ -27,6 +28,8 @@ export type GetOpt<Crt> = Crt extends Creator<
   any
 >
   ? Options
+  : Crt extends MiddlewareCreator<infer Options, any, any, any, any>
+  ? Options
   : never;
 
 export type GetService<Crt> = Crt extends Creator<
@@ -46,6 +49,8 @@ export type GetService<Crt> = Crt extends Creator<
   any
 >
   ? Service
+  : Crt extends MiddlewareCreator<any, infer Service, any, any, any>
+  ? Service
   : never;
 
 export type GetEvent<Crt> = Crt extends Creator<
@@ -64,6 +69,8 @@ export type GetEvent<Crt> = Crt extends Creator<
   any,
   any
 >
+  ? Event
+  : Crt extends MiddlewareCreator<any, any, any, any, infer Event>
   ? Event
   : never;
 
@@ -86,6 +93,8 @@ export type GetError<Crt> = Crt extends Creator<
   any
 >
   ? Error
+  : Crt extends MiddlewareCreator<any, any, infer Error, any, any>
+  ? Error
   : never;
 
 export type GetHandler<Crt, Data, Error> = Crt extends Creator<
@@ -105,9 +114,11 @@ export type GetHandler<Crt, Data, Error> = Crt extends Creator<
   any
 >
   ? Handler<Service, Data, Error, Event, Options>
+  : Crt extends MiddlewareCreator<infer Options, infer Service, any, any, infer Event>
+  ? Handler<Service, Data, Error, Event, Options>
   : never;
 
-export type GetHandlerError<Crt, Data, Error> = Crt extends Creator<
+export type GetHandlerError<Crt, Data, Error, HandledError = never> = Crt extends Creator<
   infer Event,
   any,
   any,
@@ -123,7 +134,9 @@ export type GetHandlerError<Crt, Data, Error> = Crt extends Creator<
   any,
   any
 >
-  ? HandlerError<ServiceError, Data, Error, Event, Options>
+  ? HandlerError<ServiceError, Data, Error, HandledError, Event, Options>
+  : Crt extends MiddlewareCreator<infer Options, any, infer ServiceError, any, infer Event>
+  ? HandlerError<ServiceError, Data, Error, HandledError, Event, Options>
   : never;
 
 export type GetHandlerException<Crt, Data, Error> = Crt extends Creator<
@@ -143,6 +156,8 @@ export type GetHandlerException<Crt, Data, Error> = Crt extends Creator<
   any
 >
   ? HandlerException<Data, Error, Event, Options>
+  : Crt extends MiddlewareCreator<infer Options, any, any, any, infer Event>
+  ? HandlerException<Data, Error, Event, Options>
   : never;
 
 export type GetTransform<Crt, Res> = Crt extends Creator<
@@ -153,18 +168,41 @@ export type GetTransform<Crt, Res> = Crt extends Creator<
   infer Options,
   infer Service,
   any,
-  any,
-  any,
+  infer Data,
+  infer Error,
   any,
   any,
   any,
   any,
   any
 >
-  ? Transform<Res, Event, Options, Service>
+  ? Transform<Res, Data, Error, Event, Options, Service>
+  : Crt extends MiddlewareCreator<infer Options, infer Service, any, any, infer Event>
+  ? Transform<Res, unknown, Err, Event, Options, Service>
   : never;
 
-export type GetTransformError<Crt, Res> = Crt extends Creator<
+export type GetTransformFailure<Crt, Res> = Crt extends Creator<
+  infer Event,
+  any,
+  any,
+  any,
+  infer Options,
+  any,
+  any,
+  any,
+  any,
+  infer Data,
+  infer Error,
+  any,
+  any,
+  any
+>
+  ? TransformError<Res, Data, Error, Event, Options>
+  : Crt extends MiddlewareCreator<infer Options, any, any, any, infer Event>
+  ? TransformError<Res, unknown, Err, Event, Options>
+  : never;
+
+export type GetTransformException<Crt, Res> = Crt extends Creator<
   infer Event,
   any,
   any,
@@ -176,11 +214,13 @@ export type GetTransformError<Crt, Res> = Crt extends Creator<
   any,
   any,
   any,
-  any,
-  any,
+  infer Data,
+  infer Error,
   any
 >
-  ? TransformError<Res, Event, Options>
+  ? TransformError<Res, Data, Error, Event, Options>
+  : Crt extends MiddlewareCreator<infer Options, any, any, any, infer Event>
+  ? TransformError<Res, unknown, Err, Event, Options>
   : never;
 
 export type GetOptionMdl<Mdl> = Mdl extends MiddlewareCreator<infer Option, any, any, any, any>

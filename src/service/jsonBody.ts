@@ -10,8 +10,8 @@ export type JsonBody = { [key: string]: unknown };
 
 export type JsonBodyService = { jsonBody: JsonBody };
 
-export type JsonRequestError = { type: 'JsonRequestError' } & Err;
-export type JsonBodyParseError = { type: 'JsonBodyParseError' } & Err;
+export type JsonRequestError = Err<'JsonRequestError'>;
+export type JsonBodyParseError = Err<'JsonBodyParseError'>;
 export type JsonBodyErrors = JsonRequestError | JsonBodyParseError;
 
 const isHaveBody = (event: unknown): event is { body: string } => {

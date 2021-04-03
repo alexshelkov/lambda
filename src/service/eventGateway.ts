@@ -5,11 +5,11 @@ import { MiddlewareCreator } from '../types';
 import { addService } from '../utils';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-export type EventGatewayOptions = {};
+export type EventGatewayOptions = { test: string };
 
 export type EventGatewayService = { eventGateway: APIGatewayProxyEvent };
 
-export type EventGatewayRequestError = { type: 'EventGatewayRequestError' } & Err;
+export type EventGatewayRequestError = Err<'EventGatewayRequestError'>;
 export type EventGatewayErrors = EventGatewayRequestError;
 
 const isApiGatewayEvent = (event: unknown): event is APIGatewayProxyEvent => {

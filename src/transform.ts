@@ -47,12 +47,14 @@ export const json = async (result: Result<unknown, unknown>): Promise<APIGateway
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
-export const raw = async <Res = Result<unknown, unknown>>(
-  result: Result<unknown, unknown>
+export const raw = async <Res extends Result<unknown, unknown> = Result<unknown, unknown>>(
+  result: Res
+  // eslint-disable-next-line @typescript-eslint/require-await
 ): Promise<Res> => {
-  return (result as unknown) as Promise<Res>;
+  return result;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/explicit-module-boundary-types
-export const none = async (result: Result<unknown, unknown>): Promise<void> => {};
+export const none = async (
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  result: Result<unknown, unknown>
+): Promise<void> => {};
