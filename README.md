@@ -69,9 +69,9 @@ const lambda = creator(jsonBodyService).srv(numbers).srv(adder).ok(handler);
 API
 ===================================
 
-## Services
+### Services
 
-### `MiddlewareCreator`
+#### `MiddlewareCreator`
 
 Type used for creating new services. 
 
@@ -102,7 +102,7 @@ const service: MiddlewareCreator<Options, Service, Errors> = () => {
 };
 ```
 
-### `creator`
+#### `creator`
 
 Starts the creation of the lambda chain.
 
@@ -117,7 +117,7 @@ import { creator, empty } from '@alexshelkov/lambda';
 const res = creator(empty); // now you can use other methods, for example: .srv 
 ```
 
-### `srv`
+#### `srv`
 
 Adds a new service.
 
@@ -137,7 +137,7 @@ const service: MiddlewareCreator<{}, {}, never> = () => {
 const res = creator(empty).srv(service); 
 ```
 
-### `opt`
+#### `opt`
 
 Set the options.
 
@@ -148,9 +148,9 @@ Params:
 
 ------------------------------------------------------------------------------------------
 
-## Handlers
+### Handlers
 
-### `ok`
+#### `ok`
 
 Adds a handler which will be run if all middleware creators executed successfully.
 
@@ -167,7 +167,7 @@ const res = creator(empty).ok(async () => {
 });
 ```
 
-### `fail`
+#### `fail`
 
 Adds a handler which runs on middleware failure.
 
@@ -187,7 +187,7 @@ const res = creator(empty).fail(async () => {
 });
 ```
 
-### `fatal`
+#### `fatal`
 
 Adds an unknown exception handler.
 
@@ -209,9 +209,9 @@ const res = creator(empty).fatal(async () => {
 
 ------------------------------------------------------------------------------------------
 
-## Transforms
+### Transforms
 
-### `onOk`
+#### `onOk`
 
 Sets the result transformation of ok handler.
 
@@ -230,7 +230,7 @@ const res = creator(empty).ok(async () => {
 });
 ```
 
-### `onFail`
+#### `onFail`
 
 Sets the result transformation of fail handler.
 
@@ -249,7 +249,7 @@ const res = creator(empty).fail(async () => {
 });
 ```
 
-### `onFatal`
+#### `onFatal`
 
 Sets the result transformation of fatal handler.
 
@@ -268,10 +268,10 @@ const res = creator(empty).fatal(async () => {
 });
 ```
 
-### `on`
+#### `on`
 
 Same as calling `onOk`, `onFail` and `onFatal`.
 
-### `req`
+#### `req`
 
 Returns AWS Lambda handler.
