@@ -796,8 +796,20 @@ describe('creator types correctness', () => {
       ? X extends readonly string[]
         ? { [k in X[number]]: string }
         : never
-      : never;
+      : unknown;
+
     type EnvError = Err<'EnvError', { name: string }>;
+
+    const cr2: MiddlewareCreator<
+      ServiceOptions,
+      ServiceContainer,
+      never,
+      { appEnvs: { env2: string } }
+    > = () => {
+      return async (request) => {
+        return ok(request);
+      };
+    };
 
     const inferServices = <T extends ServiceOptions>(
       options: Partial<T & { envs: readonly string[] }>
@@ -829,7 +841,7 @@ describe('creator types correctness', () => {
 
     const opt = { envs: ['env1', 'env2'] as const };
 
-    const res = creator(cr1).opt(opt).srv(inferServices).on(raw);
+    const res = creator(cr1).opt(opt).srv(inferServices).srv(cr2).on(raw);
 
     const resOk = res.ok(
       async ({
