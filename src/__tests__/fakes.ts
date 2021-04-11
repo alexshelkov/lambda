@@ -5,8 +5,10 @@ import {
   GetEvent,
   GetOpt,
   GetService,
+  JsonBodyService,
   addService,
   creator,
+  jsonBodyService,
 } from '../index';
 import { createContext, createEvent } from '../__stubs__';
 
@@ -356,6 +358,102 @@ describe('fake services', () => {
 
         expect(db.connectionId).toStrictEqual(0);
       });
+    });
+  });
+
+  it('works with calc service', async () => {
+    expect.assertions(4);
+
+    type NumberService = { a: number; b: number };
+    type NumberErrNaN = Err<'NaA'>;
+    type NumberDependencies = JsonBodyService;
+
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    const numbers: MiddlewareCreator<{}, NumberService, NumberErrNaN, NumberDependencies> = () => {
+      return async (request) => {
+        const body = request.service.jsonBody;
+
+        if (!(Number.isFinite(body.a) && Number.isFinite(body.b))) {
+          return fail<NumberErrNaN>('NaA');
+        }
+
+        const service = body as NumberService;
+
+        return addService(request, service);
+      };
+    };
+
+    type Options = { acceptFloat: boolean };
+    type AdderService = { add: (a: number, b: number) => number };
+    type AdderErrNoFloats = Err<'Float'>;
+
+    const adder: MiddlewareCreator<Options, AdderService, AdderErrNoFloats> = (
+      options,
+      { throws }
+    ) => {
+      return async (request) => {
+        const service: AdderService = {
+          add: (a: number, b: number) => {
+            if (!options.acceptFloat && !(Number.isInteger(a) && Number.isInteger(b))) {
+              throws<AdderErrNoFloats>('Float');
+            }
+
+            return a + b;
+          },
+        };
+
+        return addService(request, service);
+      };
+    };
+
+    const handler: Handler<AdderService & NumberService, number, never> = async ({
+      service: { a, b, add },
+    }) => {
+      return ok(add(a, b));
+    };
+
+    const lambda = creator(jsonBodyService).srv(numbers).srv(adder).ok(handler);
+
+    let body = JSON.stringify({
+      a: 1,
+      b: 2,
+    });
+
+    expect(await lambda.req()(createEvent({ body }), createContext())).toMatchObject({
+      statusCode: 200,
+      body: '{"status":"success","data":3}',
+    });
+
+    body = JSON.stringify({
+      a: 'a',
+      b: 2,
+    });
+
+    expect(await lambda.req()(createEvent({ body }), createContext())).toMatchObject({
+      statusCode: 400,
+      body: '{"status":"error","error":{"type":"NaA"}}',
+    });
+
+    body = JSON.stringify({
+      a: 1,
+      b: 2.2,
+    });
+
+    expect(await lambda.req()(createEvent({ body }), createContext())).toMatchObject({
+      statusCode: 400,
+      body: '{"status":"error","error":{"type":"Float"}}',
+    });
+
+    body = JSON.stringify({
+      a: 1,
+      b: 2.2,
+    });
+
+    expect(
+      await lambda.opt({ acceptFloat: true }).req()(createEvent({ body }), createContext())
+    ).toMatchObject({
+      statusCode: 200,
+      body: '{"status":"success","data":3.2}',
     });
   });
 });
