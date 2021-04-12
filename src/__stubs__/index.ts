@@ -20,6 +20,7 @@ type MiddlewareError5 = Err<'err5'>;
 
 export type TestError<T extends string> = Err & {
   type: T;
+  test: string;
 };
 
 export type MiddlewareErrors =

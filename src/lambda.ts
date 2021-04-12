@@ -1,4 +1,4 @@
-import { Err, fail, Failure, FailureException, Result } from '@alexshelkov/result';
+import { fail, Failure, FailureException, Result } from '@alexshelkov/result';
 import {
   AwsEvent,
   AwsHandler,
@@ -13,14 +13,10 @@ import {
   Transform,
   TransformError,
   MiddlewareFail,
+  UnhandledErrors,
 } from './types';
 import { json } from './transform';
 import { createLifecycle, createHandlerLifecycle, createMiddlewareLifecycle } from './utils';
-
-export type UnhandledError = { cause?: string };
-export type UncaughtError = Err<'UncaughtError', UnhandledError>;
-export type UncaughtErrorTransform = Err<'UncaughtTransformError', UnhandledError>;
-export type UnhandledErrors = UncaughtError | UncaughtErrorTransform;
 
 export const convertToFailure = (
   type: UnhandledErrors['type'],

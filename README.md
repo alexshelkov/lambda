@@ -211,7 +211,7 @@ const res = creator(empty).fatal(async () => {
 
 ### Transforms
 
-#### `onOk`
+#### `onOk`, `onOkRes`
 
 Sets the result transformation of ok handler.
 
@@ -230,7 +230,7 @@ const res = creator(empty).ok(async () => {
 });
 ```
 
-#### `onFail`
+#### `onFail`, `onFailRes`
 
 Sets the result transformation of fail handler.
 
@@ -249,7 +249,7 @@ const res = creator(empty).fail(async () => {
 });
 ```
 
-#### `onFatal`
+#### `onFatal`, `onFatal`
 
 Sets the result transformation of fatal handler.
 

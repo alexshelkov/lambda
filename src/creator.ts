@@ -12,6 +12,7 @@ import {
   TransformError,
   AwsHandler,
   AwsEvent,
+  UnhandledErrors,
 } from './types';
 
 import { join, joinFailure, joinFatal, connect } from './utils';
@@ -20,11 +21,16 @@ import { lambda, convertToFailure } from './lambda';
 
 import { json } from './transform';
 
+type GetReqRes<R1, R2> = R2 extends undefined ? R1 : R2;
+
 export interface Creator<
   Event extends AwsEvent,
   ResOk1,
+  ResOkRes1,
   ResErr1,
+  ResErrRes1,
   ResFatal1,
+  ResFatalRes1,
   Options1 extends ServiceOptions,
   Service1 extends ServiceContainer,
   ServiceError1,
@@ -47,8 +53,11 @@ export interface Creator<
   ) => Creator<
     Event,
     ResOk1,
+    ResOkRes1,
     ResErr1,
+    ResErrRes1,
     ResFatal1,
+    ResFatalRes1,
     Options1 & Options2,
     Service1 & Service2,
     ServiceError2 | ServiceError1,
@@ -66,8 +75,11 @@ export interface Creator<
   ) => Creator<
     Event,
     ResOk1,
+    ResOkRes1,
     ResErr1,
+    ResErrRes1,
     ResFatal1,
+    ResFatalRes1,
     Options1 & Options2,
     Service1,
     ServiceError1,
@@ -83,8 +95,11 @@ export interface Creator<
   ctx: <Event2 extends AwsEvent>() => Creator<
     Event2,
     ResOk1,
+    ResOkRes1,
     ResErr1,
+    ResErrRes1,
     ResFatal1,
+    ResFatalRes1,
     Options1,
     Service1,
     ServiceError1,
@@ -102,8 +117,11 @@ export interface Creator<
   ) => Creator<
     Event,
     ResOk1,
+    undefined,
     ResErr1,
+    ResErrRes1,
     ResFatal1,
+    ResFatalRes1,
     Options1,
     Service1,
     ServiceError1,
@@ -121,8 +139,11 @@ export interface Creator<
   ) => Creator<
     Event,
     ResOk1,
+    ResOkRes1,
     ResErr1,
+    undefined,
     ResFatal1,
+    ResFatalRes1,
     Options1,
     Service1,
     Exclude<ServiceError1, HandledError2>,
@@ -140,8 +161,11 @@ export interface Creator<
   ) => Creator<
     Event,
     ResOk1,
+    ResOkRes1,
     ResErr1,
+    ResErrRes1,
     ResFatal1,
+    undefined,
     Options1,
     Service1,
     ServiceError1,
@@ -155,14 +179,17 @@ export interface Creator<
   >;
 
   on: <ResOk2, ResErr2, ResFatal2>(
-    transform: Transform<ResOk2, Data1, Error1, Event, Options1, Service1> &
-      TransformError<ResErr2, FailureData1, FailureError1, Event, Options1> &
-      TransformError<ResFatal2, ExceptionData1, ExceptionError1, Event, Options1>
+    transform: Transform<ResOk2, unknown, unknown, Event, Options1, Service1> &
+      TransformError<ResErr2, unknown, unknown, Event, Options1> &
+      TransformError<ResFatal2, unknown, unknown, Event, Options1>
   ) => Creator<
     Event,
     ResOk2,
+    undefined,
     ResErr2,
+    undefined,
     ResFatal2,
+    undefined,
     Options1,
     Service1,
     ServiceError1,
@@ -176,12 +203,37 @@ export interface Creator<
   >;
 
   onOk: <ResOk2>(
-    transform: Transform<ResOk2, Data1, Error1, Event, Options1, Service1>
+    transform: Transform<ResOk2, unknown, unknown, Event, Options1, Service1>
   ) => Creator<
     Event,
     ResOk2,
+    undefined,
     ResErr1,
+    ResErrRes1,
     ResFatal1,
+    ResFatalRes1,
+    Options1,
+    Service1,
+    ServiceError1,
+    Data1,
+    Error1,
+    FailureData1,
+    FailureError1,
+    ExceptionData1,
+    ExceptionError1,
+    ServiceDeps
+  >;
+
+  onOkRes: <ResOkRes2>(
+    transform: Transform<ResOkRes2, Data1, Error1, Event, Options1, Service1>
+  ) => Creator<
+    Event,
+    ResOk1,
+    ResOkRes2,
+    ResErr1,
+    ResErrRes1,
+    ResFatal1,
+    ResFatalRes1,
     Options1,
     Service1,
     ServiceError1,
@@ -195,12 +247,37 @@ export interface Creator<
   >;
 
   onFail: <ResErr2>(
-    transformError: TransformError<ResErr2, FailureData1, FailureError1, Event, Options1>
+    transformError: TransformError<ResErr2, unknown, unknown, Event, Options1>
   ) => Creator<
     Event,
     ResOk1,
+    ResOkRes1,
     ResErr2,
+    undefined,
     ResFatal1,
+    ResFatalRes1,
+    Options1,
+    Service1,
+    ServiceError1,
+    Data1,
+    Error1,
+    FailureData1,
+    FailureError1,
+    ExceptionData1,
+    ExceptionError1,
+    ServiceDeps
+  >;
+
+  onFailRes: <ResErrRes2>(
+    transformError: TransformError<ResErrRes2, FailureData1, FailureError1, Event, Options1>
+  ) => Creator<
+    Event,
+    ResOk1,
+    ResOkRes1,
+    ResErr1,
+    ResErrRes2,
+    ResFatal1,
+    ResFatalRes1,
     Options1,
     Service1,
     ServiceError1,
@@ -214,12 +291,37 @@ export interface Creator<
   >;
 
   onFatal: <ResFatal2>(
-    transformFatal: TransformError<ResFatal2, ExceptionData1, ExceptionError1, Event, Options1>
+    transformFatal: TransformError<ResFatal2, unknown, unknown, Event, Options1>
   ) => Creator<
     Event,
     ResOk1,
+    ResOkRes1,
     ResErr1,
+    ResErrRes1,
     ResFatal2,
+    undefined,
+    Options1,
+    Service1,
+    ServiceError1,
+    Data1,
+    Error1,
+    FailureData1,
+    FailureError1,
+    ExceptionData1,
+    ExceptionError1,
+    ServiceDeps
+  >;
+
+  onFatalRes: <ResFatalRes2>(
+    transformFatal: TransformError<ResFatalRes2, ExceptionData1, ExceptionError1, Event, Options1>
+  ) => Creator<
+    Event,
+    ResOk1,
+    ResOkRes1,
+    ResErr1,
+    ResErrRes1,
+    ResFatal1,
+    ResFatalRes2,
     Options1,
     Service1,
     ServiceError1,
@@ -236,7 +338,12 @@ export interface Creator<
 
   options: () => Options1;
 
-  req: () => AwsHandler<Event, ResOk1 | ResErr1 | ResFatal1>;
+  req: () => AwsHandler<
+    Event,
+    | GetReqRes<ResOk1, ResOkRes1>
+    | GetReqRes<ResErr1, ResErrRes1>
+    | GetReqRes<ResFatal1, ResFatalRes1>
+  >;
 }
 
 export const creatorHelper = <
@@ -252,7 +359,10 @@ export const creatorHelper = <
   FailureData1,
   FailureError1,
   ExceptionData1,
-  ExceptionError1
+  ExceptionError1,
+  ResOkRes1 = undefined,
+  ResErrRes1 = undefined,
+  ResFatalRes1 = undefined
 >(
   crtGen: number,
   creator1: MiddlewareCreator<Options1, Service1, ServiceError1, ServiceContainer, Event>,
@@ -260,14 +370,24 @@ export const creatorHelper = <
   success1: Handler<Service1, Data1, Error1, Event, Options1>,
   error1: HandlerError<ServiceError1, FailureData1, FailureError1, never, Event, Options1>,
   exception1: HandlerException<ExceptionData1, ExceptionError1, Event, Options1>,
-  transform1: Transform<ResOk1, Data1, Error1, Event, Options1, Service1>,
-  transformError1: TransformError<ResErr1, FailureData1, FailureError1, Event, Options1>,
-  transformException1: TransformError<ResFatal1, ExceptionData1, ExceptionError1, Event, Options1>
+  transform1: Transform<ResOk1, unknown, unknown, Event, Options1, Service1>,
+  transformRes1: Transform<ResOkRes1, Data1, Error1, Event, Options1, Service1> | undefined,
+  transformError1: TransformError<ResErr1, unknown, unknown, Event, Options1>,
+  transformErrorRes1:
+    | TransformError<ResErrRes1, FailureData1, FailureError1, Event, Options1>
+    | undefined,
+  transformException1: TransformError<ResFatal1, unknown, unknown, Event, Options1>,
+  transformExceptionRes1:
+    | TransformError<ResFatalRes1, ExceptionData1, ExceptionError1, Event, Options1>
+    | undefined
 ): Creator<
   Event,
   ResOk1,
+  ResOkRes1,
   ResErr1,
+  ResErrRes1,
   ResFatal1,
+  ResFatalRes1,
   Options1,
   Service1,
   ServiceError1,
@@ -300,8 +420,11 @@ export const creatorHelper = <
         >,
         exception1,
         transform1,
+        transformRes1,
         transformError1,
-        transformException1
+        transformErrorRes1,
+        transformException1,
+        transformExceptionRes1
       );
     },
 
@@ -314,8 +437,11 @@ export const creatorHelper = <
         error1,
         exception1,
         transform1,
+        transformRes1,
         transformError1,
-        transformException1
+        transformErrorRes1,
+        transformException1,
+        transformExceptionRes1
       );
     },
 
@@ -328,13 +454,19 @@ export const creatorHelper = <
         error1,
         exception1,
         transform1,
+        transformRes1,
         transformError1,
-        transformException1
+        transformErrorRes1,
+        transformException1,
+        transformExceptionRes1
       ) as unknown) as Creator<
         Event2,
         ResOk1,
+        ResOkRes1,
         ResErr1,
+        ResErrRes1,
         ResFatal1,
+        ResFatalRes1,
         Options1,
         Service1,
         ServiceError1,
@@ -358,9 +490,12 @@ export const creatorHelper = <
         success12,
         error1,
         exception1,
-        transform1 as Transform<ResOk1, Data1 | Data2, Error1 | Error2>,
+        transform1,
+        undefined,
         transformError1,
-        transformException1
+        transformErrorRes1,
+        transformException1,
+        transformExceptionRes1
       );
     },
 
@@ -390,14 +525,11 @@ export const creatorHelper = <
         error12,
         exception1,
         transform1,
-        transformError1 as TransformError<
-          ResErr1,
-          FailureData1 | FailureData2,
-          FailureError1 | FailureError2,
-          Event,
-          Options1
-        >,
-        transformException1
+        transformRes1,
+        transformError1,
+        undefined,
+        transformException1,
+        transformExceptionRes1
       );
     },
 
@@ -414,22 +546,19 @@ export const creatorHelper = <
         error1,
         exception12,
         transform1,
+        transformRes1,
         transformError1,
-        transformException1 as TransformError<
-          ResFatal1,
-          ExceptionData1 | ExceptionData2,
-          ExceptionError1 | ExceptionError2,
-          Event,
-          Options1
-        >
+        transformErrorRes1,
+        transformException1,
+        undefined
       );
     },
 
     on: <ResOk2, ResErr2, ResFatal2>(
       transform2:
-        | Transform<ResOk2, Data1, Error1, Event, Options1, Service1>
-        | TransformError<ResErr2, FailureData1, FailureError1, Event, Options1>
-        | TransformError<ResFatal2, ExceptionData1, ExceptionError1, Event, Options1>
+        | Transform<ResOk2, unknown, unknown, Event, Options1, Service1>
+        | TransformError<ResErr2, unknown, unknown, Event, Options1>
+        | TransformError<ResFatal2, unknown, unknown, Event, Options1>
     ) => {
       return creatorHelper(
         crtGen,
@@ -438,13 +567,16 @@ export const creatorHelper = <
         success1,
         error1,
         exception1,
-        transform2 as Transform<ResOk2, Data1, Error1, Event, Options1, Service1>,
-        transform2 as TransformError<ResErr2, FailureData1, FailureError1, Event, Options1>,
-        transform2 as TransformError<ResFatal2, ExceptionData1, ExceptionError1, Event, Options1>
+        transform2 as Transform<ResOk2, unknown, unknown, Event, Options1, Service1>,
+        undefined,
+        transform2 as TransformError<ResErr2, unknown, unknown, Event, Options1>,
+        undefined,
+        transform2 as TransformError<ResFatal2, unknown, unknown, Event, Options1>,
+        undefined
       );
     },
 
-    onOk: <ResOk2>(transform2: Transform<ResOk2, Data1, Error1, Event, Options1, Service1>) => {
+    onOk: <ResOk2>(transform2: Transform<ResOk2, unknown, unknown, Event, Options1, Service1>) => {
       return creatorHelper(
         crtGen,
         creator1,
@@ -453,13 +585,16 @@ export const creatorHelper = <
         error1,
         exception1,
         transform2,
+        undefined,
         transformError1,
-        transformException1
+        transformErrorRes1,
+        transformException1,
+        transformExceptionRes1
       );
     },
 
-    onFail: <ResErr2>(
-      transformError2: TransformError<ResErr2, FailureData1, FailureError1, Event, Options1>
+    onOkRes: <ResOkRes2>(
+      transform2: Transform<ResOkRes2, Data1, Error1, Event, Options1, Service1>
     ) => {
       return creatorHelper(
         crtGen,
@@ -469,12 +604,72 @@ export const creatorHelper = <
         error1,
         exception1,
         transform1,
+        transform2,
+        transformError1,
+        transformErrorRes1,
+        transformException1,
+        transformExceptionRes1
+      );
+    },
+
+    onFail: <ResErr2>(
+      transformError2: TransformError<ResErr2, unknown, unknown, Event, Options1>
+    ) => {
+      return creatorHelper(
+        crtGen,
+        creator1,
+        options1,
+        success1,
+        error1,
+        exception1,
+        transform1,
+        transformRes1,
         transformError2,
-        transformException1
+        undefined,
+        transformException1,
+        transformExceptionRes1
+      );
+    },
+
+    onFailRes: <ResErrRes2>(
+      transformError2: TransformError<ResErrRes2, FailureData1, FailureError1, Event, Options1>
+    ) => {
+      return creatorHelper(
+        crtGen,
+        creator1,
+        options1,
+        success1,
+        error1,
+        exception1,
+        transform1,
+        transformRes1,
+        transformError1,
+        transformError2,
+        transformException1,
+        transformExceptionRes1
       );
     },
 
     onFatal: <ResFatal2>(
+      transformFatal2: TransformError<ResFatal2, unknown, unknown, Event, Options1>
+    ) => {
+      return creatorHelper(
+        crtGen,
+        creator1,
+        options1,
+        success1,
+        error1,
+        exception1,
+        transform1,
+        transformRes1,
+        transformError1,
+        transformErrorRes1,
+        transformFatal2,
+        undefined
+      );
+    },
+
+    onFatalRes: <ResFatal2>(
       transformFatal2: TransformError<ResFatal2, ExceptionData1, ExceptionError1, Event, Options1>
     ) => {
       return creatorHelper(
@@ -485,7 +680,10 @@ export const creatorHelper = <
         error1,
         exception1,
         transform1,
+        transformRes1,
         transformError1,
+        transformErrorRes1,
+        transformException1,
         transformFatal2
       );
     },
@@ -499,22 +697,45 @@ export const creatorHelper = <
     },
 
     req: () => {
+      const transform = transformRes1 || transform1;
+      const transformError = transformErrorRes1 || transformError1;
+      const transformException = transformExceptionRes1 || transformException1;
+
       return lambda(
         options1,
         creator1,
         exception1,
         error1,
         success1,
-        transform1,
-        transformError1,
-        transformException1
+        transform as Transform<
+          GetReqRes<ResOk1, ResOkRes1>,
+          Data1,
+          Error1,
+          Event,
+          Options1,
+          Service1
+        >,
+        transformError as TransformError<
+          GetReqRes<ResErr1, ResErrRes1>,
+          FailureData1,
+          FailureError1,
+          Event,
+          Options1
+        >,
+        transformException as TransformError<
+          GetReqRes<ResFatal1, ResFatalRes1>,
+          ExceptionData1,
+          ExceptionError1,
+          Event,
+          Options1
+        >
       );
     },
   };
 };
 
-export const success1: Handler<ServiceContainer, never, Err> = () => {
-  return Promise.resolve(fail('Not implemented', { order: -1 }));
+export const success1: Handler<ServiceContainer, never, Err<'NotImplemented'>> = () => {
+  return Promise.resolve(fail('NotImplemented', { order: -1 }));
 };
 
 export const error1: HandlerError<unknown, never, Err> = (request) => {
@@ -533,13 +754,13 @@ export const error1: HandlerError<unknown, never, Err> = (request) => {
   return Promise.resolve(fail(typeof error === 'string' ? error : 'Unknown', { order: -1 }));
 };
 
-export const exception1: HandlerException<never, Err> = ({ exception }) => {
+export const exception1: HandlerException<never, UnhandledErrors> = ({ exception }) => {
   return Promise.resolve(convertToFailure('UncaughtError', exception));
 };
 
-const transform1: Transform<APIGatewayProxyResult, never, Err> = json;
-const transformError1: TransformError<APIGatewayProxyResult, never, Err> = json;
-const transformException1: TransformError<APIGatewayProxyResult, never, Err> = json;
+const transform1: Transform<APIGatewayProxyResult, unknown, unknown> = json;
+const transformError1: TransformError<APIGatewayProxyResult, unknown, unknown> = json;
+const transformException1: TransformError<APIGatewayProxyResult, unknown, unknown> = json;
 
 export const creator = <
   Event extends AwsEvent,
@@ -559,8 +780,11 @@ export const creator = <
     error1,
     exception1,
     transform1,
+    undefined,
     transformError1,
-    transformException1
+    undefined,
+    transformException1,
+    undefined
   );
 
   return creatorType;

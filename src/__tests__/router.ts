@@ -148,7 +148,7 @@ describe('router', () => {
 
     expect(await srv1.req()(createEvent(), createContext())).toMatchObject({
       statusCode: 400,
-      body: '{"status":"error","error":{"type":"Not implemented"}}',
+      body: '{"status":"error","error":{"type":"NotImplemented"}}',
     });
 
     expect(await srv1.opt({ err: 'err1' }).req()(createEvent(), createContext())).toMatchObject({

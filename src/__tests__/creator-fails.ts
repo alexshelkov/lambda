@@ -17,7 +17,7 @@ describe('createMdl and createFail mocks', () => {
     expect(await res1.req()(createEvent(), createContext())).toMatchObject({
       status: 'error',
       error: {
-        type: 'Not implemented',
+        type: 'NotImplemented',
       },
     });
 

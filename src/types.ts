@@ -154,3 +154,8 @@ export interface TransformError<
 }
 
 export type SkippedError = Err<'Skipped'>;
+
+export type UnhandledError = { cause?: string };
+export type UncaughtError = Err<'UncaughtError', UnhandledError>;
+export type UncaughtErrorTransform = Err<'UncaughtTransformError', UnhandledError>;
+export type UnhandledErrors = UncaughtError | UncaughtErrorTransform;

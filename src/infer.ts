@@ -16,6 +16,9 @@ export type GetOpt<Crt> = Crt extends Creator<
   any,
   any,
   any,
+  any,
+  any,
+  any,
   infer Options,
   any,
   any,
@@ -33,6 +36,9 @@ export type GetOpt<Crt> = Crt extends Creator<
   : never;
 
 export type GetService<Crt> = Crt extends Creator<
+  any,
+  any,
+  any,
   any,
   any,
   any,
@@ -67,6 +73,9 @@ export type GetEvent<Crt> = Crt extends Creator<
   any,
   any,
   any,
+  any,
+  any,
+  any,
   any
 >
   ? Event
@@ -77,6 +86,9 @@ export type GetEvent<Crt> = Crt extends Creator<
 export type PickService<Crt, Srv extends keyof GetService<Crt>> = Pick<GetService<Crt>, Srv>;
 
 export type GetError<Crt> = Crt extends Creator<
+  any,
+  any,
+  any,
   any,
   any,
   any,
@@ -102,6 +114,9 @@ export type GetHandler<Crt, Data, Error> = Crt extends Creator<
   any,
   any,
   any,
+  any,
+  any,
+  any,
   infer Options,
   infer Service,
   any,
@@ -120,6 +135,9 @@ export type GetHandler<Crt, Data, Error> = Crt extends Creator<
 
 export type GetHandlerError<Crt, Data, Error, HandledError = never> = Crt extends Creator<
   infer Event,
+  any,
+  any,
+  any,
   any,
   any,
   any,
@@ -144,6 +162,9 @@ export type GetHandlerException<Crt, Data, Error> = Crt extends Creator<
   any,
   any,
   any,
+  any,
+  any,
+  any,
   infer Options,
   any,
   any,
@@ -162,6 +183,9 @@ export type GetHandlerException<Crt, Data, Error> = Crt extends Creator<
 
 export type GetTransform<Crt, Res> = Crt extends Creator<
   infer Event,
+  any,
+  any,
+  any,
   any,
   any,
   any,
@@ -186,6 +210,9 @@ export type GetTransformFailure<Crt, Res> = Crt extends Creator<
   any,
   any,
   any,
+  any,
+  any,
+  any,
   infer Options,
   any,
   any,
@@ -204,6 +231,9 @@ export type GetTransformFailure<Crt, Res> = Crt extends Creator<
 
 export type GetTransformException<Crt, Res> = Crt extends Creator<
   infer Event,
+  any,
+  any,
+  any,
   any,
   any,
   any,

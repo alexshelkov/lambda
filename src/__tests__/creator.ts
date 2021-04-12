@@ -34,6 +34,7 @@ import {
   Transform,
   TransformError,
   Middleware,
+  GetTransformException,
 } from '../index';
 
 import { error1 } from '../creator';
@@ -1219,7 +1220,7 @@ describe('creator handlers and transforms', () => {
 
   describe('works with custom transform', () => {
     it('everything success', async () => {
-      expect.assertions(4);
+      expect.assertions(5);
 
       const res = creator(creatorTest1).opt({ op1: '1' });
 
@@ -1255,7 +1256,9 @@ describe('creator handlers and transforms', () => {
         return `Test 3 ${result.ok()} ${request.service.test1}`;
       };
 
-      expect(await resOk.onOk(trans2).req()(createEvent(), createContext())).toStrictEqual(
+      const resTrans2 = resTrans.onOkRes(trans2);
+
+      expect(await resTrans2.req()(createEvent(), createContext())).toStrictEqual(
         'Test 3 success 1'
       );
 
@@ -1263,9 +1266,18 @@ describe('creator handlers and transforms', () => {
         return `Test 4 ${request.service.test1}`;
       };
 
-      expect(await resOk.onOk(trans3).req()(createEvent(), createContext())).toStrictEqual(
+      expect(await resTrans2.onOkRes(trans3).req()(createEvent(), createContext())).toStrictEqual(
         'Test 4 1'
       );
+
+      const resOk2 = resTrans2.ok(async () => {
+        return ok('success2');
+      });
+
+      expect(await resOk2.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 123,
+        body: 'Test 1 1',
+      });
     });
 
     it('callback fail', async () => {
@@ -1299,11 +1311,11 @@ describe('creator handlers and transforms', () => {
     });
 
     it('middleware fail', async () => {
-      expect.assertions(4);
+      expect.assertions(5);
 
       const res = creator(creatorTest4Error).opt({ op4: '1' });
 
-      const resOk = res.fail(async (_r) => {
+      const resFail = res.fail(async (_r) => {
         if (Math.random() < 0) {
           return fail<TestError<'error'>>('error');
         }
@@ -1311,7 +1323,7 @@ describe('creator handlers and transforms', () => {
         return ok('fail');
       });
 
-      const resTrans = resOk.onFail(async () => {
+      const resTrans = resFail.onFail(async () => {
         return {
           statusCode: 789,
           body: 'Test 1',
@@ -1327,25 +1339,99 @@ describe('creator handlers and transforms', () => {
         return `Test 2`;
       };
 
-      expect(await resOk.onFail(trans1).req()(createEvent(), createContext())).toStrictEqual(
+      expect(await resFail.onFail(trans1).req()(createEvent(), createContext())).toStrictEqual(
         'Test 2'
       );
 
-      const trans2: GetTransformFailure<typeof resOk, string> = async (result) => {
+      const trans2: GetTransformFailure<typeof resFail, string> = async (result) => {
         return `Test ${result.ok()} 3`;
       };
 
-      expect(await resOk.onFail(trans2).req()(createEvent(), createContext())).toStrictEqual(
-        'Test fail 3'
-      );
+      const restTrans2 = resTrans.onFailRes(trans2);
+
+      expect(await restTrans2.req()(createEvent(), createContext())).toStrictEqual('Test fail 3');
 
       const trans3: GetTransformFailure<typeof creatorTest4Error, string> = async () => {
         return `Test 4`;
       };
 
-      expect(await resOk.onFail(trans3).req()(createEvent(), createContext())).toStrictEqual(
+      expect(await resFail.onFailRes(trans3).req()(createEvent(), createContext())).toStrictEqual(
         'Test 4'
       );
+
+      const resFail2 = restTrans2.fail(async () => {
+        return ok('fail2');
+      });
+
+      expect(await resFail2.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 789,
+        body: 'Test 1',
+      });
+    });
+
+    it('fatal errors', async () => {
+      expect.assertions(5);
+
+      const res = creator(creatorTest1).ok(async () => {
+        if (Math.random() > 0) {
+          throw new Error('Unhandled error');
+        }
+
+        return ok(false);
+      });
+
+      const resFatal = res.fatal(async (_r) => {
+        if (Math.random() < 0) {
+          return fail<Err>('1');
+        }
+
+        return ok('fatal');
+      });
+
+      const resTrans = resFatal.onFatal(async () => {
+        return {
+          statusCode: 789,
+          body: 'Test 1',
+        };
+      });
+
+      expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 789,
+        body: 'Test 1',
+      });
+
+      const trans1: TransformError<string, unknown, unknown> = async () => {
+        return `Test 2`;
+      };
+
+      expect(await resFatal.onFatal(trans1).req()(createEvent(), createContext())).toStrictEqual(
+        'Test 2'
+      );
+
+      const trans2: GetTransformException<typeof resFatal, string> = async (result) => {
+        return `Test ${result.ok()} 3`;
+      };
+
+      const resTrans2 = resTrans.onFatalRes(trans2);
+
+      expect(await resTrans2.req()(createEvent(), createContext())).toStrictEqual('Test fatal 3');
+
+      const trans3: GetTransformException<typeof creatorTest1, string> = async () => {
+        return `Test 4`;
+      };
+
+      expect(await resFatal.onFatalRes(trans3).req()(createEvent(), createContext())).toStrictEqual(
+        'Test 4'
+      );
+
+      const resFatal2 = resTrans2.fatal(async () => {
+        return ok('fatal2');
+      });
+
+      expect(await resFatal2.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 789,
+        body: 'Test 1',
+      });
     });
   });
 });
