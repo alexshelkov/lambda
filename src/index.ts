@@ -14,9 +14,12 @@ export {
   AwsEvent,
   AwsHandler,
   SkippedError,
+  UncaughtError,
+  UncaughtErrorTransform,
+  UnhandledErrors,
 } from './types';
 
-export { Creator, creator } from './creator';
+export { GetReqRes, Creator, creator } from './creator';
 
 export {
   GetOpt,

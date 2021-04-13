@@ -21,7 +21,7 @@ import { lambda, convertToFailure } from './lambda';
 
 import { json } from './transform';
 
-type GetReqRes<R1, R2> = R2 extends undefined ? R1 : R2;
+export type GetReqRes<R1, R2> = R2 extends undefined ? R1 : R2;
 
 export interface Creator<
   Event extends AwsEvent,
