@@ -793,14 +793,6 @@ describe('creator types correctness', () => {
       };
     };
 
-    type Get<T> = T extends { envs: infer X }
-      ? X extends readonly string[]
-        ? { [k in X[number]]: string }
-        : never
-      : unknown;
-
-    type EnvError = Err<'EnvError', { name: string }>;
-
     const cr2: MiddlewareCreator<
       ServiceOptions,
       ServiceContainer,
@@ -812,9 +804,17 @@ describe('creator types correctness', () => {
       };
     };
 
-    const inferServices = <T extends ServiceOptions>(
-      options: Partial<T & { envs: readonly string[] }>
-    ): Middleware<{ appEnvs: Get<T> }, EnvError> => {
+    type Opts = { envs: readonly string[] };
+    type Serv<O> = O extends { envs: infer X }
+      ? X extends readonly string[]
+        ? { [k in X[number]]: string }
+        : never
+      : unknown;
+    type EnvError = Err<'EnvError', { name: string }>;
+
+    const inferServices = <O extends Opts>(
+      options: Partial<O>
+    ): Middleware<{ appEnvs: Serv<O> }, EnvError> => {
       return async <Service1 extends ServiceContainer>(request: Request<AwsEvent, Service1>) => {
         const { envs } = options;
 
@@ -832,7 +832,7 @@ describe('creator types correctness', () => {
         }
 
         return addService(request, {
-          appEnvs: service as Get<T>,
+          appEnvs: service as Serv<O>,
         });
       };
     };

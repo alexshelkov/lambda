@@ -69,7 +69,9 @@ const lambda = creator(jsonBodyService).srv(numbers).srv(adder).ok(handler);
 API
 ===================================
 
-### Services
+### Defining services
+
+##### Static service:
 
 #### `MiddlewareCreator`
 
@@ -101,6 +103,43 @@ const service: MiddlewareCreator<Options, Service, Errors> = () => {
   };
 };
 ```
+
+##### Dynamic service:
+
+#### `Middleware`
+
+Used to define services dynamically based on provided options.
+
+Params:
+
+- `Service`
+- `Errors`
+- `ServiceDeps`
+- `Event`
+
+```typescript
+import { Middleware, GetOpt, ServiceContainer, Request, AwsEvent, GetService, empty, addService, creator } from '@alexshelkov/lambda';
+
+type Options = { test: number };
+type Service<O> = O;
+type Errors = never;
+
+const service = <O extends Options>(
+  options: Partial<O>
+): Middleware<{ service: Service<O> }, Errors> => {
+  return async <Service1 extends ServiceContainer>(request: Request<AwsEvent, Service1>) => {
+    return addService(request, {
+      service: { test: options.test } as Service<O>,
+    });
+  };
+};
+
+const res = creator(empty).opt({ test: 1 }).srv(service);
+```
+
+------------------------------------------------------------------------------------------
+
+### Initialization
 
 #### `creator`
 
@@ -249,7 +288,7 @@ const res = creator(empty).fail(async () => {
 });
 ```
 
-#### `onFatal`, `onFatal`
+#### `onFatal`, `onFatalRes`
 
 Sets the result transformation of fatal handler.
 
