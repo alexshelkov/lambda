@@ -5,7 +5,7 @@ import { MiddlewareCreator } from '../types';
 import { addService } from '../utils';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-export type EventGatewayOptions = { test: string };
+export type EventGatewayOptions = {};
 
 export type EventGatewayService = { eventGateway: APIGatewayProxyEvent };
 
