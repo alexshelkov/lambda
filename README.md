@@ -85,8 +85,7 @@ Params:
 - `Event`
 
 ```typescript
-import { Err } from '@alexshelkov/result';
-import { MiddlewareCreator, addService } from '@alexshelkov/lambda';
+import { Err, MiddlewareCreator, addService } from '@alexshelkov/lambda';
 
 type Options = { };
 type Service = { add: (a: number, b: number) => number };
@@ -232,8 +231,7 @@ Params:
 - `handler`: `HandlerException`
 
 ```typescript
-import { ok } from '@alexshelkov/result';
-import { creator, empty } from '@alexshelkov/lambda';
+import { ok, creator, empty } from '@alexshelkov/lambda';
 
 const res = creator(empty).fatal(async () => {
   // this handler will not runs because 
@@ -254,4 +252,59 @@ Sets the result transformation of ok handler.
 Params:
 
 - `transform`: `Transform`
+
+```typescript
+import { ok, creator, empty } from '@alexshelkov/lambda';
+
+const res = creator(empty).ok(async () => {
+  return ok('success');
+}).onOk(async (result) => {
+  return result; // result equals to 'success'
+});
+```
+
+#### `onFail`, `onFailRes`
+
+Sets the result transformation of fail handler.
+
+Params:
+
+- `transform`: `TransformError`
+
+```typescript
+import { ok, creator, empty } from '@alexshelkov/lambda';
+
+const res = creator(empty).fail(async () => {
+  return ok('fail');
+}).onFail(async (result) => {
+  return result; // result equals to 'fail'
+});
+```
+
+#### `onFatal`, `onFatalRes`
+
+Sets the result transformation of fatal handler.
+
+Params:
+
+- `transform`: `TransformError`
+
+```typescript
+import { ok, creator, empty } from '@alexshelkov/lambda';
+
+const res = creator(empty).fatal(async () => {
+  return ok('fatal');
+}).onFatal(async (result) => {
+  return result; // result equals to 'fatal'
+});
+```
+
+#### `on`
+
+Same as calling `onOk`, `onFail` and `onFatal`.
+
+#### `req`
+
+Returns AWS Lambda handler.
+
 
