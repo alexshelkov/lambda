@@ -1,3 +1,5 @@
+export * from '@alexshelkov/result';
+
 export {
   ServiceOptions,
   ServiceContainer,
@@ -10,13 +12,26 @@ export {
   Transform,
   TransformError,
   Request,
+  RequestBase,
   RequestError,
+  RequestException,
   AwsEvent,
   AwsHandler,
   SkippedError,
+  UnhandledError,
   UncaughtError,
   UncaughtErrorTransform,
   UnhandledErrors,
+  HandlerLifecycle,
+  MiddlewareCreatorLifecycle,
+  MiddlewareFail,
+  FallBackTransform,
+  Success1,
+  Error1,
+  Exception1,
+  Transform1,
+  TransformError1,
+  APIGatewayProxyResult,
 } from './types';
 
 export { GetReqRes, Creator, creator } from './creator';
@@ -78,6 +93,7 @@ export {
   EventGatewayService,
   EventGatewayErrors,
   EventGatewayRequestError,
+  APIGatewayProxyEvent,
 } from './service/eventGateway';
 
 export {
@@ -86,6 +102,8 @@ export {
   EventSnsService,
   EventSnsRequestError,
   EventSnsErrors,
+  SNSMessage,
+  SNSEvent,
 } from './service/eventSns';
 
 export {
@@ -94,6 +112,8 @@ export {
   EventSqsService,
   EventSqsRequestError,
   EventSqsErrors,
+  SQSRecord,
+  SQSEvent,
 } from './service/eventSqs';
 
 export {

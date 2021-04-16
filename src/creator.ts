@@ -1,4 +1,3 @@
-import { APIGatewayProxyResult } from 'aws-lambda';
 import { Err, fail } from '@alexshelkov/result';
 
 import {
@@ -12,7 +11,11 @@ import {
   TransformError,
   AwsHandler,
   AwsEvent,
-  UnhandledErrors,
+  Success1,
+  Error1,
+  Exception1,
+  Transform1,
+  TransformError1,
 } from './types';
 
 import { join, joinFailure, joinFatal, connect } from './utils';
@@ -734,11 +737,11 @@ export const creatorHelper = <
   };
 };
 
-export const success1: Handler<ServiceContainer, never, Err<'NotImplemented'>> = () => {
+export const success1: Success1 = () => {
   return Promise.resolve(fail('NotImplemented', { order: -1 }));
 };
 
-export const error1: HandlerError<unknown, never, Err> = (request) => {
+export const error1: Error1 = (request) => {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { error } = request;
 
@@ -754,13 +757,13 @@ export const error1: HandlerError<unknown, never, Err> = (request) => {
   return Promise.resolve(fail(typeof error === 'string' ? error : 'Unknown', { order: -1 }));
 };
 
-export const exception1: HandlerException<never, UnhandledErrors> = ({ exception }) => {
+export const exception1: Exception1 = ({ exception }) => {
   return Promise.resolve(convertToFailure('UncaughtError', exception));
 };
 
-const transform1: Transform<APIGatewayProxyResult, unknown, unknown> = json;
-const transformError1: TransformError<APIGatewayProxyResult, unknown, unknown> = json;
-const transformException1: TransformError<APIGatewayProxyResult, unknown, unknown> = json;
+const transform1: Transform1 = json;
+const transformError1: TransformError1 = json;
+const transformException1: TransformError1 = json;
 
 export const creator = <
   Event extends AwsEvent,

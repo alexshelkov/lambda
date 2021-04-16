@@ -1,4 +1,4 @@
-import { fail, Failure, FailureException, Result } from '@alexshelkov/result';
+import { fail, Failure, FailureException } from '@alexshelkov/result';
 import {
   AwsEvent,
   AwsHandler,
@@ -14,6 +14,7 @@ import {
   TransformError,
   MiddlewareFail,
   UnhandledErrors,
+  FallBackTransform,
 } from './types';
 import { json } from './transform';
 import { createLifecycle, createHandlerLifecycle, createMiddlewareLifecycle } from './utils';
@@ -39,8 +40,6 @@ export const convertToFailure = (
 
   return error;
 };
-
-type FallBackTransform = (result: Result<unknown, unknown>) => Promise<unknown>;
 
 let fallBackTransform: FallBackTransform = json;
 

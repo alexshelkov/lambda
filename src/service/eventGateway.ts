@@ -4,6 +4,8 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 import { MiddlewareCreator } from '../types';
 import { addService } from '../utils';
 
+export { APIGatewayProxyEvent };
+
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type EventGatewayOptions = {};
 

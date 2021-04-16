@@ -16,8 +16,7 @@ A service which parse request body as JSON, get `a` and `b` from it,
 check if both are valid numbers, then adds them and return result. 
 
 ```typescript
-import { Err, ok, fail } from '@alexshelkov/result';
-import { MiddlewareCreator, Handler, JsonBodyService, creator, addService, jsonBodyService } from '@alexshelkov/lambda';
+import { Err, MiddlewareCreator, Handler, JsonBodyService, ok, fail, creator, addService, jsonBodyService } from '@alexshelkov/lambda';
 
 type NumberService = { a: number; b: number };
 type NumberErrNaN = Err<'NaA'>;
@@ -198,8 +197,7 @@ Params:
 - `handler`: `Handler`
 
 ```typescript
-import { ok } from '@alexshelkov/result';
-import { creator, empty } from '@alexshelkov/lambda';
+import { ok, creator, empty } from '@alexshelkov/lambda';
 
 const res = creator(empty).ok(async () => {
   return ok('success'); // can be used in onOk
@@ -215,8 +213,7 @@ Params:
 - `handler`: `HandlerError`
 
 ```typescript
-import { ok } from '@alexshelkov/result';
-import { creator, empty } from '@alexshelkov/lambda';
+import { ok, creator, empty } from '@alexshelkov/lambda';
 
 const res = creator(empty).fail(async () => {
   // this handler will not runs because 
@@ -258,59 +255,3 @@ Params:
 
 - `transform`: `Transform`
 
-```typescript
-import { ok } from '@alexshelkov/result';
-import { creator, empty } from '@alexshelkov/lambda';
-
-const res = creator(empty).ok(async () => {
-  return ok('success');
-}).onOk(async (result) => {
-  return result; // result equals to 'success'
-});
-```
-
-#### `onFail`, `onFailRes`
-
-Sets the result transformation of fail handler.
-
-Params:
-
-- `transform`: `TransformError`
-
-```typescript
-import { ok } from '@alexshelkov/result';
-import { creator, empty } from '@alexshelkov/lambda';
-
-const res = creator(empty).fail(async () => {
-  return ok('fail');
-}).onFail(async (result) => {
-  return result; // result equals to 'fail'
-});
-```
-
-#### `onFatal`, `onFatalRes`
-
-Sets the result transformation of fatal handler.
-
-Params:
-
-- `transform`: `TransformError`
-
-```typescript
-import { ok } from '@alexshelkov/result';
-import { creator, empty } from '@alexshelkov/lambda';
-
-const res = creator(empty).fatal(async () => {
-  return ok('fatal');
-}).onFatal(async (result) => {
-  return result; // result equals to 'fatal'
-});
-```
-
-#### `on`
-
-Same as calling `onOk`, `onFail` and `onFatal`.
-
-#### `req`
-
-Returns AWS Lambda handler.

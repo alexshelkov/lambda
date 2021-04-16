@@ -1,4 +1,5 @@
-import { Response, Result, fail, Failure, Err } from '@alexshelkov/result';
+import { Response, Result, Failure, fail, Err } from '@alexshelkov/result';
+import { APIGatewayProxyResult } from 'aws-lambda';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ServiceContainer {}
@@ -159,3 +160,12 @@ export type UnhandledError = { cause?: string };
 export type UncaughtError = Err<'UncaughtError', UnhandledError>;
 export type UncaughtErrorTransform = Err<'UncaughtTransformError', UnhandledError>;
 export type UnhandledErrors = UncaughtError | UncaughtErrorTransform;
+
+export type FallBackTransform = (result: Result<unknown, unknown>) => Promise<unknown>;
+
+export type Success1 = Handler<ServiceContainer, never, Err<'NotImplemented'>>;
+export type Error1 = HandlerError<unknown, never, Err>;
+export type Exception1 = HandlerException<never, UnhandledErrors>;
+export { APIGatewayProxyResult };
+export type Transform1 = Transform<APIGatewayProxyResult, unknown, unknown>;
+export type TransformError1 = TransformError<APIGatewayProxyResult, unknown, unknown>;

@@ -5,6 +5,8 @@ import { MiddlewareCreator } from '../types';
 import { addService } from '../utils';
 import { isHaveRecords } from './utils';
 
+export { SQSEvent, SQSRecord };
+
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type EventSqsOptions = {};
 
