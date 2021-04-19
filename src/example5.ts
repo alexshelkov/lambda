@@ -1,5 +1,4 @@
-import { Err, ok, fail, nope } from '@alexshelkov/result';
-import { Handler, MiddlewareCreator, creator, addService } from '@alexshelkov/lambda';
+import { Handler, MiddlewareCreator, Err, ok, fail, nope, creator, addService } from 'lambda-mdl';
 
 type Hello = {
   sayHello: () => string;

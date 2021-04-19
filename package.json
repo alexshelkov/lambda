@@ -1,6 +1,6 @@
 {
-  "name": "@alexshelkov/lambda-examples",
-  "description": "An examples for @alexshelkov/lambda",
+  "name": "lambda-mdl-examples",
+  "description": "An examples for lambda-mdl",
   "version": "1.0.1",
   "author": "Alex Shelkovskiy <alexshelkov@gmail.com>",
   "repository": "https://github.com/alexshelkov/lambda",
@@ -28,7 +28,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@alexshelkov/lambda": "^1.6.0"
+    "lambda-mdl": "^1.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.19.0",

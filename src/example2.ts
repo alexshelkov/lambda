@@ -1,5 +1,4 @@
-import { ok } from '@alexshelkov/result';
-import { Handler, MiddlewareCreator, creator, addService } from '@alexshelkov/lambda';
+import { Handler, MiddlewareCreator, ok, creator, addService } from 'lambda-mdl';
 
 type Hello = {
   sayHello: () => string; // hello service will show errors if sayHello is missing or wrong type
