@@ -1,4 +1,4 @@
-import { ok } from '@alexshelkov/result';
+import { ok } from 'lambda-res';
 
 import { empty, creator } from '../../index';
 import { createContext, createEvent } from '../../__stubs__';

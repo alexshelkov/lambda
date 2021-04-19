@@ -1,4 +1,4 @@
-import { compare, ok, fail, Success, Err, Failure } from '@alexshelkov/result';
+import { compare, ok, fail, Success, Err, Failure } from 'lambda-res';
 
 import {
   Handler,

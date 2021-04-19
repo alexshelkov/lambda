@@ -1,4 +1,4 @@
-import { fail, Failure, FailureException } from '@alexshelkov/result';
+import { fail, Failure, FailureException } from 'lambda-res';
 import {
   AwsEvent,
   AwsHandler,

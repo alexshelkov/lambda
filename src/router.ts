@@ -1,4 +1,4 @@
-import { fail } from '@alexshelkov/result';
+import { fail } from 'lambda-res';
 
 import {
   Handler,

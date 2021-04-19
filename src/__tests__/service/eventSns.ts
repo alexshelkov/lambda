@@ -1,6 +1,6 @@
 import { SNSHandler, SNSEvent } from 'aws-lambda';
 
-import { ok } from '@alexshelkov/result';
+import { ok } from 'lambda-res';
 
 import { eventSnsService, creator, none } from '../../index';
 import { createContext, createEvent } from '../../__stubs__';

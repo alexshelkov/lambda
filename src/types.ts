@@ -1,4 +1,4 @@
-import { Response, Result, Failure, fail, Err } from '@alexshelkov/result';
+import { Response, Result, Failure, fail, Err } from 'lambda-res';
 import { APIGatewayProxyResult } from 'aws-lambda';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

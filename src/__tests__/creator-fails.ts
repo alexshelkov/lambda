@@ -1,4 +1,4 @@
-import { ok } from '@alexshelkov/result';
+import { ok } from 'lambda-res';
 import { GetHandler, creator, raw, glue, glueFailure } from '../index';
 import { createContext, createEvent, createMdl, createFail, reset } from '../__stubs__';
 

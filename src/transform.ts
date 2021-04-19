@@ -1,4 +1,4 @@
-import { Result } from '@alexshelkov/result';
+import { Result } from 'lambda-res';
 import { APIGatewayProxyResult } from 'aws-lambda';
 
 // eslint-disable-next-line @typescript-eslint/require-await

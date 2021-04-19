@@ -1,4 +1,4 @@
-import { Err, fail } from '@alexshelkov/result';
+import { Err, fail } from 'lambda-res';
 
 import {
   ServiceOptions,

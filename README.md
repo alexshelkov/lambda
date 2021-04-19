@@ -16,7 +16,7 @@ A service which parse request body as JSON, get `a` and `b` from it,
 check if both are valid numbers, then adds them and return result. 
 
 ```typescript
-import { Err, MiddlewareCreator, Handler, JsonBodyService, ok, fail, creator, addService, jsonBodyService } from '@alexshelkov/lambda';
+import { Err, MiddlewareCreator, Handler, JsonBodyService, ok, fail, creator, addService, jsonBodyService } from 'lambda-mdl';
 
 type NumberService = { a: number; b: number };
 type NumberErrNaN = Err<'NaA'>;
@@ -85,7 +85,7 @@ Params:
 - `Event`
 
 ```typescript
-import { Err, MiddlewareCreator, addService } from '@alexshelkov/lambda';
+import { Err, MiddlewareCreator, addService } from 'lambda-mdl';
 
 type Options = { };
 type Service = { add: (a: number, b: number) => number };
@@ -116,7 +116,7 @@ Params:
 - `Event`
 
 ```typescript
-import { Middleware, ServiceContainer, Request, AwsEvent, empty, addService, creator } from '@alexshelkov/lambda';
+import { Middleware, ServiceContainer, Request, AwsEvent, empty, addService, creator } from 'lambda-mdl';
 
 type Options = { test: number };
 type Service<Opt> = Opt;
@@ -149,7 +149,7 @@ Params:
 
 
 ```typescript
-import { creator, empty } from '@alexshelkov/lambda';
+import { creator, empty } from 'lambda-mdl';
 
 const res = creator(empty); // now you can use other methods, for example: .srv 
 ```
@@ -163,7 +163,7 @@ Params:
 - `creator`: `MiddlewareCreator`
 
 ```typescript
-import { MiddlewareCreator, creator, empty, addService } from '@alexshelkov/lambda';
+import { MiddlewareCreator, creator, empty, addService } from 'lambda-mdl';
 
 const service: MiddlewareCreator<{}, {}, never> = () => {
   return async (request) => {
@@ -196,7 +196,7 @@ Params:
 - `handler`: `Handler`
 
 ```typescript
-import { ok, creator, empty } from '@alexshelkov/lambda';
+import { ok, creator, empty } from 'lambda-mdl';
 
 const res = creator(empty).ok(async () => {
   return ok('success'); // can be used in onOk
@@ -212,7 +212,7 @@ Params:
 - `handler`: `HandlerError`
 
 ```typescript
-import { ok, creator, empty } from '@alexshelkov/lambda';
+import { ok, creator, empty } from 'lambda-mdl';
 
 const res = creator(empty).fail(async () => {
   // this handler will not run because 
@@ -231,7 +231,7 @@ Params:
 - `handler`: `HandlerException`
 
 ```typescript
-import { ok, creator, empty } from '@alexshelkov/lambda';
+import { ok, creator, empty } from 'lambda-mdl';
 
 const res = creator(empty).fatal(async () => {
   // this handler will not run because 
@@ -254,7 +254,7 @@ Params:
 - `transform`: `Transform`
 
 ```typescript
-import { ok, creator, empty } from '@alexshelkov/lambda';
+import { ok, creator, empty } from 'lambda-mdl';
 
 const res = creator(empty).ok(async () => {
   return ok('success');
@@ -272,7 +272,7 @@ Params:
 - `transform`: `TransformError`
 
 ```typescript
-import { ok, creator, empty } from '@alexshelkov/lambda';
+import { ok, creator, empty } from 'lambda-mdl';
 
 const res = creator(empty).fail(async () => {
   return ok('fail');
@@ -290,7 +290,7 @@ Params:
 - `transform`: `TransformError`
 
 ```typescript
-import { ok, creator, empty } from '@alexshelkov/lambda';
+import { ok, creator, empty } from 'lambda-mdl';
 
 const res = creator(empty).fatal(async () => {
   return ok('fatal');

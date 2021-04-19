@@ -1,4 +1,4 @@
-import { fail, Err, ok } from '@alexshelkov/result';
+import { fail, Err, ok } from 'lambda-res';
 import {
   MiddlewareCreator,
   Request,

@@ -1,4 +1,4 @@
-import { Err, fail, ok } from '@alexshelkov/result';
+import { Err, fail, ok } from 'lambda-res';
 
 import {
   GetEvent,

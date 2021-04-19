@@ -1,4 +1,4 @@
-export * from '@alexshelkov/result';
+export * from 'lambda-res';
 
 export {
   ServiceOptions,

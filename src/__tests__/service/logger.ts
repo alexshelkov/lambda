@@ -1,4 +1,4 @@
-import { ok } from '@alexshelkov/result';
+import { ok } from 'lambda-res';
 
 import {
   loggerService,

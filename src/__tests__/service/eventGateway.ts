@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 
-import { ok } from '@alexshelkov/result';
+import { ok } from 'lambda-res';
 
 import { eventGatewayService, creator } from '../../index';
 import { createContext, createEvent } from '../../__stubs__';

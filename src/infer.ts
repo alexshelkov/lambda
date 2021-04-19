@@ -1,4 +1,4 @@
-import { Err } from '@alexshelkov/result';
+import { Err } from 'lambda-res';
 import {
   Handler,
   HandlerError,
