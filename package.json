@@ -16,10 +16,13 @@
     }
   },
   "lint-staged": {
+    "*.md": [
+      "typescript-docs-verifier",
+      "git add"
+    ],
     "*.{js,ts}": [
       "prettier --write",
       "eslint --fix --rule 'tsc/config: [2, {configFile: \"tsconfig.json\"}]'",
-      "typescript-docs-verifier",
       "git add"
     ]
   },

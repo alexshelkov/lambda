@@ -116,18 +116,18 @@ Params:
 - `Event`
 
 ```typescript
-import { Middleware, GetOpt, ServiceContainer, Request, AwsEvent, GetService, empty, addService, creator } from '@alexshelkov/lambda';
+import { Middleware, ServiceContainer, Request, AwsEvent, empty, addService, creator } from '@alexshelkov/lambda';
 
 type Options = { test: number };
-type Service<O> = O;
+type Service<Opt> = Opt;
 type Errors = never;
 
-const service = <O extends Options>(
-  options: Partial<O>
-): Middleware<{ service: Service<O> }, Errors> => {
+const service = <Opt extends Options>(
+  options: Partial<Opt>
+): Middleware<{ service: Service<Opt> }, Errors> => {
   return async <Service1 extends ServiceContainer>(request: Request<AwsEvent, Service1>) => {
     return addService(request, {
-      service: { test: options.test } as Service<O>,
+      service: { test: options.test } as Service<Opt>,
     });
   };
 };
@@ -215,8 +215,8 @@ Params:
 import { ok, creator, empty } from '@alexshelkov/lambda';
 
 const res = creator(empty).fail(async () => {
-  // this handler will not runs because 
-  // empty middleware not fails
+  // this handler will not run because 
+  // empty middleware won't fail
   
   return ok('success'); // can be used in onFail
 });
@@ -234,7 +234,7 @@ Params:
 import { ok, creator, empty } from '@alexshelkov/lambda';
 
 const res = creator(empty).fatal(async () => {
-  // this handler will not runs because 
+  // this handler will not run because 
   // empty middleware won't throw fatal errors
   
   return ok('success'); // can be used in onFatal
