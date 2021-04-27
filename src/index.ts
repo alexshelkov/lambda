@@ -1,4 +1,20 @@
-export * from 'lambda-res';
+export {
+  Success,
+  Failure,
+  Result,
+  Response,
+  Err,
+  FailureException,
+  ErrLevel,
+  Errs,
+  Dis,
+  ok,
+  fail,
+  compare,
+  isErr,
+  nope,
+  toResult,
+} from 'lambda-res';
 
 export {
   ServiceOptions,
