@@ -79,7 +79,7 @@ describe('fake services', () => {
         const logger: Logger = {
           log: (message: string) => {
             return request.service.transport.send(
-              `${new Date().toISOString().split('T')[0]}: ${message}`
+              `${new Date().toISOString().split('T')[0] || ''}: ${message}`
             );
           },
         };
@@ -113,7 +113,7 @@ describe('fake services', () => {
     await resFail.req()(createEvent(), createContext());
 
     expect(error).toBeNull();
-    expect(dbLogs).toContain(`${new Date().toISOString().split('T')[0]}: test message 1`);
+    expect(dbLogs).toContain(`${new Date().toISOString().split('T')[0] || ''}: test message 1`);
 
     const res2 = creator(dbLoggerCreator).srv(loggerCreator).opt({ throwError: true });
 

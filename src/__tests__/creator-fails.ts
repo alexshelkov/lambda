@@ -350,8 +350,9 @@ describe('works with errors', () => {
     const f3 = createFail('f3', steps2);
     const f4 = createFail('f4', steps2);
 
-    const error2: GetHandler<typeof cr3, string, never> = async ({ service: { cr4Throws } }) => {
-      cr4Throws();
+    const error2: GetHandler<typeof cr3, string, never> = async ({ service }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+      (service as any).cr4Throws();
       return ok('success');
     };
 

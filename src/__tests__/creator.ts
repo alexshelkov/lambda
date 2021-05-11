@@ -823,8 +823,9 @@ describe('creator types correctness', () => {
         if (envs) {
           // eslint-disable-next-line no-restricted-syntax
           for (const name of envs) {
-            if (typeof definedEnvs[name] === 'string') {
-              service[name] = definedEnvs[name];
+            const definedEnv = definedEnvs[name];
+            if (definedEnv) {
+              service[name] = definedEnv;
             } else {
               return fail<EnvError>('EnvError', { name });
             }

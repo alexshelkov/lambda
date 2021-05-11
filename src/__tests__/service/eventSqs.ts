@@ -27,7 +27,7 @@ describe('eventSqs', () => {
 
     const resOk = res.ok(({ service: { eventSqs, eventSqsRecord } }) => {
       expect(eventSqs.Records).toHaveLength(1);
-      expect(eventSqs.Records[0].eventSource).toStrictEqual('aws:sqs');
+      expect(eventSqs.Records[0]?.eventSource).toStrictEqual('aws:sqs');
       expect(eventSqsRecord.body).toStrictEqual('Test message');
 
       return Promise.resolve(ok('success'));

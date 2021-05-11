@@ -1,11 +1,11 @@
 import { Err, fail } from 'lambda-res';
-import { SNSEvent, SNSMessage } from 'aws-lambda';
+import { SNSEvent, SNSMessage, SNSEventRecord } from 'aws-lambda';
 
 import { MiddlewareCreator } from '../types';
 import { addService } from '../utils';
 import { isHaveRecords } from './utils';
 
-export { SNSEvent, SNSMessage };
+export { SNSEvent, SNSMessage, SNSEventRecord };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type EventSnsOptions = {};
@@ -23,7 +23,7 @@ const isHaveSnsProps = (input: unknown): input is { EventSource: string } => {
   );
 };
 
-const isSnsEvent = (event: unknown): event is SNSEvent => {
+const isSnsEvent = (event: unknown): event is SNSEvent & { Records: [SNSEventRecord] } => {
   return (
     isHaveRecords(event) &&
     isHaveSnsProps(event.Records[0]) &&

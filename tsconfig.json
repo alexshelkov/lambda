@@ -12,7 +12,9 @@
     "strict": true,
     "noImplicitAny": true,
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "noErrorTruncation": true,
+    "noUncheckedIndexedAccess": true
   },
   "exclude": [
     "node_modules/**/*",

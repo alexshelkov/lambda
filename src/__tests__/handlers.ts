@@ -57,7 +57,7 @@ describe('custom handlers', () => {
 
     const resTranOk = resFail.onOk(async (_r, { event }) => {
       event.response.issueTokens = true;
-      event.response.challengeName = event.request.session[0]?.challengeName;
+      event.response.challengeName = event.request.session[0]?.challengeName ?? '';
 
       return event;
     });

@@ -23,7 +23,7 @@ const isHaveSqsProps = (input: unknown): input is { eventSource: string } => {
   );
 };
 
-const isSqsEvent = (event: unknown): event is SQSEvent => {
+const isSqsEvent = (event: unknown): event is SQSEvent & { Records: [SQSRecord] } => {
   return (
     isHaveRecords(event) &&
     isHaveSqsProps(event.Records[0]) &&

@@ -7,7 +7,6 @@ export {
   FailureException,
   ErrLevel,
   Errs,
-  Dis,
   ok,
   fail,
   compare,

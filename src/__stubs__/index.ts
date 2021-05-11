@@ -148,8 +148,8 @@ export const createErrorRequest = <Error>(error: Error): RequestError<AwsEvent, 
   };
 };
 
-export const createMdl = (
-  name: string,
+export const createMdl = <T extends string>(
+  name: T,
   steps: string[]
 ): MiddlewareCreator<
   {
@@ -159,7 +159,7 @@ export const createMdl = (
     throwCreator: boolean;
     destroyThrow: boolean;
   },
-  { [k: string]: () => void },
+  { [k in T as `${k}Throws`]: () => void },
   Err
 > => {
   return (options, { throws }) => {
@@ -212,7 +212,7 @@ export const createMdl = (
             throws<Err>(name);
           }
         },
-      });
+      } as { [k in T as `${k}Throws`]: () => void });
     };
   };
 };
