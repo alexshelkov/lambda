@@ -4,16 +4,22 @@ export {
   Result,
   Response,
   Err,
+  ErrInfo,
   FailureException,
   ErrLevel,
   Errs,
   ok,
   fail,
+  err,
   compare,
   isErr,
+  isFailureLike,
+  isOkLike,
   nope,
   toResult,
 } from 'lambda-res';
+
+export { APIGatewayProxyResult } from 'aws-lambda';
 
 export {
   ServiceOptions,
@@ -33,6 +39,7 @@ export {
   AwsEvent,
   AwsHandler,
   SkippedError,
+  NotImplementedError,
   UnhandledError,
   UncaughtError,
   UncaughtErrorTransform,
@@ -46,7 +53,6 @@ export {
   Exception1,
   Transform1,
   TransformError1,
-  APIGatewayProxyResult,
 } from './types';
 
 export { GetReqRes, Creator, creator } from './creator';
@@ -86,7 +92,7 @@ export {
   disconnectHandlerLifecycle,
 } from './utils';
 
-export { lambda, resetFallBackTransform, getFallBackTransform } from './lambda';
+export { lambda, convertToFailure, resetFallBackTransform, getFallBackTransform } from './lambda';
 
 export { route, routeError, Router, RouterError } from './router';
 

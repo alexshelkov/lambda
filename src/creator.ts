@@ -741,10 +741,7 @@ export const success1: Success1 = () => {
   return Promise.resolve(fail('NotImplemented', { order: -1 }));
 };
 
-export const error1: Error1 = (request) => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const { error } = request;
-
+export const error1: Error1 = ({ error }) => {
   if (typeof error === 'object' && error !== null) {
     const type =
       typeof (error as { type: unknown }).type === 'string'

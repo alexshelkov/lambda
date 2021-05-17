@@ -155,6 +155,7 @@ export interface TransformError<
 }
 
 export type SkippedError = Err<'Skipped'>;
+export type NotImplementedError = Err<'NotImplemented'>;
 
 export type UnhandledError = { cause?: string };
 export type UncaughtError = Err<'UncaughtError', UnhandledError>;
@@ -163,9 +164,8 @@ export type UnhandledErrors = UncaughtError | UncaughtErrorTransform;
 
 export type FallBackTransform = (result: Result<unknown, unknown>) => Promise<unknown>;
 
-export type Success1 = Handler<ServiceContainer, never, Err<'NotImplemented'>>;
+export type Success1 = Handler<ServiceContainer, never, NotImplementedError>;
 export type Error1 = HandlerError<unknown, never, Err>;
 export type Exception1 = HandlerException<never, UnhandledErrors>;
-export { APIGatewayProxyResult };
 export type Transform1 = Transform<APIGatewayProxyResult, unknown, unknown>;
 export type TransformError1 = TransformError<APIGatewayProxyResult, unknown, unknown>;
