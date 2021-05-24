@@ -14,7 +14,9 @@ describe('createMdl and createFail mocks', () => {
 
     const res1 = creator(cr1).fail(f1).on(raw);
 
-    expect(await res1.req()(createEvent(), createContext())).toMatchObject({
+    await expect(() => {
+      return res1.req()(createEvent(), createContext());
+    }).rejects.toMatchObject({
       status: 'error',
       error: {
         type: 'NotImplemented',

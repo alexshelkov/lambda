@@ -24,6 +24,10 @@ import {
   GetDepsMdl,
   GetEventMdl,
   Request,
+  Transform,
+  TransformError,
+  Middleware,
+  GetTransformException,
   creator,
   addService,
   raw,
@@ -31,10 +35,6 @@ import {
   resetFallBackTransform,
   createHandlerLifecycle,
   createLifecycle,
-  Transform,
-  TransformError,
-  Middleware,
-  GetTransformException,
 } from '../index';
 
 import { error1 } from '../creator';
@@ -862,7 +862,9 @@ describe('creator types correctness', () => {
 
     delete definedEnvs.env2;
 
-    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+    await expect(() => {
+      return resOk.req()(createEvent(), createContext());
+    }).rejects.toMatchObject({
       status: 'error',
       error: {
         type: 'EnvError',
@@ -1716,20 +1718,22 @@ describe('creator exceptions', () => {
   });
 
   it('handle fatal exception in exception transform', async () => {
-    expect.assertions(2);
-
-    resetFallBackTransform(raw);
+    expect.assertions(4);
 
     const res = creator(creatorTest1)
       .ok(async () => {
         throw new Error('Fatal error');
       })
-      .onOk(raw)
-      .onFail(raw)
-      .onFatal(raw);
+      .on(raw);
 
     const resTrans = res.onFatal(() => {
       throw new Error('Double fatal error');
+    });
+
+    expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 400,
+      body:
+        '{"status":"error","error":{"cause":"Error","type":"UncaughtTransformError","message":"Double fatal error"}}',
     });
 
     const resTrans1 = res.onFatal(() => {
@@ -1737,22 +1741,20 @@ describe('creator exceptions', () => {
       throw { error: true };
     });
 
-    expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
-      status: 'error',
-      error: {
-        type: 'UncaughtTransformError',
-        cause: 'Error',
-        message: 'Double fatal error',
-      },
+    expect(await resTrans1.req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 400,
+      body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtTransformError"}}',
     });
 
-    expect(await resTrans1.req()(createEvent(), createContext())).toMatchObject({
-      status: 'error',
-      error: {
-        type: 'UncaughtTransformError',
-        cause: 'Unknown',
-      },
-    });
+    resetFallBackTransform(raw);
+
+    await expect(() => {
+      return resTrans.req()(createEvent(), createContext());
+    }).rejects.toThrow('Double fatal error');
+
+    await expect(() => {
+      return resTrans1.req()(createEvent(), createContext());
+    }).rejects.toThrow('UncaughtTransformError');
 
     resetFallBackTransform(json);
   });

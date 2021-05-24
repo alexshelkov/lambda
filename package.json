@@ -35,7 +35,7 @@
     "prepublishOnly": "rm -rf dist && npm run build"
   },
   "dependencies": {
-    "lambda-res": "^1.0.4",
+    "lambda-res": "^1.0.5",
     "@types/aws-lambda": "^8.10.72"
   },
   "devDependencies": {

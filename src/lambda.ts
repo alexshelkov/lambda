@@ -261,6 +261,10 @@ export const lambda = <
       await tryDestroyAndNeverThrow();
     }
 
+    if (response instanceof Error) {
+      throw response;
+    }
+
     return response;
   };
 };
