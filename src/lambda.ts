@@ -119,19 +119,17 @@ export const lambda = <
       return transform(result, data, options);
     };
 
-    const isHandleFailureError = (
-      err: unknown
-    ): err is FailureException<MiddlewareFail<ServiceError>> => {
+    const isHandleFailureError = (err: unknown): err is Failure<MiddlewareFail<ServiceError>> => {
       if (!(err instanceof FailureException)) {
         return false;
       }
 
-      const error = err.err() as Failure<ServiceError>;
+      const error = (err as Failure<ServiceError>).err();
 
       return err !== null && typeof err === 'object' && 'gen' in error;
     };
 
-    const handleFailureError = async (err: FailureException<MiddlewareFail<ServiceError>>) => {
+    const handleFailureError = async (err: Failure<MiddlewareFail<ServiceError>>) => {
       const error = err.err();
 
       lifecycle.threw(error.gen);

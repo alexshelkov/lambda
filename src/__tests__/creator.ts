@@ -1,4 +1,4 @@
-import { Err, fail, ok } from 'lambda-res';
+import { Err, fail, ok, err as failErr } from 'lambda-res';
 
 import {
   GetEvent,
@@ -100,7 +100,7 @@ describe('creator base', () => {
     const res = creator(creatorTest2).opt({ op2: '1' });
 
     const resOk = res.ok(async () => {
-      return fail<undefined>(undefined);
+      return failErr(undefined);
     });
 
     expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
