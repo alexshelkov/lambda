@@ -26,7 +26,7 @@ export const json = async (result: Result<unknown, unknown>): Promise<APIGateway
     body = result.data !== undefined ? JSON.stringify(result) : '';
   } else {
     body =
-      result.error !== undefined
+      result.err() !== undefined
         ? JSON.stringify({
             ...result,
             message: undefined,

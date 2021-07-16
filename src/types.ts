@@ -1,4 +1,4 @@
-import { Response, Result, Failure, fail, Err } from 'lambda-res';
+import { Response, Result, fail, Err } from 'lambda-res';
 import { APIGatewayProxyResult } from 'aws-lambda';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -35,7 +35,11 @@ export interface RequestException<Event extends AwsEvent> extends RequestBase<Ev
   exception: unknown;
 }
 
-export type MiddlewareFail<Error> = { type: 'MiddlewareFail'; gen: number; inner: Failure<Error> };
+export type MiddlewareFail<Error> = {
+  type: 'MiddlewareFail';
+  gen: number;
+  inner: Result<never, Error>;
+};
 
 export type MiddlewareCreatorLifecycle = {
   gen: (gen: number) => void;

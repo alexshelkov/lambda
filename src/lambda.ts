@@ -231,9 +231,9 @@ export const lambda = <
       );
 
       if (service.isErr()) {
-        response = await handleServiceError(service.error);
+        response = await handleServiceError(service.err());
       } else {
-        response = await handleHandler(service.data);
+        response = await handleHandler(service.ok());
       }
 
       await tryDestroyAndNeverThrow();

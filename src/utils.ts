@@ -1,4 +1,4 @@
-import { compare, ok, fail, Success, Err, Failure } from 'lambda-res';
+import { compare, ok, fail, Err, Failure, Result } from 'lambda-res';
 
 import {
   Handler,
@@ -178,7 +178,9 @@ export const glue = <
         if (r1.isErr()) {
           r = r1;
         } else {
-          r = await m2<typeof r1.data.service>(r1.data, l2);
+          const data = r1.ok();
+
+          r = await m2<typeof data.service>(data, l2);
         }
 
         return r;
@@ -227,7 +229,9 @@ export const connect = (gen: number) => {
             dec = true;
             r = r1;
           } else {
-            r = await m2<typeof r1.data.service>(r1.data, l2);
+            const data = r1.ok();
+
+            r = await m2<typeof data.service>(data, l2);
           }
 
           if (r.isErr()) {
@@ -467,7 +471,7 @@ export const addService = <
 >(
   request: Request<Event, Service1>,
   addedService: Service2
-): Success<Request<Event, Service1 & Service2>> => {
+): Result<Request<Event, Service1 & Service2>, never> => {
   return ok({
     ...request,
     service: {
