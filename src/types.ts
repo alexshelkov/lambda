@@ -41,19 +41,33 @@ export type MiddlewareFail<Error> = {
   inner: Result<never, Error>;
 };
 
-export type MiddlewareCreatorLifecycle = {
-  gen: (gen: number) => void;
+export interface MiddlewareCreatorLifecycle {
   throws: typeof fail;
-};
+}
 
-export type MiddlewareLifecycle = {
+export interface PrivateMiddlewareCreatorLifecycle extends MiddlewareCreatorLifecycle {
+  gen: (gen: number) => void;
+}
+
+export interface MiddlewareLifecycle {
+  destroy: (cb: () => Promise<void>) => void;
+}
+
+export interface PrivateMiddlewareLifecycle extends MiddlewareLifecycle {
+  finish: () => Promise<void>;
   threw: (threw: number | undefined) => void;
   throws: () => number | undefined;
-  finish: () => Promise<void>;
-  error: (err: number) => void;
   errored: () => number;
-  destroy: (cb: () => Promise<void>) => void;
-};
+  error: (err: number) => void;
+}
+
+export interface HandlerLifecycle {
+  returns: (cb: () => boolean) => void;
+}
+
+export interface PrivateHandlerLifecycle extends HandlerLifecycle {
+  stops: () => boolean;
+}
 
 export interface Middleware<
   Service2 extends ServiceContainer,
@@ -80,11 +94,6 @@ export interface MiddlewareCreator<
     ServiceDeps,
     Event
   >;
-}
-
-export interface HandlerLifecycle {
-  returns: (cb: () => boolean) => void;
-  stops: () => boolean;
 }
 
 export interface Handler<

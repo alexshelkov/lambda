@@ -189,7 +189,6 @@ describe('creator base', () => {
 
     await req(createEvent(), createContext());
     await req(createEvent(), createContext());
-
     await req(createEvent(), createContext());
 
     expect(created).toStrictEqual(1);
@@ -1069,25 +1068,19 @@ describe('creator handlers and transforms', () => {
   });
 
   it('lifecycles called in the right order', async () => {
-    expect.assertions(10);
+    expect.assertions(3);
 
-    let step = 'start';
+    const steps = ['start'];
 
     const m1: MiddlewareCreator<ServiceOptions, { test1: string }, never> = () => {
-      expect(step).toStrictEqual('start');
-
-      step = 'm1 created';
+      steps.push('m1 created');
 
       return async (r, lc) => {
         lc.destroy(async () => {
-          expect(step).toStrictEqual('m2 destroyed');
-
-          step = 'm1 destroyed';
+          steps.push('m1 destroyed');
         });
 
-        expect(step).toStrictEqual('m2 created');
-
-        step = 'm1 request';
+        steps.push('m1 request');
 
         return addService(r, {
           test1: '1',
@@ -1096,20 +1089,14 @@ describe('creator handlers and transforms', () => {
     };
 
     const m2: MiddlewareCreator<ServiceOptions, { test2: string }, never> = () => {
-      expect(step).toStrictEqual('m1 created');
-
-      step = 'm2 created';
+      steps.push('m2 created');
 
       return async (r, lc) => {
         lc.destroy(async () => {
-          expect(step).toStrictEqual('ok1');
-
-          step = 'm2 destroyed';
+          steps.push('m2 destroyed');
         });
 
-        expect(step).toStrictEqual('m1 request');
-
-        step = 'm2 request';
+        steps.push('m2 request');
 
         return addService(r, {
           test2: '2',
@@ -1120,21 +1107,28 @@ describe('creator handlers and transforms', () => {
     const res = creator(m1)
       .srv(m2)
       .ok(async ({ service: { test1, test2 } }) => {
-        expect(step).toStrictEqual('m2 request');
-
-        step = 'ok1';
+        steps.push('ok1');
 
         return ok(`${test1} & ${test2}`);
       });
 
-    expect(step).toStrictEqual('start');
+    expect(steps).toStrictEqual(['start']);
 
     expect(await res.req()(createEvent(), createContext())).toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"1 & 2"}',
     });
 
-    expect(step).toStrictEqual('m1 destroyed');
+    expect(steps).toStrictEqual([
+      'start',
+      'm1 created',
+      'm2 created',
+      'm1 request',
+      'm2 request',
+      'ok1',
+      'm2 destroyed',
+      'm1 destroyed',
+    ]);
   });
 
   it('lifecycles may be called in parallel', async () => {

@@ -4,8 +4,11 @@ import {
   Handler,
   HandlerError,
   HandlerException,
-  MiddlewareCreatorLifecycle,
+  PrivateMiddlewareCreatorLifecycle,
   MiddlewareLifecycle,
+  PrivateMiddlewareLifecycle,
+  HandlerLifecycle,
+  PrivateHandlerLifecycle,
   MiddlewareCreator,
   Request,
   RequestError,
@@ -13,11 +16,10 @@ import {
   ServiceContainer,
   ServiceOptions,
   AwsEvent,
-  HandlerLifecycle,
   MiddlewareFail,
 } from './types';
 
-export const createMiddlewareLifecycle = (): MiddlewareCreatorLifecycle => {
+export const createMiddlewareLifecycle = (): PrivateMiddlewareCreatorLifecycle => {
   let gen = -1;
 
   return {
@@ -31,12 +33,12 @@ export const createMiddlewareLifecycle = (): MiddlewareCreatorLifecycle => {
 };
 
 export const disconnectMiddlewareLifecycle = (
-  _lifecycle: MiddlewareCreatorLifecycle
-): [MiddlewareCreatorLifecycle, MiddlewareCreatorLifecycle] => {
+  _lifecycle: PrivateMiddlewareCreatorLifecycle
+): [PrivateMiddlewareCreatorLifecycle, PrivateMiddlewareCreatorLifecycle] => {
   let g1 = -1;
   let g2 = -1;
 
-  const l1: MiddlewareCreatorLifecycle = {
+  const l1: PrivateMiddlewareCreatorLifecycle = {
     gen(g) {
       g1 = g;
     },
@@ -45,7 +47,7 @@ export const disconnectMiddlewareLifecycle = (
     },
   };
 
-  const l2: MiddlewareCreatorLifecycle = {
+  const l2: PrivateMiddlewareCreatorLifecycle = {
     gen(g) {
       g2 = g;
     },
@@ -57,7 +59,7 @@ export const disconnectMiddlewareLifecycle = (
   return [l1, l2];
 };
 
-export const createLifecycle = (): MiddlewareLifecycle => {
+export const createLifecycle = (): PrivateMiddlewareLifecycle => {
   let threw: number | undefined;
   let error = -1;
   let finish: () => Promise<void> = async () => {};
@@ -88,12 +90,12 @@ export const createLifecycle = (): MiddlewareLifecycle => {
 };
 
 export const disconnectLifecycle = (
-  lifecycle: MiddlewareLifecycle
-): [MiddlewareLifecycle, MiddlewareLifecycle] => {
+  lifecycle: PrivateMiddlewareLifecycle
+): [PrivateMiddlewareLifecycle, PrivateMiddlewareLifecycle] => {
   let f1: () => Promise<void> = async () => {};
   let f2: () => Promise<void> = async () => {};
 
-  const l1: MiddlewareLifecycle = {
+  const l1: PrivateMiddlewareLifecycle = {
     threw(th) {
       lifecycle.threw(th);
     },
@@ -115,7 +117,7 @@ export const disconnectLifecycle = (
     },
   };
 
-  const l2: MiddlewareLifecycle = {
+  const l2: PrivateMiddlewareLifecycle = {
     error(err) {
       lifecycle.error(err);
     },
@@ -163,7 +165,9 @@ export const glue = <
     Event
   > => {
     return (options, middlewareLifecycle) => {
-      const [lm1, lm2] = disconnectMiddlewareLifecycle(middlewareLifecycle);
+      const [lm1, lm2] = disconnectMiddlewareLifecycle(
+        middlewareLifecycle as PrivateMiddlewareCreatorLifecycle
+      );
 
       const m1 = c1(options, lm1);
       const m2 = c2(options, lm2);
@@ -171,7 +175,7 @@ export const glue = <
       return async (request, lifecycle) => {
         let r;
 
-        const [l1, l2] = disconnectLifecycle(lifecycle);
+        const [l1, l2] = disconnectLifecycle(lifecycle as PrivateMiddlewareLifecycle);
 
         const r1 = await m1(request, l1);
 
@@ -208,7 +212,9 @@ export const connect = (gen: number) => {
       Event
     > => {
       return (options, middlewareLifecycle) => {
-        const [lm1, lm2] = disconnectMiddlewareLifecycle(middlewareLifecycle);
+        const [lm1, lm2] = disconnectMiddlewareLifecycle(
+          middlewareLifecycle as PrivateMiddlewareCreatorLifecycle
+        );
 
         lm1.gen(gen - 1);
         lm2.gen(gen);
@@ -219,7 +225,7 @@ export const connect = (gen: number) => {
         return async (request, lifecycle) => {
           let r;
 
-          const [l1, l2] = disconnectLifecycle(lifecycle);
+          const [l1, l2] = disconnectLifecycle(lifecycle as PrivateMiddlewareLifecycle);
 
           const r1 = await m1(request, l1);
 
@@ -235,7 +241,7 @@ export const connect = (gen: number) => {
           }
 
           if (r.isErr()) {
-            lifecycle.error(dec ? gen - 1 : gen);
+            (lifecycle as PrivateMiddlewareLifecycle).error(dec ? gen - 1 : gen);
           }
 
           return r;
@@ -245,7 +251,7 @@ export const connect = (gen: number) => {
   };
 };
 
-export const createHandlerLifecycle = (): HandlerLifecycle => {
+export const createHandlerLifecycle = (): PrivateHandlerLifecycle => {
   let stops: () => boolean = () => {
     return false;
   };
@@ -261,8 +267,8 @@ export const createHandlerLifecycle = (): HandlerLifecycle => {
 };
 
 export const disconnectHandlerLifecycle = (
-  lifecycle: HandlerLifecycle
-): [HandlerLifecycle, HandlerLifecycle] => {
+  lifecycle: PrivateHandlerLifecycle
+): [PrivateHandlerLifecycle, PrivateHandlerLifecycle] => {
   let s1: () => boolean = () => {
     return false;
   };
@@ -270,7 +276,7 @@ export const disconnectHandlerLifecycle = (
     return false;
   };
 
-  const l1: HandlerLifecycle = {
+  const l1: PrivateHandlerLifecycle = {
     ...lifecycle,
     stops() {
       return s1();
@@ -280,7 +286,7 @@ export const disconnectHandlerLifecycle = (
     },
   };
 
-  const l2: HandlerLifecycle = {
+  const l2: PrivateHandlerLifecycle = {
     ...lifecycle,
     stops() {
       return s2();
@@ -314,13 +320,8 @@ export const join = <
   c1: Handler<Service1, Data1, Error1, Event, Options>,
   c2: Handler<Service2, Data2, Error2, Event, Options>
 ): Handler<Service1 & Service2, Data1 | Data2, Error1 | Error2, Event, Options> => {
-  return async (
-    request: Request<Event, Service1 & Service2>,
-    options: Partial<Options>,
-    lifecycleHandler: HandlerLifecycle,
-    lifecycle: MiddlewareLifecycle
-  ) => {
-    const [l1, l2] = disconnectHandlerLifecycle(lifecycleHandler);
+  return async (request, options, lifecycleHandler, lifecycle) => {
+    const [l1, l2] = disconnectHandlerLifecycle(lifecycleHandler as PrivateHandlerLifecycle);
 
     const r1 = await c1(request, options, l1, lifecycle);
 
@@ -362,7 +363,7 @@ export const glueFailure = <
     handlerLifecycle: HandlerLifecycle,
     lifecycle: MiddlewareLifecycle
   ) => {
-    const [l1, l2] = disconnectHandlerLifecycle(handlerLifecycle);
+    const [l1, l2] = disconnectHandlerLifecycle(handlerLifecycle as PrivateHandlerLifecycle);
 
     const r1 = await c1(request as RequestError<Event, ServiceError1>, options, l1, lifecycle);
 
@@ -403,9 +404,11 @@ export const joinFailure = (failGen: number) => {
       request: RequestError<Event, ServiceError1 | ServiceError2>,
       options: Partial<Options>,
       handlerLifecycle: HandlerLifecycle,
-      lifecycle: MiddlewareLifecycle
+      publicLifecycle: MiddlewareLifecycle
     ) => {
-      const [l1, l2] = disconnectHandlerLifecycle(handlerLifecycle);
+      const lifecycle = publicLifecycle as PrivateMiddlewareLifecycle;
+
+      const [l1, l2] = disconnectHandlerLifecycle(handlerLifecycle as PrivateHandlerLifecycle);
 
       const r1 = await c1(request as RequestError<Event, ServiceError1>, options, l1, lifecycle);
 
@@ -450,7 +453,7 @@ export const joinFatal = <
     lifecycleHandler: HandlerLifecycle,
     lifecycle: MiddlewareLifecycle
   ) => {
-    const [l1, l2] = disconnectHandlerLifecycle(lifecycleHandler);
+    const [l1, l2] = disconnectHandlerLifecycle(lifecycleHandler as PrivateHandlerLifecycle);
 
     const r1 = await c1(request, options, l1, lifecycle);
 
