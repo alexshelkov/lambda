@@ -6,20 +6,17 @@ import getTransport, { Transport, TransportService } from './loggerTransport';
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type LoggerOptions = {};
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface Logger {
   save: (meta: Record<string, unknown>) => void;
   meta: () => Record<string, unknown>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   log: (...messages: any[]) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   info: (...messages: any[]) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   error: (...messages: any[]) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   warn: (...messages: any[]) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   debug: (...messages: any[]) => void;
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export type LoggerService = {
   logger: Logger;

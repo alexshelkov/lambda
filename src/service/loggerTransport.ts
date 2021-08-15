@@ -16,28 +16,25 @@ export type TransportService = {
 
 export type TransportErrors = never;
 
+/* eslint-disable no-console */
 export const createTransport = (): Transport => {
   return {
     send(type, data) {
       if (type === 'error') {
-        // eslint-disable-next-line no-console
         console.error(...data);
       } else if (type === 'warn') {
-        // eslint-disable-next-line no-console
         console.warn(...data);
       } else if (type === 'debug') {
-        // eslint-disable-next-line no-console
         console.debug(...data);
       } else if (type === 'info') {
-        // eslint-disable-next-line no-console
         console.info(...data);
       } else {
-        // eslint-disable-next-line no-console
         console.log(...data);
       }
     },
   };
 };
+/* eslint-enable no-console */
 
 let service: Transport;
 

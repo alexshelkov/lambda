@@ -14,7 +14,7 @@ export {
   compare,
   isErr,
   isFailureLike,
-  isOkLike,
+  isSuccessLike,
   nope,
   toResult,
 } from 'lambda-res';
