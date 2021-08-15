@@ -1,4 +1,4 @@
-import { Handler, MiddlewareCreator, Err, ok, fail, nope, creator, addService } from 'lambda-mdl';
+import { Errs, Handler, MiddlewareCreator, ok, fail, nope, creator, addService } from 'lambda-mdl';
 
 type Hello = {
   sayHello: () => string;
@@ -21,21 +21,22 @@ type WorldOpt = {
 type World = {
   sayWorld: () => string;
 };
-type ProblemWithWorld = { type: 'ProblemWithWorld' };
-type ProblemWithYou = { type: 'ProblemWithMe' };
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type ProblemNotChecked = { type: 'ProblemNotChecked' };
-type WorldErrs = ProblemWithWorld | ProblemWithYou; // | ProblemNotChecked;
+type WorldErr = Errs<{
+  name: 'Problem';
+  WithWorld: string;
+  WithMe: string;
+  // ProblemNotChecked: string;
+}>;
 
-const world: MiddlewareCreator<WorldOpt, World, WorldErrs> = (options) => {
+const world: MiddlewareCreator<WorldOpt, World, Errs<WorldErr>> = (options, { throws }) => {
   return async (request) => {
     return addService(request, {
       sayWorld: () => {
         if (options.worldsFault) {
-          throw fail<ProblemWithWorld>('ProblemWithWorld');
+          throws<WorldErr['WithWorld']>('ProblemWithWorld');
         }
         if (options.myFault) {
-          throw fail<ProblemWithYou>('ProblemWithMe');
+          throws<WorldErr['WithMe']>('ProblemWithMe');
         }
         return 'world';
       },
@@ -55,15 +56,17 @@ const handle: Handler<Hello, API, never> = async (request) => {
 
 export const handler = creator(world)
   .srv(hello)
+  .opt({ worldsFault: false, myFault: false })
   .ok(handle)
   .fail(async (request) => {
     if (request.error.type === 'ProblemWithWorld') {
-      return fail<Err>(request.error.type, { message: 'Problem with world' });
+      return fail(request.error.type, { message: 'Problem with world' });
     }
     if (request.error.type === 'ProblemWithMe') {
-      return fail<Err>(request.error.type, { message: 'Problem with me' });
+      return fail(request.error.type, { message: 'Problem with me' });
     }
 
+    // if you uncomment ProblemNotChecked you will see TS error here
     return nope(request.error);
   })
   .req(); // returns lambda handler
