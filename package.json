@@ -1,7 +1,15 @@
 {
   "name": "lambda-mdl",
   "description": "Type-safe middleware for AWS Lambda",
-  "version": "1.0.14",
+  "keywords": [
+    "aws",
+    "serverless",
+    "lambda",
+    "error",
+    "error-handling",
+    "middleware"
+  ],
+  "version": "1.0.15",
   "author": "Alex Shelkovskiy <alexshelkov@gmail.com>",
   "repository": "https://github.com/alexshelkov/lambda",
   "license": "MIT",
@@ -35,7 +43,7 @@
     "prepublishOnly": "rm -rf dist && npm run build"
   },
   "dependencies": {
-    "lambda-res": "^1.0.16",
+    "lambda-res": "^1.0.17",
     "@types/aws-lambda": "^8.10.72"
   },
   "devDependencies": {
