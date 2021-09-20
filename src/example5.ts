@@ -1,4 +1,14 @@
-import { Errs, Handler, MiddlewareCreator, ok, fail, nope, creator, addService } from 'lambda-mdl';
+import {
+  Err,
+  Errs,
+  Handler,
+  MiddlewareCreator,
+  ok,
+  fail,
+  nope,
+  creator,
+  addService,
+} from 'lambda-mdl';
 
 type Hello = {
   sayHello: () => string;
@@ -60,10 +70,10 @@ export const handler = creator(world)
   .ok(handle)
   .fail(async (request) => {
     if (request.error.type === 'ProblemWithWorld') {
-      return fail(request.error.type, { message: 'Problem with world' });
+      return fail<Err>(request.error.type, { message: 'Problem with world' });
     }
     if (request.error.type === 'ProblemWithMe') {
-      return fail(request.error.type, { message: 'Problem with me' });
+      return fail<Err>(request.error.type, { message: 'Problem with me' });
     }
 
     // if you uncomment ProblemNotChecked you will see TS error here
