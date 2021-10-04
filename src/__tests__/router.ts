@@ -39,9 +39,9 @@ const refine = (
 };
 
 const refineError = (
-  request: RequestError<AwsEvent, RouterErrors>
-): RequestError<AwsEvent, E2> | false => {
-  return request.error.type === 'err2' ? (request as RequestError<AwsEvent, E2>) : false;
+  request: RequestError<AwsEvent, TestRouter, RouterErrors>
+): RequestError<AwsEvent, RefinedTestRouter, E2> | false => {
+  return request.error.type === 'err2' ? (request as RequestError<AwsEvent, RefinedTestRouter, E2>) : false;
 };
 
 const routerCreatorTest: MiddlewareCreator<
@@ -160,7 +160,7 @@ describe('router', () => {
       return Promise.resolve(ok(`will be triggered: ${request.service.a.a2 ? 'ok' : 'bad'}`));
     });
 
-    const e2o: HandlerError<E2, string, never, E2> = () => {
+    const e2o: HandlerError<RefinedTestRouter, E2, string, never, E2> = () => {
       return Promise.resolve(ok('will be triggered'));
     };
 

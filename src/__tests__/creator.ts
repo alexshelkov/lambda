@@ -203,7 +203,7 @@ describe('creator base', () => {
       const err1 = await error1(
         {
           error: 1,
-        } as RequestError<AwsEvent, number>,
+        } as RequestError<AwsEvent, ServiceContainer, number>,
         {},
         createHandlerLifecycle(),
         createLifecycle()
@@ -218,7 +218,7 @@ describe('creator base', () => {
       const err1 = await error1(
         {
           error: 'test',
-        } as RequestError<AwsEvent, string>,
+        } as RequestError<AwsEvent, ServiceContainer, string>,
         {},
         createHandlerLifecycle(),
         createLifecycle()
@@ -235,7 +235,7 @@ describe('creator base', () => {
           error: {
             type: (1 as unknown) as string,
           },
-        } as RequestError<AwsEvent, Err>,
+        } as RequestError<AwsEvent, ServiceContainer, Err>,
         {},
         createHandlerLifecycle(),
         createLifecycle()
@@ -470,7 +470,7 @@ describe('creator types correctness', () => {
       return ok('success');
     };
 
-    const e1: HandlerError<ErrorType, string, Err> = async () => {
+    const e1: HandlerError<ServiceType, ErrorType, string, Err> = async () => {
       return fail('error');
     };
 
@@ -543,9 +543,11 @@ describe('creator types correctness', () => {
 
     type InferredError = GetErrorMdl<InferMiddleware> | GetErrorMdl<typeof dep1>;
 
-    const resErr = res.fail(async (_r: RequestError<InferredEvent, InferredError>) => {
-      return ok('error');
-    });
+    const resErr = res.fail(
+      async (_r: RequestError<InferredEvent, InferredService, InferredError>) => {
+        return ok('error');
+      }
+    );
 
     expect(await resErr.req()(createEvent(), createContext())).toMatchObject({
       statusCode: 200,
@@ -578,7 +580,15 @@ describe('creator types correctness', () => {
     const h1: Handler<ServiceType, string, Err, EventType, ServiceOpt> = async () => {
       return ok('success');
     };
-    const e1: HandlerError<ErrorType, string, Err, never, EventType, ServiceOpt> = async () => {
+    const e1: HandlerError<
+      ServiceType,
+      ErrorType,
+      string,
+      Err,
+      never,
+      EventType,
+      ServiceOpt
+    > = async () => {
       return fail('error');
     };
 
@@ -869,6 +879,30 @@ describe('creator types correctness', () => {
         type: 'EnvError',
         name: 'env2',
       },
+    });
+  });
+
+  it('fail handler may have an access to partial service', async () => {
+    expect.assertions(3);
+
+    const f1: GetHandlerError<
+      typeof creatorTest1 | typeof creatorTest4Error,
+      string,
+      never,
+      never,
+      GetService<typeof creatorTest1>
+      > = async ({ service, error }) => {
+      expect(error.type).toStrictEqual('err4');
+      expect(service.test1).toStrictEqual('1');
+
+      return ok(`f1: ${service.test1 || ''}`);
+    };
+
+    const res = creator(creatorTest1).srv(creatorTest4Error).fail(f1);
+
+    expect(await res.req()(createEvent(), createContext())).toMatchObject({
+      statusCode: 200,
+      body: '{"status":"success","data":"f1: 1"}',
     });
   });
 });

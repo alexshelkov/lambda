@@ -9,6 +9,7 @@ import {
   glue,
   glueFailure,
   HandlerError,
+  ServiceContainer,
 } from '../index';
 
 import {
@@ -38,13 +39,16 @@ describe('middleware utils', () => {
   });
 
   it('middleware lifecycle defaults', async () => {
-    expect.assertions(14);
+    expect.assertions(16);
 
     const lc = createLifecycle();
 
     expect(lc.errored()).toStrictEqual(-1);
 
     const [l1, l2] = disconnectLifecycle(lc);
+
+    expect(l1.partial()).toStrictEqual(lc.partial());
+    expect(l2.partial()).toStrictEqual(lc.partial());
 
     expect(l1.errored()).toStrictEqual(-1);
     lc.error(1);
@@ -169,7 +173,7 @@ describe('handlers utils', () => {
 
     expect(resOk).toMatchObject({ status: 'success', data: 2 });
 
-    const errors: HandlerError<string, string | number, never> = glueFailure(
+    const errors: HandlerError<ServiceContainer, string, string | number, never> = glueFailure(
       glueFailure(
         async (_r) => {
           return ok('1');

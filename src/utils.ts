@@ -60,6 +60,7 @@ export const disconnectMiddlewareLifecycle = (
 };
 
 export const createLifecycle = (): PrivateMiddlewareLifecycle => {
+  let srv: ServiceContainer = {};
   let threw: number | undefined;
   let error = -1;
   let finish: () => Promise<void> = async () => {};
@@ -86,6 +87,12 @@ export const createLifecycle = (): PrivateMiddlewareLifecycle => {
     async finish() {
       return finish();
     },
+    service(service) {
+      srv = service;
+    },
+    partial() {
+      return srv;
+    }
   };
 };
 
@@ -115,6 +122,12 @@ export const disconnectLifecycle = (
     async finish() {
       return f1();
     },
+    service(service) {
+      lifecycle.service(service);
+    },
+    partial() {
+      return lifecycle.partial();
+    }
   };
 
   const l2: PrivateMiddlewareLifecycle = {
@@ -137,6 +150,12 @@ export const disconnectLifecycle = (
     async finish() {
       return f2();
     },
+    service(service) {
+      lifecycle.service(service);
+    },
+    partial() {
+      return lifecycle.partial();
+    }
   };
 
   lifecycle.destroy(async () => {
@@ -183,6 +202,8 @@ export const glue = <
           r = r1;
         } else {
           const data = r1.ok();
+
+          l1.service(data.service);
 
           r = await m2<typeof data.service>(data, l2);
         }
@@ -236,6 +257,8 @@ export const connect = (gen: number) => {
             r = r1;
           } else {
             const data = r1.ok();
+
+            l1.service(data.service);
 
             r = await m2<typeof data.service>(data, l2);
           }
@@ -338,6 +361,7 @@ export const join = <
 export const glueFailure = <
   Event extends AwsEvent,
   Options extends ServiceOptions,
+  Service extends ServiceContainer,
   ServiceError1,
   ServiceError2,
   Data1,
@@ -347,9 +371,10 @@ export const glueFailure = <
   HandledError1 = never,
   HandledError2 = never
 >(
-  c1: HandlerError<ServiceError1, Data1, Error1, HandledError1, Event, Options>,
-  c2: HandlerError<ServiceError2, Data2, Error2, HandledError2, Event, Options>
+  c1: HandlerError<Service, ServiceError1, Data1, Error1, HandledError1, Event, Options>,
+  c2: HandlerError<Service, ServiceError2, Data2, Error2, HandledError2, Event, Options>
 ): HandlerError<
+  Service,
   Exclude<ServiceError1 | ServiceError2, HandledError1 | HandledError2>,
   Data1 | Data2,
   Error1 | Error2,
@@ -358,20 +383,20 @@ export const glueFailure = <
   Options
 > => {
   return async (
-    request: RequestError<Event, ServiceError1 | ServiceError2>,
+    request: RequestError<Event, Service, ServiceError1 | ServiceError2>,
     options: Partial<Options>,
     handlerLifecycle: HandlerLifecycle,
     lifecycle: MiddlewareLifecycle
   ) => {
     const [l1, l2] = disconnectHandlerLifecycle(handlerLifecycle as PrivateHandlerLifecycle);
 
-    const r1 = await c1(request as RequestError<Event, ServiceError1>, options, l1, lifecycle);
+    const r1 = await c1(request as RequestError<Event, Service, ServiceError1>, options, l1, lifecycle);
 
     if (l1.stops()) {
       return r1;
     }
 
-    const r2 = await c2(request as RequestError<Event, ServiceError2>, options, l2, lifecycle);
+    const r2 = await c2(request as RequestError<Event, Service, ServiceError2>, options, l2, lifecycle);
 
     return compare(r1, r2);
   };
@@ -381,6 +406,7 @@ export const joinFailure = (failGen: number) => {
   return <
     Event extends AwsEvent,
     Options extends ServiceOptions,
+    Service extends ServiceContainer,
     ServiceError1,
     ServiceError2,
     Data1,
@@ -390,9 +416,10 @@ export const joinFailure = (failGen: number) => {
     HandledError1 = never,
     HandledError2 = never
   >(
-    c1: HandlerError<ServiceError1, Data1, Error1, HandledError1, Event, Options>,
-    c2: HandlerError<ServiceError2, Data2, Error2, HandledError2, Event, Options>
+    c1: HandlerError<Service, ServiceError1, Data1, Error1, HandledError1, Event, Options>,
+    c2: HandlerError<Service, ServiceError2, Data2, Error2, HandledError2, Event, Options>
   ): HandlerError<
+    Service,
     Exclude<ServiceError1 | ServiceError2, HandledError1 | HandledError2>,
     Data1 | Data2,
     Error1 | Error2,
@@ -401,7 +428,7 @@ export const joinFailure = (failGen: number) => {
     Options
   > => {
     return async (
-      request: RequestError<Event, ServiceError1 | ServiceError2>,
+      request: RequestError<Event, Service, ServiceError1 | ServiceError2>,
       options: Partial<Options>,
       handlerLifecycle: HandlerLifecycle,
       publicLifecycle: MiddlewareLifecycle
@@ -410,7 +437,7 @@ export const joinFailure = (failGen: number) => {
 
       const [l1, l2] = disconnectHandlerLifecycle(handlerLifecycle as PrivateHandlerLifecycle);
 
-      const r1 = await c1(request as RequestError<Event, ServiceError1>, options, l1, lifecycle);
+      const r1 = await c1(request as RequestError<Event, Service, ServiceError1>, options, l1, lifecycle);
 
       if (l1.stops()) {
         return r1;
@@ -426,7 +453,7 @@ export const joinFailure = (failGen: number) => {
       }
 
       if (failGen >= gen) {
-        r2 = await c2(request as RequestError<Event, ServiceError2>, options, l2, lifecycle);
+        r2 = await c2(request as RequestError<Event, Service, ServiceError2>, options, l2, lifecycle);
       } else {
         r2 = (fail<Err>('Skipped', { skip: true }) as unknown) as Failure<Error2>;
       }

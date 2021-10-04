@@ -27,7 +27,8 @@ export interface Request<Event extends AwsEvent, Service extends ServiceContaine
   service: Service;
 }
 
-export interface RequestError<Event extends AwsEvent, ServiceError> extends RequestBase<Event> {
+export interface RequestError<Event extends AwsEvent, Service extends ServiceContainer, ServiceError> extends RequestBase<Event> {
+  service: Partial<Service>;
   error: ServiceError;
 }
 
@@ -59,6 +60,8 @@ export interface PrivateMiddlewareLifecycle extends MiddlewareLifecycle {
   throws: () => number | undefined;
   errored: () => number;
   error: (err: number) => void;
+  service: (service: ServiceContainer) => void;
+  partial: () => ServiceContainer;
 }
 
 export interface HandlerLifecycle {
@@ -112,6 +115,7 @@ export interface Handler<
 }
 
 export interface HandlerError<
+  Service extends ServiceContainer,
   ServiceError,
   Data,
   Error,
@@ -121,7 +125,7 @@ export interface HandlerError<
   Options extends ServiceOptions = ServiceOptions
 > {
   (
-    request: RequestError<Event, ServiceError>,
+    request: RequestError<Event, Service, ServiceError>,
     options: Partial<Options>,
     handlerLifecycle: HandlerLifecycle,
     lifecycle: MiddlewareLifecycle
@@ -167,6 +171,8 @@ export interface TransformError<
   (response: Result<Data, Error>, event: Event, options: Partial<Options>): Promise<Res>;
 }
 
+export type GetReqRes<R1, R2> = R2 extends undefined ? R1 : R2;
+
 export type SkippedError = Err<'Skipped'>;
 export type NotImplementedError = Err<'NotImplemented'>;
 
@@ -178,7 +184,8 @@ export type UnhandledErrors = UncaughtError | UncaughtErrorTransform;
 export type FallBackTransform = (result: Result<unknown, unknown>) => Promise<unknown>;
 
 export type Success1 = Handler<ServiceContainer, never, NotImplementedError>;
-export type Error1 = HandlerError<unknown, never, Err>;
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type Error1 = HandlerError<{}, unknown, never, Err>;
 export type Exception1 = HandlerException<never, UnhandledErrors>;
 export type Transform1 = Transform<APIGatewayProxyResult, unknown, unknown>;
 export type TransformError1 = TransformError<APIGatewayProxyResult, unknown, unknown>;

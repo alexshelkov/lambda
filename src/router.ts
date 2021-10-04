@@ -23,11 +23,13 @@ export interface Router<
 export interface RouterError<
   Event extends AwsEvent,
   Options extends ServiceOptions,
+  Service extends ServiceContainer,
   ServiceError,
-  Routed
+  RoutedService extends ServiceContainer,
+  RoutedError
 > {
-  (request: RequestError<Event, ServiceError>, options: Partial<Options>):
-    | RequestError<Event, Routed>
+  (request: RequestError<Event, Service, ServiceError>, options: Partial<Options>):
+    | RequestError<Event, RoutedService, RoutedError>
     | false;
 }
 
@@ -57,14 +59,16 @@ export const route = <
 export const routeError = <
   Event extends AwsEvent,
   Options extends ServiceOptions,
+  Service extends ServiceContainer,
   ServiceError,
-  Routed
+  RoutedService extends ServiceContainer,
+  RoutedError
 >(
-  router: RouterError<Event, Options, ServiceError, Routed>
+  router: RouterError<Event, Options, Service, ServiceError, RoutedService, RoutedError>
 ) => {
   return <Data, Error, HandledError = never>(
-    handler: HandlerError<Routed, Data, Error, HandledError, Event, Options>
-  ): HandlerError<ServiceError, Data, SkippedError | Error, HandledError, Event, Options> => {
+    handler: HandlerError<RoutedService, RoutedError, Data, Error, HandledError, Event, Options>
+  ): HandlerError<Service, ServiceError, Data, SkippedError | Error, HandledError, Event, Options> => {
     return async (request, options, handlerLifecycle, lifecycle) => {
       const routedRequest = router(request, options);
 

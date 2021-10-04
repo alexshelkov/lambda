@@ -16,6 +16,7 @@ import {
   Exception1,
   Transform1,
   TransformError1,
+  GetReqRes
 } from './types';
 
 import { join, joinFailure, joinFatal, connect } from './utils';
@@ -23,8 +24,6 @@ import { join, joinFailure, joinFatal, connect } from './utils';
 import { lambda, convertToFailure } from './lambda';
 
 import { json } from './transform';
-
-export type GetReqRes<R1, R2> = R2 extends undefined ? R1 : R2;
 
 export interface Creator<
   Event extends AwsEvent,
@@ -138,7 +137,7 @@ export interface Creator<
   >;
 
   fail: <FailureData2, FailureError2, HandledError2 = never>(
-    error: HandlerError<ServiceError1, FailureData2, FailureError2, HandledError2, Event, Options1>
+    error: HandlerError<Service1, ServiceError1, FailureData2, FailureError2, HandledError2, Event, Options1>
   ) => Creator<
     Event,
     ResOk1,
@@ -371,7 +370,7 @@ export const creatorHelper = <
   creator1: MiddlewareCreator<Options1, Service1, ServiceError1, ServiceContainer, Event>,
   options1: Options1,
   success1: Handler<Service1, Data1, Error1, Event, Options1>,
-  error1: HandlerError<ServiceError1, FailureData1, FailureError1, never, Event, Options1>,
+  error1: HandlerError<Service1, ServiceError1, FailureData1, FailureError1, never, Event, Options1>,
   exception1: HandlerException<ExceptionData1, ExceptionError1, Event, Options1>,
   transform1: Transform<ResOk1, unknown, unknown, Event, Options1, Service1>,
   transformRes1: Transform<ResOkRes1, Data1, Error1, Event, Options1, Service1> | undefined,
@@ -414,6 +413,7 @@ export const creatorHelper = <
         options1 as Options1 & Options2,
         success1,
         error1 as HandlerError<
+          Service1,
           ServiceError1 | ServiceError2,
           FailureData1,
           FailureError1,
@@ -504,6 +504,7 @@ export const creatorHelper = <
 
     fail: <FailureData2, FailureError2, HandledError2 = never>(
       error2: HandlerError<
+        Service1,
         ServiceError1,
         FailureData2,
         FailureError2,

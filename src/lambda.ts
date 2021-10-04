@@ -70,7 +70,7 @@ export const lambda = <
   options: Options,
   creator: MiddlewareCreator<Options, Service, ServiceError, ServiceContainer, Event>,
   exception: HandlerException<ExceptionData, ExceptionError, Event, Options>,
-  failure: HandlerError<ServiceError, FailureData, FailureError, HandledError, Event, Options>,
+  failure: HandlerError<Service, ServiceError, FailureData, FailureError, HandledError, Event, Options>,
   success: Handler<Service, Data, Error, Event, Options>,
   transform: Transform<ResOk, Data, Error, Event, Options, Service>,
   transformError: TransformError<ResErr, FailureData, FailureError, Event, Options>,
@@ -102,6 +102,7 @@ export const lambda = <
           event,
           context,
           error: err,
+          service: lifecycle.partial()
         },
         options,
         handlerLifecycle,
@@ -141,6 +142,7 @@ export const lambda = <
           event,
           context,
           error: error.inner.err(),
+          service: lifecycle.partial()
         },
         options,
         handlerLifecycle,
