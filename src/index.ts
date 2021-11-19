@@ -8,6 +8,9 @@ export {
   FailureException,
   ErrLevel,
   Errs,
+  OkFn,
+  FailFn,
+  ThrowFailFn,
   ok,
   fail,
   err,
@@ -53,9 +56,10 @@ export {
   Exception1,
   Transform1,
   TransformError1,
+  GetReqRes,
 } from './types';
 
-export { GetReqRes, Creator, creator } from './creator';
+export { Creator, creator } from './creator';
 
 export {
   GetOpt,
@@ -76,7 +80,7 @@ export {
   GetEventMdl,
 } from './infer';
 
-export { json, raw, none } from './transform';
+export { json, raw, safe, none } from './transform';
 
 export {
   join,

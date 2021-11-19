@@ -35,6 +35,8 @@ import {
   resetFallBackTransform,
   createHandlerLifecycle,
   createLifecycle,
+  empty,
+  safe,
 } from '../index';
 
 import { error1 } from '../creator';
@@ -47,6 +49,7 @@ import {
   createEvent,
   createContext,
   TestError,
+  reset,
 } from '../__stubs__';
 
 /* eslint-disable @typescript-eslint/require-await */
@@ -54,18 +57,6 @@ import {
 describe('creator base', () => {
   it('empty service', async () => {
     expect.assertions(1);
-
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    type EmptyOptions = {};
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    type EmptyService = {};
-    type EmptyErrors = Err;
-
-    const empty: MiddlewareCreator<EmptyOptions, EmptyService, EmptyErrors> = () => {
-      return async (request) => {
-        return ok(request);
-      };
-    };
 
     const res = creator(empty);
 
@@ -891,7 +882,7 @@ describe('creator types correctness', () => {
       never,
       never,
       GetService<typeof creatorTest1>
-      > = async ({ service, error }) => {
+    > = async ({ service, error }) => {
       expect(error.type).toStrictEqual('err4');
       expect(service.test1).toStrictEqual('1');
 
@@ -1311,7 +1302,7 @@ describe('creator handlers and transforms', () => {
       });
     });
 
-    it('callback fail', async () => {
+    it('ok fail', async () => {
       expect.assertions(2);
 
       const res = creator(creatorTest1).opt({ op1: '1' });
@@ -1472,37 +1463,43 @@ describe('creator exceptions', () => {
     type CreationError = Err<'CreationError'>;
     type RequestError = Err<'RequestError'>;
     type ExceptionCreatorErrors = CreationError | RequestError;
+    type ExceptionCreatorOptions = {
+      throwError?: 'CreatingError' | 'RequestError';
+      errorType?: 'ThrowFail' | 'UnhandledException' | 'PlainObject';
+    };
+    type ExceptionCreatorService = { throwError: () => void };
 
     const exceptionCreator: MiddlewareCreator<
-      { throwCreatorError?: number },
-      { error: () => void },
+      ExceptionCreatorOptions,
+      ExceptionCreatorService,
       ExceptionCreatorErrors
     > = (options, lc) => {
-      if (options.throwCreatorError === -1) {
-        throw fail<CreationError>('CreationError');
-      } else if (options.throwCreatorError === 1) {
-        lc.throws<CreationError>('CreationError');
-      } else if (options.throwCreatorError === 2) {
-        throw new Error('Unhandled exception in creator');
-      } else if (options.throwCreatorError === 3) {
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
-        throw { error: true };
+      if (options.throwError === 'CreatingError') {
+        if (options.errorType === 'ThrowFail') {
+          throw fail<Err>('ThrowFail', { message: 'ThrowFail message' });
+        } else if (options.errorType === 'UnhandledException') {
+          throw new Error('Unhandled exception in creator');
+        } else if (options.errorType === 'PlainObject') {
+          // eslint-disable-next-line @typescript-eslint/no-throw-literal
+          throw { error: true };
+        } else {
+          lc.throws<CreationError>('CreationError');
+        }
       }
 
-      return async (r) => {
-        if (options.throwCreatorError === -2) {
-          throw fail<RequestError>('RequestError');
-        } else if (options.throwCreatorError === 4) {
-          lc.throws<RequestError>('RequestError');
+      return async (request) => {
+        if (options.throwError === 'RequestError') {
+          if (options.errorType === 'ThrowFail') {
+            throw fail<Err>('RequestThrowFail', { message: 'RequestThrowFail message' });
+          } else {
+            lc.throws<RequestError>('RequestError');
+          }
         }
 
-        return ok({
-          ...r,
-          service: {
-            ...r.service,
-            error: () => {
-              throw new Error('Unhandled exception in middleware');
-            },
+        return addService(request, {
+          throwError: () => {
+            // if ()
+            throw new Error('Unhandled exception in middleware');
           },
         });
       };
@@ -1511,7 +1508,7 @@ describe('creator exceptions', () => {
     it('default handler', async () => {
       expect.assertions(1);
 
-      const res2 = creator(creatorTest1);
+      const res2 = creator(creatorTest1).on(safe);
 
       const res2Ok = res2.ok(async () => {
         if (Math.random() !== -1) {
@@ -1522,16 +1519,16 @@ describe('creator exceptions', () => {
       });
 
       expect(await res2Ok.req()(createEvent(), createContext())).toMatchObject({
-        statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Test error"}}',
+        status: 'error',
+        name: 'FailureException',
+        error: { cause: 'Error', type: 'UncaughtError', message: 'Test error' },
       });
     });
 
     it('raw object error', async () => {
       expect.assertions(1);
 
-      const res = creator(creatorTest1);
+      const res = creator(creatorTest1).on(safe);
 
       const resOk = res.ok(async () => {
         if (Math.random() !== -1) {
@@ -1543,18 +1540,19 @@ describe('creator exceptions', () => {
       });
 
       expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
-        statusCode: 400,
-        body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
+        status: 'error',
+        name: 'FailureException',
+        error: { cause: 'Unknown', type: 'UncaughtError' },
       });
     });
 
-    it('exception in middleware', async () => {
+    it('exception in service method', async () => {
       expect.assertions(2);
 
-      const res = creator(exceptionCreator);
+      const res = creator(exceptionCreator).on(safe);
 
-      const resOk = res.ok(async ({ service: { error } }) => {
-        error();
+      const resOk = res.ok(async ({ service }) => {
+        service.throwError();
 
         return ok(true);
       });
@@ -1568,81 +1566,102 @@ describe('creator exceptions', () => {
       });
 
       expect(await resExc.req()(createEvent(), createContext())).toMatchObject({
-        statusCode: 200,
-        body: '{"status":"success","data":true}',
+        status: 'success',
+        data: true,
       });
     });
 
     it('exception in creator', async () => {
       expect.assertions(5);
 
-      const res = creator(exceptionCreator);
+      const res = creator(exceptionCreator).on(safe);
 
       expect(
-        await res.opt({ throwCreatorError: -1 }).req()(createEvent(), createContext())
+        await res.opt({ throwError: 'CreatingError', errorType: 'ThrowFail' }).req()(
+          createEvent(),
+          createContext()
+        )
       ).toMatchObject({
-        statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"FailureException","type":"UncaughtError","message":"CreationError"}}',
+        status: 'error',
+        name: 'FailureException',
+        error: { cause: 'ThrowFail', type: 'UncaughtError', message: 'ThrowFail message' },
       });
 
       expect(
-        await res.opt({ throwCreatorError: 1 }).req()(createEvent(), createContext())
+        await res.opt({ throwError: 'CreatingError' }).req()(createEvent(), createContext())
       ).toMatchObject({
-        statusCode: 400,
-        body: '{"status":"error","error":{"type":"CreationError"}}',
+        status: 'error',
+        name: 'FailureException',
+        error: { type: 'CreationError' },
       });
 
       expect(
         await res
-          .opt({ throwCreatorError: 1 })
+          .opt({ throwError: 'CreatingError' })
           .fail(async () => {
             throw new Error('Double error');
           })
           .req()(createEvent(), createContext())
       ).toMatchObject({
-        statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Double error"}}',
+        status: 'error',
+        name: 'FailureException',
+        error: { cause: 'Error', type: 'UncaughtError', message: 'Double error' },
       });
 
       expect(
-        await res.opt({ throwCreatorError: 2 }).req()(createEvent(), createContext())
+        await res.opt({ throwError: 'CreatingError', errorType: 'UnhandledException' }).req()(
+          createEvent(),
+          createContext()
+        )
       ).toMatchObject({
-        statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Unhandled exception in creator"}}',
+        status: 'error',
+        name: 'FailureException',
+        error: { cause: 'Error', type: 'UncaughtError', message: 'Unhandled exception in creator' },
       });
 
       expect(
-        await res.opt({ throwCreatorError: 3 }).req()(createEvent(), createContext())
+        await res.opt({ throwError: 'CreatingError', errorType: 'PlainObject' }).req()(
+          createEvent(),
+          createContext()
+        )
       ).toMatchObject({
-        statusCode: 400,
-        body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
+        status: 'error',
+        name: 'FailureException',
+        error: { cause: 'Unknown', type: 'UncaughtError' },
       });
     });
 
-    it('failure exception in middleware', async () => {
-      expect.assertions(3);
+    it('fail in creator request', async () => {
+      expect.assertions(5);
 
-      const res = creator(exceptionCreator);
+      const res = creator(exceptionCreator).on(safe);
 
       expect(
-        await res.opt({ throwCreatorError: 4 }).req()(createEvent(), createContext())
+        await res.opt({ throwError: 'RequestError' }).req()(createEvent(), createContext())
       ).toMatchObject({
-        statusCode: 400,
-        body: '{"status":"error","error":{"type":"RequestError"}}',
+        status: 'error',
+        name: 'FailureException',
+        error: { type: 'RequestError' },
       });
 
       expect(
-        await res.opt({ throwCreatorError: -2 }).req()(createEvent(), createContext())
+        await res.opt({ throwError: 'RequestError', errorType: 'ThrowFail' }).req()(
+          createEvent(),
+          createContext()
+        )
       ).toMatchObject({
-        statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"FailureException","type":"UncaughtError","message":"RequestError"}}',
+        status: 'error',
+        name: 'FailureException',
+        error: {
+          cause: 'RequestThrowFail',
+          type: 'UncaughtError',
+          message: 'RequestThrowFail message',
+        },
       });
 
       const res1 = res.fail(async () => {
+        expect(true).toStrictEqual(true); // called only once
+
         if (Math.random() > -1) {
           throw new Error('Unhandled double error');
         }
@@ -1650,18 +1669,34 @@ describe('creator exceptions', () => {
       });
 
       expect(
-        await res1.opt({ throwCreatorError: 4 }).req()(createEvent(), createContext())
+        await res1.opt({ throwError: 'RequestError' }).req()(createEvent(), createContext())
       ).toMatchObject({
-        statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Unhandled double error"}}',
+        status: 'error',
+        name: 'FailureException',
+        error: { cause: 'Error', type: 'UncaughtError', message: 'Unhandled double error' },
+      });
+
+      // failure handler not called in this case
+      expect(
+        await res1.opt({ throwError: 'RequestError', errorType: 'ThrowFail' }).req()(
+          createEvent(),
+          createContext()
+        )
+      ).toMatchObject({
+        status: 'error',
+        name: 'FailureException',
+        error: {
+          cause: 'RequestThrowFail',
+          type: 'UncaughtError',
+          message: 'RequestThrowFail message',
+        },
       });
     });
 
-    it('exception in callback', async () => {
+    it('exception in ok handler', async () => {
       expect.assertions(4);
 
-      const res1 = creator(creatorTest1);
+      const res1 = creator(creatorTest1).on(safe);
 
       const res1Ok = res1.ok(async () => {
         if (Math.random() > -1) {
@@ -1679,8 +1714,8 @@ describe('creator exceptions', () => {
       });
 
       expect(await res1Exc.req()(createEvent(), createContext())).toMatchObject({
-        statusCode: 200,
-        body: '{"status":"success","data":false}',
+        status: 'success',
+        data: false,
       });
 
       const res2Ok = res1.ok(async () => {
@@ -1697,15 +1732,15 @@ describe('creator exceptions', () => {
       });
 
       expect(await res2Exc.req()(createEvent(), createContext())).toMatchObject({
-        statusCode: 200,
-        body: '{"status":"success","data":false}',
+        status: 'success',
+        data: false,
       });
     });
 
     it('exception in fatal handler', async () => {
       expect.assertions(2);
 
-      const res = creator(creatorTest1);
+      const res = creator(creatorTest1).on(safe);
 
       const resOk = res.ok(async () => {
         if (Math.random() !== -1) {
@@ -1733,61 +1768,80 @@ describe('creator exceptions', () => {
       });
 
       expect(await resExc.req()(createEvent(), createContext())).toMatchObject({
-        statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Unhandled exception in callback"}}',
+        status: 'error',
+        error: {
+          cause: 'Error',
+          type: 'UncaughtError',
+          message: 'Unhandled exception in callback',
+        },
       });
 
       expect(await resExc1.req()(createEvent(), createContext())).toMatchObject({
-        statusCode: 400,
-        body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
+        status: 'error',
+        error: { cause: 'Unknown', type: 'UncaughtError' },
       });
     });
   });
 
-  it('handle fatal exception in exception transform', async () => {
-    expect.assertions(4);
+  describe('transform exceptions', () => {
+    it('handle fatal exception in exception transform', async () => {
+      expect.assertions(6);
 
-    const res = creator(creatorTest1)
-      .ok(async () => {
-        throw new Error('Fatal error');
-      })
-      .on(raw);
+      const res = creator(creatorTest1)
+        .ok(async () => {
+          throw new Error('Fatal error');
+        })
+        .on(safe);
 
-    const resTrans = res.onFatal(() => {
-      throw new Error('Double fatal error');
+      const resTrans = res.onFatal(() => {
+        throw new Error('Double fatal error');
+      });
+
+      expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body:
+          '{"status":"error","error":{"cause":"Error","type":"UncaughtTransformError","message":"Double fatal error"}}',
+      });
+
+      const resTrans1 = res.onFatal(() => {
+        // eslint-disable-next-line @typescript-eslint/no-throw-literal
+        throw { error: true };
+      });
+
+      expect(await resTrans1.req()(createEvent(), createContext())).toMatchObject({
+        statusCode: 400,
+        body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtTransformError"}}',
+      });
+
+      resetFallBackTransform(safe);
+
+      expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
+        status: 'error',
+        name: 'FailureException',
+        error: { cause: 'Error', type: 'UncaughtTransformError', message: 'Double fatal error' },
+      });
+
+      expect(await resTrans1.req()(createEvent(), createContext())).toMatchObject({
+        status: 'error',
+        name: 'FailureException',
+        error: { cause: 'Unknown', type: 'UncaughtTransformError' },
+      });
+
+      resetFallBackTransform(raw);
+
+      await expect(() => {
+        return resTrans.req()(createEvent(), createContext());
+      }).rejects.toThrow('Double fatal error');
+
+      await expect(() => {
+        return resTrans1.req()(createEvent(), createContext());
+      }).rejects.toThrow('UncaughtTransformError');
+
+      resetFallBackTransform(json);
     });
-
-    expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body:
-        '{"status":"error","error":{"cause":"Error","type":"UncaughtTransformError","message":"Double fatal error"}}',
-    });
-
-    const resTrans1 = res.onFatal(() => {
-      // eslint-disable-next-line @typescript-eslint/no-throw-literal
-      throw { error: true };
-    });
-
-    expect(await resTrans1.req()(createEvent(), createContext())).toMatchObject({
-      statusCode: 400,
-      body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtTransformError"}}',
-    });
-
-    resetFallBackTransform(raw);
-
-    await expect(() => {
-      return resTrans.req()(createEvent(), createContext());
-    }).rejects.toThrow('Double fatal error');
-
-    await expect(() => {
-      return resTrans1.req()(createEvent(), createContext());
-    }).rejects.toThrow('UncaughtTransformError');
-
-    resetFallBackTransform(json);
   });
 
-  describe('handle failure and exceptions in lifecycle', () => {
+  describe('failure and exceptions in lifecycle', () => {
     type DestroyError = Err<'ImpossibleToDestroy'>;
     type CreateError = Err<'ImpossibleToCreate'>;
     type MiddlewareErrors = DestroyError | CreateError;
@@ -1910,7 +1964,7 @@ describe('creator exceptions', () => {
     });
   });
 
-  describe('handle exceptions in returns lifecycle handlers', () => {
+  describe('exceptions in returns lifecycle handlers', () => {
     it('fatal error', async () => {
       expect.assertions(3);
 
@@ -1948,6 +2002,173 @@ describe('creator exceptions', () => {
 
       expect(okCalls).toStrictEqual(2);
       expect(failsCalls).toStrictEqual(0);
+    });
+  });
+
+  describe('exceptions in partial service', () => {
+    const steps: string[] = [];
+
+    const cr1: MiddlewareCreator<
+      { destroyed: boolean },
+      { throwError: () => void },
+      Err<'throwError'>
+    > = (options, { throws }) => {
+      return async (request, { destroy }) => {
+        if (options.destroyed) {
+          destroy(async () => {
+            steps.push(`cr1 destroy`);
+          });
+        }
+
+        steps.push('cr1 req');
+
+        return addService(request, {
+          throwError: () => {
+            steps.push(`cr1 throwError`);
+            throws<Err<'throwError'>>('throwError');
+          },
+        });
+      };
+    };
+
+    const cr2: MiddlewareCreator<{ destroyed: boolean }, ServiceContainer, Err<'Cr2Err'>> = (
+      options
+    ) => {
+      return async (_, { destroy }) => {
+        if (options.destroyed) {
+          destroy(async () => {
+            steps.push(`cr2 destroy`);
+          });
+        }
+
+        steps.push('cr2 req');
+        steps.push('cr2 fail');
+
+        return fail<Err<'Cr2Err'>>('Cr2Err');
+      };
+    };
+
+    describe('partial service throws error when called in fail', () => {
+      it('single error', async () => {
+        expect.assertions(3);
+
+        reset(steps);
+        expect(steps).toStrictEqual([]);
+
+        const f1: GetHandlerError<
+          typeof cr1 | typeof cr2,
+          string,
+          never,
+          never,
+          GetService<typeof cr1>
+        > = async ({ service, error }) => {
+          steps.push(`f1 ${error.type}`);
+
+          if (service.throwError && error.type !== 'throwError') {
+            service.throwError();
+          }
+
+          return ok(`f1`);
+        };
+
+        const res = creator(cr1).srv(cr2).fail(f1).on(safe);
+
+        expect(await res.req()(createEvent(), createContext())).toMatchObject({
+          status: 'success',
+          data: 'f1',
+        });
+
+        expect(steps).toStrictEqual([
+          'cr1 req',
+          'cr2 req',
+          'cr2 fail',
+          'f1 Cr2Err',
+          'cr1 throwError',
+          'f1 throwError',
+        ]);
+      });
+
+      it('double error', async () => {
+        expect.assertions(3);
+
+        reset(steps);
+        expect(steps).toStrictEqual([]);
+
+        const f2: GetHandlerError<
+          typeof cr1 | typeof cr2,
+          string,
+          never,
+          never,
+          GetService<typeof cr1>
+        > = async ({ service, error }) => {
+          steps.push(`f1 ${error.type}`);
+
+          if (service.throwError) {
+            service.throwError();
+          }
+
+          return ok(`f1`);
+        };
+
+        const res2 = creator(cr1).srv(cr2).fail(f2).on(safe);
+
+        expect(await res2.req()(createEvent(), createContext())).toMatchObject({
+          status: 'error',
+          name: 'FailureException',
+          error: { cause: 'MiddlewareFail: throwError', type: 'UncaughtError' },
+        });
+
+        expect(steps).toStrictEqual([
+          'cr1 req',
+          'cr2 req',
+          'cr2 fail',
+          'f1 Cr2Err',
+          'cr1 throwError',
+          'f1 throwError',
+          'cr1 throwError',
+        ]);
+      });
+    });
+
+    it('partial and lifetimes', async () => {
+      expect.assertions(3);
+
+      reset(steps);
+      expect(steps).toStrictEqual([]);
+
+      const f1: GetHandlerError<
+        typeof cr1 | typeof cr2,
+        string,
+        never,
+        never,
+        GetService<typeof cr1>
+      > = async ({ service, error }) => {
+        steps.push(`f1 ${error.type}`);
+
+        if (service.throwError && error.type !== 'throwError') {
+          service.throwError();
+        }
+
+        return ok(`f1`);
+      };
+
+      const res1 = creator(cr1).srv(cr2).opt({ destroyed: true }).fail(f1).on(raw);
+
+      expect(await res1.req()(createEvent(), createContext())).toMatchObject({
+        status: 'success',
+        data: 'f1',
+      });
+
+      expect(steps).toStrictEqual([
+        'cr1 req',
+        'cr2 req',
+        'cr2 fail',
+        'f1 Cr2Err',
+        'cr1 throwError',
+        'f1 throwError',
+        'cr2 destroy',
+        'cr1 destroy',
+      ]);
     });
   });
 });

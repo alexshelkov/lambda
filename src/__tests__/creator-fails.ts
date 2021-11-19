@@ -310,7 +310,7 @@ describe('fails error handlers not called if registered earlier than services', 
   });
 });
 
-describe('works with errors', () => {
+describe('works with fails', () => {
   it('works with service errors', async () => {
     expect.assertions(4);
 
@@ -325,14 +325,7 @@ describe('works with errors', () => {
       return ok('success');
     };
 
-    const res1 = creator(cr1)
-      .fail(f1)
-      .srv(cr2)
-      .fail(f2)
-      .ok(error)
-      .onOk(raw)
-      .onFail(raw)
-      .onFatal(raw);
+    const res1 = creator(cr1).fail(f1).srv(cr2).fail(f2).ok(error).on(raw);
 
     expect(
       await res1.opt({ throwError: 'cr1', throwService: true }).req()(

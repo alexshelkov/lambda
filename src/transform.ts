@@ -47,6 +47,17 @@ export const json = async (result: Result<unknown, unknown>): Promise<APIGateway
   };
 };
 
+export const safe = async <Res extends Result<unknown, unknown> = Result<unknown, unknown>>(
+  result: Res
+  // eslint-disable-next-line @typescript-eslint/require-await
+): Promise<Res> => {
+  if (result instanceof Error) {
+    Object.setPrototypeOf(result, {});
+  }
+
+  return result;
+};
+
 export const raw = async <Res extends Result<unknown, unknown> = Result<unknown, unknown>>(
   result: Res
   // eslint-disable-next-line @typescript-eslint/require-await

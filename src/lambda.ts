@@ -1,4 +1,4 @@
-import { fail, Failure, FailureException } from 'lambda-res';
+import { Failure, FailureException, fail, isFailureLike, isErr } from 'lambda-res';
 import {
   AwsEvent,
   AwsHandler,
@@ -26,7 +26,18 @@ export const convertToFailure = (
   let cause;
   let message;
 
-  if (exception instanceof Error) {
+  if (isFailureLike(exception) && isErr(exception.error)) {
+    const { error } = exception;
+    const { inner } = (error as unknown) as { inner: unknown };
+
+    if (isFailureLike(inner) && isErr(inner.error)) {
+      cause = `${error.type}: ${inner.error.type}`;
+      message = `${error.message || ''}\n${inner.error.message || ''}`.trim() || undefined;
+    } else {
+      cause = error.type;
+      message = error.message;
+    }
+  } else if (exception instanceof Error) {
     cause = exception.name;
     message = exception.message;
   } else {
@@ -70,7 +81,15 @@ export const lambda = <
   options: Options,
   creator: MiddlewareCreator<Options, Service, ServiceError, ServiceContainer, Event>,
   exception: HandlerException<ExceptionData, ExceptionError, Event, Options>,
-  failure: HandlerError<Service, ServiceError, FailureData, FailureError, HandledError, Event, Options>,
+  failure: HandlerError<
+    Service,
+    ServiceError,
+    FailureData,
+    FailureError,
+    HandledError,
+    Event,
+    Options
+  >,
   success: Handler<Service, Data, Error, Event, Options>,
   transform: Transform<ResOk, Data, Error, Event, Options, Service>,
   transformError: TransformError<ResErr, FailureData, FailureError, Event, Options>,
@@ -102,7 +121,7 @@ export const lambda = <
           event,
           context,
           error: err,
-          service: lifecycle.partial()
+          service: lifecycle.partial(),
         },
         options,
         handlerLifecycle,
@@ -142,7 +161,7 @@ export const lambda = <
           event,
           context,
           error: error.inner.err(),
-          service: lifecycle.partial()
+          service: lifecycle.partial(),
         },
         options,
         handlerLifecycle,
@@ -219,46 +238,46 @@ export const lambda = <
     };
 
     if (!middleware) {
-      return handleCreationError(middlewareError);
-    }
+      response = await handleCreationError(middlewareError);
+    } else {
+      try {
+        const service = await middleware(
+          {
+            event,
+            context,
+            service: {} as Service,
+          },
+          lifecycle
+        );
 
-    try {
-      const service = await middleware(
-        {
-          event,
-          context,
-          service: {} as Service,
-        },
-        lifecycle
-      );
-
-      if (service.isErr()) {
-        response = await handleServiceError(service.err());
-      } else {
-        response = await handleHandler(service.ok());
-      }
-
-      await tryDestroyAndNeverThrow();
-    } catch (err: unknown) {
-      // check if error is failed Jest assertion and throw it immediately
-      if (
-        err instanceof Error &&
-        typeof ((err as unknown) as { matcherResult: unknown }).matcherResult !== 'undefined'
-      ) {
-        throw err;
-      }
-
-      if (isHandleFailureError(err)) {
-        try {
-          response = await handleFailureError(err);
-        } catch (fatal) {
-          response = await handleFatalError(fatal);
+        if (service.isErr()) {
+          response = await handleServiceError(service.err());
+        } else {
+          response = await handleHandler(service.ok());
         }
-      } else {
-        response = await handleFatalError(err);
-      }
 
-      await tryDestroyAndNeverThrow();
+        await tryDestroyAndNeverThrow();
+      } catch (err: unknown) {
+        // check if error is failed Jest assertion and throw it immediately
+        if (
+          err instanceof Error &&
+          typeof ((err as unknown) as { matcherResult: unknown }).matcherResult !== 'undefined'
+        ) {
+          throw err;
+        }
+
+        if (isHandleFailureError(err)) {
+          try {
+            response = await handleFailureError(err);
+          } catch (fatal) {
+            response = await handleFatalError(fatal);
+          }
+        } else {
+          response = await handleFatalError(err);
+        }
+
+        await tryDestroyAndNeverThrow();
+      }
     }
 
     if (response instanceof Error) {
