@@ -48,7 +48,15 @@ describe('custom handlers', () => {
       return ok(request.event.request.session[0]);
     };
 
-    const e1: HandlerError<ServiceType, ErrorType, string, Err, never, EventType, ServiceOpts> = async () => {
+    const e1: HandlerError<
+      ServiceType,
+      ErrorType,
+      string,
+      Err,
+      never,
+      EventType,
+      ServiceOpts
+    > = async () => {
       return fail('error');
     };
 
@@ -108,7 +116,6 @@ describe('custom handlers', () => {
         badEvent: {
           type: 'UncaughtError',
           cause: 'TypeError',
-          message: "Cannot read property 'session' of undefined",
         },
       });
     });
