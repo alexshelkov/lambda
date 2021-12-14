@@ -56,10 +56,12 @@ export interface PrivateMiddlewareCreatorLifecycle extends MiddlewareCreatorLife
 
 export interface MiddlewareLifecycle {
   destroy: (cb: () => Promise<void>) => void;
+  end: (cb: () => Promise<void>) => void;
 }
 
 export interface PrivateMiddlewareLifecycle extends MiddlewareLifecycle {
-  finish: () => Promise<void>;
+  destroyed: () => Promise<void>;
+  ended: () => Promise<void>;
   threw: (threw: number | undefined) => void;
   throws: () => number | undefined;
   errored: () => number;

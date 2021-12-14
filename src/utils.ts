@@ -63,7 +63,8 @@ export const createLifecycle = (): PrivateMiddlewareLifecycle => {
   let srv: ServiceContainer = {};
   let threw: number | undefined;
   let error = -1;
-  let finish: () => Promise<void> = async () => {};
+  let destroyed: () => Promise<void> = async () => {};
+  let ended: () => Promise<void> = async () => {};
 
   return {
     threw(th) {
@@ -82,25 +83,34 @@ export const createLifecycle = (): PrivateMiddlewareLifecycle => {
     },
     // eslint-disable-next-line @typescript-eslint/require-await
     async destroy(cb) {
-      finish = cb;
+      destroyed = cb;
     },
-    async finish() {
-      return finish();
+    async destroyed() {
+      return destroyed();
+    },
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async end(cb) {
+      ended = cb;
+    },
+    async ended() {
+      return ended();
     },
     service(service) {
       srv = service;
     },
     partial() {
       return srv;
-    }
+    },
   };
 };
 
 export const disconnectLifecycle = (
   lifecycle: PrivateMiddlewareLifecycle
 ): [PrivateMiddlewareLifecycle, PrivateMiddlewareLifecycle] => {
-  let f1: () => Promise<void> = async () => {};
-  let f2: () => Promise<void> = async () => {};
+  let d1: () => Promise<void> = async () => {};
+  let e1: () => Promise<void> = async () => {};
+  let d2: () => Promise<void> = async () => {};
+  let e2: () => Promise<void> = async () => {};
 
   const l1: PrivateMiddlewareLifecycle = {
     threw(th) {
@@ -117,17 +127,24 @@ export const disconnectLifecycle = (
     },
     // eslint-disable-next-line @typescript-eslint/require-await
     async destroy(cb) {
-      f1 = cb;
+      d1 = cb;
     },
-    async finish() {
-      return f1();
+    async destroyed() {
+      return d1();
+    },
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async end(cb) {
+      e1 = cb;
+    },
+    async ended() {
+      return e1();
     },
     service(service) {
       lifecycle.service(service);
     },
     partial() {
       return lifecycle.partial();
-    }
+    },
   };
 
   const l2: PrivateMiddlewareLifecycle = {
@@ -145,22 +162,34 @@ export const disconnectLifecycle = (
     },
     // eslint-disable-next-line @typescript-eslint/require-await
     async destroy(cb) {
-      f2 = cb;
+      d2 = cb;
     },
-    async finish() {
-      return f2();
+    async destroyed() {
+      return d2();
+    },
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async end(cb) {
+      e2 = cb;
+    },
+    async ended() {
+      return e2();
     },
     service(service) {
       lifecycle.service(service);
     },
     partial() {
       return lifecycle.partial();
-    }
+    },
   };
 
   lifecycle.destroy(async () => {
-    await f2();
-    await f1();
+    await d2();
+    await d1();
+  });
+
+  lifecycle.end(async () => {
+    await e1();
+    await e2();
   });
 
   return [l1, l2];
@@ -390,13 +419,23 @@ export const glueFailure = <
   ) => {
     const [l1, l2] = disconnectHandlerLifecycle(handlerLifecycle as PrivateHandlerLifecycle);
 
-    const r1 = await c1(request as RequestError<Event, Service, ServiceError1>, options, l1, lifecycle);
+    const r1 = await c1(
+      request as RequestError<Event, Service, ServiceError1>,
+      options,
+      l1,
+      lifecycle
+    );
 
     if (l1.stops()) {
       return r1;
     }
 
-    const r2 = await c2(request as RequestError<Event, Service, ServiceError2>, options, l2, lifecycle);
+    const r2 = await c2(
+      request as RequestError<Event, Service, ServiceError2>,
+      options,
+      l2,
+      lifecycle
+    );
 
     return compare(r1, r2);
   };
@@ -437,7 +476,12 @@ export const joinFailure = (failGen: number) => {
 
       const [l1, l2] = disconnectHandlerLifecycle(handlerLifecycle as PrivateHandlerLifecycle);
 
-      const r1 = await c1(request as RequestError<Event, Service, ServiceError1>, options, l1, lifecycle);
+      const r1 = await c1(
+        request as RequestError<Event, Service, ServiceError1>,
+        options,
+        l1,
+        lifecycle
+      );
 
       if (l1.stops()) {
         return r1;
@@ -453,7 +497,12 @@ export const joinFailure = (failGen: number) => {
       }
 
       if (failGen >= gen) {
-        r2 = await c2(request as RequestError<Event, Service, ServiceError2>, options, l2, lifecycle);
+        r2 = await c2(
+          request as RequestError<Event, Service, ServiceError2>,
+          options,
+          l2,
+          lifecycle
+        );
       } else {
         r2 = (fail<Err>('Skipped', { skip: true }) as unknown) as Failure<Error2>;
       }

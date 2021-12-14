@@ -1105,6 +1105,10 @@ describe('creator handlers and transforms', () => {
           steps.push('m1 destroyed');
         });
 
+        lc.end(async () => {
+          steps.push('m1 ended');
+        });
+
         steps.push('m1 request');
 
         return addService(r, {
@@ -1119,6 +1123,10 @@ describe('creator handlers and transforms', () => {
       return async (r, lc) => {
         lc.destroy(async () => {
           steps.push('m2 destroyed');
+        });
+
+        lc.end(async () => {
+          steps.push('m2 ended');
         });
 
         steps.push('m2 request');
@@ -1151,6 +1159,8 @@ describe('creator handlers and transforms', () => {
       'm1 request',
       'm2 request',
       'ok1',
+      'm1 ended',
+      'm2 ended',
       'm2 destroyed',
       'm1 destroyed',
     ]);

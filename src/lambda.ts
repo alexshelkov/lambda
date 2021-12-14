@@ -231,7 +231,8 @@ export const lambda = <
 
     const tryDestroyAndNeverThrow = async () => {
       try {
-        await lifecycle.finish();
+        await lifecycle.ended();
+        await lifecycle.destroyed();
       } catch (fatal: unknown) {
         response = await handleFatalLifecycleError(fatal);
       }

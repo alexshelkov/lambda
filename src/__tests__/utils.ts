@@ -39,7 +39,7 @@ describe('middleware utils', () => {
   });
 
   it('middleware lifecycle defaults', async () => {
-    expect.assertions(16);
+    expect.assertions(18);
 
     const lc = createLifecycle();
 
@@ -69,8 +69,10 @@ describe('middleware utils', () => {
     expect(lc.errored()).toStrictEqual(1);
     expect(l2.errored()).toStrictEqual(1);
 
-    expect(await l1.finish()).toBeUndefined();
-    expect(await l2.finish()).toBeUndefined();
+    expect(await l1.destroyed()).toBeUndefined();
+    expect(await l2.destroyed()).toBeUndefined();
+    expect(await l1.ended()).toBeUndefined();
+    expect(await l2.ended()).toBeUndefined();
   });
 
   it('connect 2 middleware creators', async () => {
