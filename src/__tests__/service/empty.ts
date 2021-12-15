@@ -13,7 +13,7 @@ describe('empty', () => {
       return Promise.resolve(ok('success'));
     });
 
-    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resOk.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"success"}',
     });

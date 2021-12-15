@@ -298,7 +298,7 @@ describe('fake services', () => {
       it('fails if no db option provided', async () => {
         expect.assertions(1);
 
-        expect(await res1.req()(createEvent(), createContext())).toMatchObject({
+        await expect(res1.req()(createEvent(), createContext())).resolves.toMatchObject({
           type: 'DbServiceConnectNoDbError',
         });
       });
@@ -312,7 +312,7 @@ describe('fake services', () => {
           db,
         });
 
-        expect(await res2.req()(createEvent(), createContext())).toContainEqual({
+        await expect(res2.req()(createEvent(), createContext())).resolves.toContainEqual({
           id: 1,
           name: 'jay',
         });
@@ -332,7 +332,7 @@ describe('fake services', () => {
           db,
         });
 
-        expect(await res2.req()(createEvent(), createContext())).toMatchObject({
+        await expect(res2.req()(createEvent(), createContext())).resolves.toMatchObject({
           message: 'Fatal connection error',
           cause: 'Error',
           type: 'UncaughtError',
@@ -342,7 +342,7 @@ describe('fake services', () => {
 
         db.throwFatal = false;
 
-        expect(await res2.req()(createEvent(), createContext())).toMatchObject({
+        await expect(res2.req()(createEvent(), createContext())).resolves.toMatchObject({
           type: 'NoConnection',
         });
 
@@ -351,7 +351,7 @@ describe('fake services', () => {
         db.dontConnect = false;
         db.wrongPassword = true;
 
-        expect(await res2.req()(createEvent(), createContext())).toMatchObject({
+        await expect(res2.req()(createEvent(), createContext())).resolves.toMatchObject({
           type: 'DbServiceTryConnectError',
           message: 'WrongPassword',
         });
@@ -419,7 +419,7 @@ describe('fake services', () => {
       b: 2,
     });
 
-    expect(await lambda.req()(createEvent({ body }), createContext())).toMatchObject({
+    await expect(lambda.req()(createEvent({ body }), createContext())).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":3}',
     });
@@ -429,7 +429,7 @@ describe('fake services', () => {
       b: 2,
     });
 
-    expect(await lambda.req()(createEvent({ body }), createContext())).toMatchObject({
+    await expect(lambda.req()(createEvent({ body }), createContext())).resolves.toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"NaA"}}',
     });
@@ -439,7 +439,7 @@ describe('fake services', () => {
       b: 2.2,
     });
 
-    expect(await lambda.req()(createEvent({ body }), createContext())).toMatchObject({
+    await expect(lambda.req()(createEvent({ body }), createContext())).resolves.toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"Float"}}',
     });
@@ -449,9 +449,9 @@ describe('fake services', () => {
       b: 2.2,
     });
 
-    expect(
-      await lambda.opt({ acceptFloat: true }).req()(createEvent({ body }), createContext())
-    ).toMatchObject({
+    await expect(
+      lambda.opt({ acceptFloat: true }).req()(createEvent({ body }), createContext())
+    ).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":3.2}',
     });

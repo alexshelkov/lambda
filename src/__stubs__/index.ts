@@ -138,14 +138,16 @@ export const createRequest = <Service extends ServiceContainer>(
   };
 };
 
-export const createErrorRequest = <Service extends ServiceContainer, Error>(error: Error): RequestError<AwsEvent, Service, Error> => {
+export const createErrorRequest = <Service extends ServiceContainer, Error>(
+  error: Error
+): RequestError<AwsEvent, Service, Error> => {
   return {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     event: createEvent(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     context: createContext(),
     error,
-    service: {}
+    service: {},
   };
 };
 
@@ -218,7 +220,13 @@ export const createMdl = <T extends string>(
   };
 };
 
-export const createFail = <Service extends ServiceContainer, ServiceError, Data, Error, Event extends AwsEvent>(
+export const createFail = <
+  Service extends ServiceContainer,
+  ServiceError,
+  Data,
+  Error,
+  Event extends AwsEvent
+>(
   name: string,
   steps: string[]
 ): HandlerError<Service, ServiceError, Data, Error, never, Event> => {
@@ -226,7 +234,7 @@ export const createFail = <Service extends ServiceContainer, ServiceError, Data,
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     steps.push(`${request.event?.name || ''}${name} runs`);
 
-    return ok((name as unknown) as Data);
+    return ok(name as unknown as Data);
   };
 };
 

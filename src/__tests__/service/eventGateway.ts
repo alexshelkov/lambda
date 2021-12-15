@@ -17,7 +17,7 @@ describe('eventGateway', () => {
 
     const handle = resOk.req() as APIGatewayProxyHandler;
 
-    expect(await handle(createEvent(), createContext(), () => {})).toMatchObject({
+    await expect(handle(createEvent(), createContext(), () => {})).resolves.toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"EventGatewayRequestError"}}',
     });
@@ -37,13 +37,13 @@ describe('eventGateway', () => {
 
     const handle = resOk.req() as APIGatewayProxyHandler;
 
-    expect(
-      await handle(
+    await expect(
+      handle(
         createEvent({ httpMethod: 'GET', resource: 'test' } as APIGatewayProxyEvent),
         createContext(),
         () => {}
       )
-    ).toMatchObject({
+    ).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"success"}',
     });

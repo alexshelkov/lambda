@@ -71,7 +71,7 @@ describe('custom handlers', () => {
     });
 
     const resTransErr = resTranOk.onFatal(async (r, { event }) => {
-      ((event as unknown) as { badEvent: unknown }).badEvent = r.err();
+      (event as unknown as { badEvent: unknown }).badEvent = r.err();
 
       return event;
     });
@@ -108,7 +108,7 @@ describe('custom handlers', () => {
       expect.assertions(1);
 
       const response = await handle(
-        createEvent(({ badEvent: 'no' } as unknown) as DefineAuthChallengeTriggerEvent),
+        createEvent({ badEvent: 'no' } as unknown as DefineAuthChallengeTriggerEvent),
         createContext()
       );
 
@@ -116,6 +116,7 @@ describe('custom handlers', () => {
         badEvent: {
           type: 'UncaughtError',
           cause: 'TypeError',
+          message: "Cannot read properties of undefined (reading 'session')",
         },
       });
     });

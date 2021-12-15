@@ -28,7 +28,7 @@ export const convertToFailure = (
 
   if (isFailureLike(exception) && isErr(exception.error)) {
     const { error } = exception;
-    const { inner } = (error as unknown) as { inner: unknown };
+    const { inner } = error as unknown as { inner: unknown };
 
     if (isFailureLike(inner) && isErr(inner.error)) {
       cause = `${error.type}: ${inner.error.type}`;
@@ -193,7 +193,7 @@ export const lambda = <
 
       try {
         response = await transformException(
-          (result as unknown) as Failure<ExceptionError>,
+          result as unknown as Failure<ExceptionError>,
           evObj,
           options
         );
@@ -262,7 +262,7 @@ export const lambda = <
         // check if error is failed Jest assertion and throw it immediately
         if (
           err instanceof Error &&
-          typeof ((err as unknown) as { matcherResult: unknown }).matcherResult !== 'undefined'
+          typeof (err as unknown as { matcherResult: unknown }).matcherResult !== 'undefined'
         ) {
           throw err;
         }

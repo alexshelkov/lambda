@@ -17,7 +17,7 @@ describe('eventSqs', () => {
 
     const handle: SQSHandler = resOk.req();
 
-    expect(await handle(createEvent(), createContext(), () => {})).toBeUndefined();
+    await expect(handle(createEvent(), createContext(), () => {})).resolves.toBeUndefined();
   });
 
   it('parse SQSEvent event', async () => {
@@ -48,8 +48,8 @@ describe('eventSqs', () => {
 
     const handle: SQSHandler = resTransFatal.req();
 
-    expect(
-      await handle(
+    await expect(
+      handle(
         createEvent({
           Records: [
             {
@@ -60,10 +60,10 @@ describe('eventSqs', () => {
         createContext(),
         () => {}
       )
-    ).toBeUndefined();
+    ).resolves.toBeUndefined();
 
-    expect(
-      await handle(
+    await expect(
+      handle(
         createEvent({
           Records: [
             {
@@ -75,6 +75,6 @@ describe('eventSqs', () => {
         createContext(),
         () => {}
       )
-    ).toBeUndefined();
+    ).resolves.toBeUndefined();
   });
 });

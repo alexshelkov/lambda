@@ -16,7 +16,7 @@ import {
   Exception1,
   Transform1,
   TransformError1,
-  GetReqRes
+  GetReqRes,
 } from './types';
 
 import { join, joinFailure, joinFatal, connect } from './utils';
@@ -137,7 +137,15 @@ export interface Creator<
   >;
 
   fail: <FailureData2, FailureError2, HandledError2 = never>(
-    error: HandlerError<Service1, ServiceError1, FailureData2, FailureError2, HandledError2, Event, Options1>
+    error: HandlerError<
+      Service1,
+      ServiceError1,
+      FailureData2,
+      FailureError2,
+      HandledError2,
+      Event,
+      Options1
+    >
   ) => Creator<
     Event,
     ResOk1,
@@ -370,7 +378,15 @@ export const creatorHelper = <
   creator1: MiddlewareCreator<Options1, Service1, ServiceError1, ServiceContainer, Event>,
   options1: Options1,
   success1: Handler<Service1, Data1, Error1, Event, Options1>,
-  error1: HandlerError<Service1, ServiceError1, FailureData1, FailureError1, never, Event, Options1>,
+  error1: HandlerError<
+    Service1,
+    ServiceError1,
+    FailureData1,
+    FailureError1,
+    never,
+    Event,
+    Options1
+  >,
   exception1: HandlerException<ExceptionData1, ExceptionError1, Event, Options1>,
   transform1: Transform<ResOk1, unknown, unknown, Event, Options1, Service1>,
   transformRes1: Transform<ResOkRes1, Data1, Error1, Event, Options1, Service1> | undefined,
@@ -449,7 +465,7 @@ export const creatorHelper = <
     },
 
     ctx: <Event2 extends AwsEvent = AwsEvent>() => {
-      return (creatorHelper(
+      return creatorHelper(
         crtGen,
         creator1,
         options1,
@@ -462,7 +478,7 @@ export const creatorHelper = <
         transformErrorRes1,
         transformException1,
         transformExceptionRes1
-      ) as unknown) as Creator<
+      ) as unknown as Creator<
         Event2,
         ResOk1,
         ResOkRes1,

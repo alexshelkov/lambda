@@ -13,12 +13,12 @@ describe('jsonBody', () => {
       return Promise.resolve(ok('success'));
     });
 
-    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resOk.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"JsonRequestError"}}',
     });
 
-    expect(await resOk.req()(createEvent({ body: 100 }), createContext())).toMatchObject({
+    await expect(resOk.req()(createEvent({ body: 100 }), createContext())).resolves.toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"JsonRequestError"}}',
     });
@@ -33,10 +33,11 @@ describe('jsonBody', () => {
       return Promise.resolve(ok('success'));
     });
 
-    expect(await resOk.req()(createEvent({ body: '"a":"a1"}' }), createContext())).toMatchObject({
+    await expect(
+      resOk.req()(createEvent({ body: '"a":"a1"}' }), createContext())
+    ).resolves.toMatchObject({
       statusCode: 400,
-      body:
-        '{"status":"error","error":{"type":"JsonBodyParseError","message":"Unexpected token : in JSON at position 3"}}',
+      body: '{"status":"error","error":{"type":"JsonBodyParseError","message":"Unexpected token : in JSON at position 3"}}',
     });
   });
 
@@ -49,16 +50,18 @@ describe('jsonBody', () => {
       return Promise.resolve(ok('success'));
     });
 
-    expect(await resOk.req()(createEvent({ body: 'null' }), createContext())).toMatchObject({
+    await expect(
+      resOk.req()(createEvent({ body: 'null' }), createContext())
+    ).resolves.toMatchObject({
       statusCode: 400,
-      body:
-        '{"status":"error","error":{"type":"JsonBodyParseError","message":"Parsed object is is null"}}',
+      body: '{"status":"error","error":{"type":"JsonBodyParseError","message":"Parsed object is is null"}}',
     });
 
-    expect(await resOk.req()(createEvent({ body: '"123"' }), createContext())).toMatchObject({
+    await expect(
+      resOk.req()(createEvent({ body: '"123"' }), createContext())
+    ).resolves.toMatchObject({
       statusCode: 400,
-      body:
-        '{"status":"error","error":{"type":"JsonBodyParseError","message":"Parsed object is not an object"}}',
+      body: '{"status":"error","error":{"type":"JsonBodyParseError","message":"Parsed object is not an object"}}',
     });
   });
 
@@ -73,7 +76,9 @@ describe('jsonBody', () => {
       return Promise.resolve(ok('success'));
     });
 
-    expect(await resOk.req()(createEvent({ body: '{"a":"a1"}' }), createContext())).toMatchObject({
+    await expect(
+      resOk.req()(createEvent({ body: '{"a":"a1"}' }), createContext())
+    ).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"success"}',
     });

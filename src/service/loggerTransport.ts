@@ -46,9 +46,7 @@ const getTransport = (): Transport => {
   return service;
 };
 
-export const resetTransport = (
-  transport: Transport = (undefined as unknown) as Transport
-): void => {
+export const resetTransport = (transport: Transport = undefined as unknown as Transport): void => {
   service = transport;
 };
 

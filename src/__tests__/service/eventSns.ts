@@ -17,7 +17,7 @@ describe('eventSns', () => {
 
     const handle: SNSHandler = resOk.req();
 
-    expect(await handle(createEvent(), createContext(), () => {})).toBeUndefined();
+    await expect(handle(createEvent(), createContext(), () => {})).resolves.toBeUndefined();
   });
 
   it('parse SNSEvent event', async () => {
@@ -50,8 +50,8 @@ describe('eventSns', () => {
 
     const handle: SNSHandler = resTransFatal.req();
 
-    expect(
-      await handle(
+    await expect(
+      handle(
         createEvent({
           Records: [
             {
@@ -62,10 +62,10 @@ describe('eventSns', () => {
         createContext(),
         () => {}
       )
-    ).toBeUndefined();
+    ).resolves.toBeUndefined();
 
-    expect(
-      await handle(
+    await expect(
+      handle(
         createEvent({
           Records: [
             {
@@ -79,6 +79,6 @@ describe('eventSns', () => {
         createContext(),
         () => {}
       )
-    ).toBeUndefined();
+    ).resolves.toBeUndefined();
   });
 });

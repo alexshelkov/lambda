@@ -64,7 +64,7 @@ describe('creator base', () => {
       return ok(undefined);
     });
 
-    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resOk.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 200,
       body: '',
     });
@@ -79,7 +79,7 @@ describe('creator base', () => {
       return ok(undefined);
     });
 
-    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resOk.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 200,
       body: '',
     });
@@ -94,7 +94,7 @@ describe('creator base', () => {
       return failErr(undefined);
     });
 
-    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resOk.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 400,
       body: '',
     });
@@ -109,7 +109,7 @@ describe('creator base', () => {
       return ok('success');
     });
 
-    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resOk.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"success"}',
     });
@@ -124,7 +124,7 @@ describe('creator base', () => {
       return fail<TestError<'error'>>('error');
     });
 
-    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resOk.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"error"}}',
     });
@@ -144,7 +144,7 @@ describe('creator base', () => {
       return fail<ServiceError>(request.error.type, { code: 500 });
     });
 
-    expect(await resFail.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resFail.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 500,
       body: '{"status":"error","error":{"type":"err4"}}',
     });
@@ -224,7 +224,7 @@ describe('creator base', () => {
       const err1 = await error1(
         {
           error: {
-            type: (1 as unknown) as string,
+            type: 1 as unknown as string,
           },
         } as RequestError<AwsEvent, ServiceContainer, Err>,
         {},
@@ -472,7 +472,7 @@ describe('creator types correctness', () => {
     const resOk1 = res.ok(h1).ok(h1GetCrt).ok(h1GetMdl);
     const resFail1 = resOk1.fail(e1).fail(e1GetCrt);
 
-    expect(await resFail1.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resFail1.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"success"}',
     });
@@ -491,7 +491,7 @@ describe('creator types correctness', () => {
     const resFail2 = resOk2.fail(e2);
     const resFatal2 = resFail2.fatal(f2);
 
-    expect(await resFatal2.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resFatal2.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"success"}',
     });
@@ -540,7 +540,7 @@ describe('creator types correctness', () => {
       }
     );
 
-    expect(await resErr.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resErr.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"success"}',
     });
@@ -586,7 +586,7 @@ describe('creator types correctness', () => {
     const resOk = res.ok(h1);
     const resFail = resOk.fail(e1);
 
-    expect(await resFail.req()(createEvent('event'), createContext(42))).toMatchObject({
+    await expect(resFail.req()(createEvent('event'), createContext(42))).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"success"}',
     });
@@ -635,7 +635,7 @@ describe('creator types correctness', () => {
         return ok(type);
       });
 
-    expect(await res.req()(createEvent(), createContext())).toMatchObject({
+    await expect(res.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"f1"}',
     });
@@ -855,7 +855,7 @@ describe('creator types correctness', () => {
       }
     );
 
-    expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+    await expect(resOk.req()(createEvent(), createContext())).resolves.toMatchObject({
       status: 'success',
       data: 'ok env1=1 env2=2',
     });
@@ -891,7 +891,7 @@ describe('creator types correctness', () => {
 
     const res = creator(creatorTest1).srv(creatorTest4Error).fail(f1);
 
-    expect(await res.req()(createEvent(), createContext())).toMatchObject({
+    await expect(res.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"f1: 1"}',
     });
@@ -945,7 +945,7 @@ describe('creator handlers and transforms', () => {
           return ok('3');
         });
 
-      expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resOk.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 200,
         body: '{"status":"success","data":"2"}',
       });
@@ -965,7 +965,7 @@ describe('creator handlers and transforms', () => {
           return ok('2');
         });
 
-      expect(await resOk2.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resOk2.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 200,
         body: '{"status":"success","data":"1"}',
       });
@@ -997,7 +997,7 @@ describe('creator handlers and transforms', () => {
           return ok('3');
         });
 
-      expect(await resErr.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resErr.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 200,
         body: '{"status":"success","data":"2"}',
       });
@@ -1021,7 +1021,7 @@ describe('creator handlers and transforms', () => {
           return ok('3');
         });
 
-      expect(await resFail2.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resFail2.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 200,
         body: '{"status":"success","data":"1"}',
       });
@@ -1063,7 +1063,7 @@ describe('creator handlers and transforms', () => {
           return ok('3');
         });
 
-      expect(await resErr.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resErr.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 200,
         body: '{"status":"success","data":"2"}',
       });
@@ -1083,7 +1083,7 @@ describe('creator handlers and transforms', () => {
           return ok('2');
         });
 
-      expect(await resFail2.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resFail2.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 200,
         body: '{"status":"success","data":"1"}',
       });
@@ -1147,7 +1147,7 @@ describe('creator handlers and transforms', () => {
 
     expect(steps).toStrictEqual(['start']);
 
-    expect(await res.req()(createEvent(), createContext())).toMatchObject({
+    await expect(res.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"1 & 2"}',
     });
@@ -1271,7 +1271,7 @@ describe('creator handlers and transforms', () => {
         };
       });
 
-      expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resTrans.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 123,
         body: 'Test 1 1',
       });
@@ -1280,7 +1280,7 @@ describe('creator handlers and transforms', () => {
         return 'Test 2';
       };
 
-      expect(await resOk.onOk(trans1).req()(createEvent(), createContext())).toStrictEqual(
+      await expect(resOk.onOk(trans1).req()(createEvent(), createContext())).resolves.toStrictEqual(
         'Test 2'
       );
 
@@ -1290,7 +1290,7 @@ describe('creator handlers and transforms', () => {
 
       const resTrans2 = resTrans.onOkRes(trans2);
 
-      expect(await resTrans2.req()(createEvent(), createContext())).toStrictEqual(
+      await expect(resTrans2.req()(createEvent(), createContext())).resolves.toStrictEqual(
         'Test 3 success 1'
       );
 
@@ -1298,15 +1298,15 @@ describe('creator handlers and transforms', () => {
         return `Test 4 ${request.service.test1}`;
       };
 
-      expect(await resTrans2.onOkRes(trans3).req()(createEvent(), createContext())).toStrictEqual(
-        'Test 4 1'
-      );
+      await expect(
+        resTrans2.onOkRes(trans3).req()(createEvent(), createContext())
+      ).resolves.toStrictEqual('Test 4 1');
 
       const resOk2 = resTrans2.ok(async () => {
         return ok('success2');
       });
 
-      expect(await resOk2.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resOk2.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 123,
         body: 'Test 1 1',
       });
@@ -1328,7 +1328,7 @@ describe('creator handlers and transforms', () => {
         };
       });
 
-      expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resTrans.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 456,
         body: 'Test 1 1',
       });
@@ -1337,9 +1337,9 @@ describe('creator handlers and transforms', () => {
         return 'Test 1';
       };
 
-      expect(await resErr.onOk(trans1).req()(createEvent(), createContext())).toStrictEqual(
-        'Test 1'
-      );
+      await expect(
+        resErr.onOk(trans1).req()(createEvent(), createContext())
+      ).resolves.toStrictEqual('Test 1');
     });
 
     it('middleware fail', async () => {
@@ -1362,7 +1362,7 @@ describe('creator handlers and transforms', () => {
         };
       });
 
-      expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resTrans.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 789,
         body: 'Test 1',
       });
@@ -1371,9 +1371,9 @@ describe('creator handlers and transforms', () => {
         return `Test 2`;
       };
 
-      expect(await resFail.onFail(trans1).req()(createEvent(), createContext())).toStrictEqual(
-        'Test 2'
-      );
+      await expect(
+        resFail.onFail(trans1).req()(createEvent(), createContext())
+      ).resolves.toStrictEqual('Test 2');
 
       const trans2: GetTransformFailure<typeof resFail, string> = async (result) => {
         return `Test ${result.ok()} 3`;
@@ -1381,21 +1381,23 @@ describe('creator handlers and transforms', () => {
 
       const restTrans2 = resTrans.onFailRes(trans2);
 
-      expect(await restTrans2.req()(createEvent(), createContext())).toStrictEqual('Test fail 3');
+      await expect(restTrans2.req()(createEvent(), createContext())).resolves.toStrictEqual(
+        'Test fail 3'
+      );
 
       const trans3: GetTransformFailure<typeof creatorTest4Error, string> = async () => {
         return `Test 4`;
       };
 
-      expect(await resFail.onFailRes(trans3).req()(createEvent(), createContext())).toStrictEqual(
-        'Test 4'
-      );
+      await expect(
+        resFail.onFailRes(trans3).req()(createEvent(), createContext())
+      ).resolves.toStrictEqual('Test 4');
 
       const resFail2 = restTrans2.fail(async () => {
         return ok('fail2');
       });
 
-      expect(await resFail2.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resFail2.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 789,
         body: 'Test 1',
       });
@@ -1427,7 +1429,7 @@ describe('creator handlers and transforms', () => {
         };
       });
 
-      expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resTrans.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 789,
         body: 'Test 1',
       });
@@ -1436,9 +1438,9 @@ describe('creator handlers and transforms', () => {
         return `Test 2`;
       };
 
-      expect(await resFatal.onFatal(trans1).req()(createEvent(), createContext())).toStrictEqual(
-        'Test 2'
-      );
+      await expect(
+        resFatal.onFatal(trans1).req()(createEvent(), createContext())
+      ).resolves.toStrictEqual('Test 2');
 
       const trans2: GetTransformException<typeof resFatal, string> = async (result) => {
         return `Test ${result.ok()} 3`;
@@ -1446,21 +1448,23 @@ describe('creator handlers and transforms', () => {
 
       const resTrans2 = resTrans.onFatalRes(trans2);
 
-      expect(await resTrans2.req()(createEvent(), createContext())).toStrictEqual('Test fatal 3');
+      await expect(resTrans2.req()(createEvent(), createContext())).resolves.toStrictEqual(
+        'Test fatal 3'
+      );
 
       const trans3: GetTransformException<typeof creatorTest1, string> = async () => {
         return `Test 4`;
       };
 
-      expect(await resFatal.onFatalRes(trans3).req()(createEvent(), createContext())).toStrictEqual(
-        'Test 4'
-      );
+      await expect(
+        resFatal.onFatalRes(trans3).req()(createEvent(), createContext())
+      ).resolves.toStrictEqual('Test 4');
 
       const resFatal2 = resTrans2.fatal(async () => {
         return ok('fatal2');
       });
 
-      expect(await resFatal2.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resFatal2.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 789,
         body: 'Test 1',
       });
@@ -1528,7 +1532,7 @@ describe('creator exceptions', () => {
         return ok(true);
       });
 
-      expect(await res2Ok.req()(createEvent(), createContext())).toMatchObject({
+      await expect(res2Ok.req()(createEvent(), createContext())).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: { cause: 'Error', type: 'UncaughtError', message: 'Test error' },
@@ -1549,7 +1553,7 @@ describe('creator exceptions', () => {
         return ok(true);
       });
 
-      expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resOk.req()(createEvent(), createContext())).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: { cause: 'Unknown', type: 'UncaughtError' },
@@ -1575,7 +1579,7 @@ describe('creator exceptions', () => {
         return ok(true);
       });
 
-      expect(await resExc.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resExc.req()(createEvent(), createContext())).resolves.toMatchObject({
         status: 'success',
         data: true,
       });
@@ -1586,55 +1590,55 @@ describe('creator exceptions', () => {
 
       const res = creator(exceptionCreator).on(safe);
 
-      expect(
-        await res.opt({ throwError: 'CreatingError', errorType: 'ThrowFail' }).req()(
+      await expect(
+        res.opt({ throwError: 'CreatingError', errorType: 'ThrowFail' }).req()(
           createEvent(),
           createContext()
         )
-      ).toMatchObject({
+      ).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: { cause: 'ThrowFail', type: 'UncaughtError', message: 'ThrowFail message' },
       });
 
-      expect(
-        await res.opt({ throwError: 'CreatingError' }).req()(createEvent(), createContext())
-      ).toMatchObject({
+      await expect(
+        res.opt({ throwError: 'CreatingError' }).req()(createEvent(), createContext())
+      ).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: { type: 'CreationError' },
       });
 
-      expect(
-        await res
+      await expect(
+        res
           .opt({ throwError: 'CreatingError' })
           .fail(async () => {
             throw new Error('Double error');
           })
           .req()(createEvent(), createContext())
-      ).toMatchObject({
+      ).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: { cause: 'Error', type: 'UncaughtError', message: 'Double error' },
       });
 
-      expect(
-        await res.opt({ throwError: 'CreatingError', errorType: 'UnhandledException' }).req()(
+      await expect(
+        res.opt({ throwError: 'CreatingError', errorType: 'UnhandledException' }).req()(
           createEvent(),
           createContext()
         )
-      ).toMatchObject({
+      ).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: { cause: 'Error', type: 'UncaughtError', message: 'Unhandled exception in creator' },
       });
 
-      expect(
-        await res.opt({ throwError: 'CreatingError', errorType: 'PlainObject' }).req()(
+      await expect(
+        res.opt({ throwError: 'CreatingError', errorType: 'PlainObject' }).req()(
           createEvent(),
           createContext()
         )
-      ).toMatchObject({
+      ).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: { cause: 'Unknown', type: 'UncaughtError' },
@@ -1646,20 +1650,20 @@ describe('creator exceptions', () => {
 
       const res = creator(exceptionCreator).on(safe);
 
-      expect(
-        await res.opt({ throwError: 'RequestError' }).req()(createEvent(), createContext())
-      ).toMatchObject({
+      await expect(
+        res.opt({ throwError: 'RequestError' }).req()(createEvent(), createContext())
+      ).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: { type: 'RequestError' },
       });
 
-      expect(
-        await res.opt({ throwError: 'RequestError', errorType: 'ThrowFail' }).req()(
+      await expect(
+        res.opt({ throwError: 'RequestError', errorType: 'ThrowFail' }).req()(
           createEvent(),
           createContext()
         )
-      ).toMatchObject({
+      ).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: {
@@ -1678,21 +1682,21 @@ describe('creator exceptions', () => {
         return ok('f1');
       });
 
-      expect(
-        await res1.opt({ throwError: 'RequestError' }).req()(createEvent(), createContext())
-      ).toMatchObject({
+      await expect(
+        res1.opt({ throwError: 'RequestError' }).req()(createEvent(), createContext())
+      ).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: { cause: 'Error', type: 'UncaughtError', message: 'Unhandled double error' },
       });
 
       // failure handler not called in this case
-      expect(
-        await res1.opt({ throwError: 'RequestError', errorType: 'ThrowFail' }).req()(
+      await expect(
+        res1.opt({ throwError: 'RequestError', errorType: 'ThrowFail' }).req()(
           createEvent(),
           createContext()
         )
-      ).toMatchObject({
+      ).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: {
@@ -1723,7 +1727,7 @@ describe('creator exceptions', () => {
         return ok(false);
       });
 
-      expect(await res1Exc.req()(createEvent(), createContext())).toMatchObject({
+      await expect(res1Exc.req()(createEvent(), createContext())).resolves.toMatchObject({
         status: 'success',
         data: false,
       });
@@ -1741,7 +1745,7 @@ describe('creator exceptions', () => {
         return ok(false);
       });
 
-      expect(await res2Exc.req()(createEvent(), createContext())).toMatchObject({
+      await expect(res2Exc.req()(createEvent(), createContext())).resolves.toMatchObject({
         status: 'success',
         data: false,
       });
@@ -1777,7 +1781,7 @@ describe('creator exceptions', () => {
         return ok(false);
       });
 
-      expect(await resExc.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resExc.req()(createEvent(), createContext())).resolves.toMatchObject({
         status: 'error',
         error: {
           cause: 'Error',
@@ -1786,7 +1790,7 @@ describe('creator exceptions', () => {
         },
       });
 
-      expect(await resExc1.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resExc1.req()(createEvent(), createContext())).resolves.toMatchObject({
         status: 'error',
         error: { cause: 'Unknown', type: 'UncaughtError' },
       });
@@ -1807,10 +1811,9 @@ describe('creator exceptions', () => {
         throw new Error('Double fatal error');
       });
 
-      expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resTrans.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"Error","type":"UncaughtTransformError","message":"Double fatal error"}}',
+        body: '{"status":"error","error":{"cause":"Error","type":"UncaughtTransformError","message":"Double fatal error"}}',
       });
 
       const resTrans1 = res.onFatal(() => {
@@ -1818,20 +1821,20 @@ describe('creator exceptions', () => {
         throw { error: true };
       });
 
-      expect(await resTrans1.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resTrans1.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 400,
         body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtTransformError"}}',
       });
 
       resetFallBackTransform(safe);
 
-      expect(await resTrans.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resTrans.req()(createEvent(), createContext())).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: { cause: 'Error', type: 'UncaughtTransformError', message: 'Double fatal error' },
       });
 
-      expect(await resTrans1.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resTrans1.req()(createEvent(), createContext())).resolves.toMatchObject({
         status: 'error',
         name: 'FailureException',
         error: { cause: 'Unknown', type: 'UncaughtTransformError' },
@@ -1906,18 +1909,21 @@ describe('creator exceptions', () => {
     it('exception happens in lifecycle', async () => {
       expect.assertions(3);
 
-      expect(await res1.req()(createEvent(), createContext())).toMatchObject({
+      await expect(res1.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 400,
         body: '{"status":"error","error":{"type":"ImpossibleToDestroy"}}',
       });
 
-      expect(await res1.opt({ errorType: 1 }).req()(createEvent(), createContext())).toMatchObject({
+      await expect(
+        res1.opt({ errorType: 1 }).req()(createEvent(), createContext())
+      ).resolves.toMatchObject({
         statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal lifecycle error"}}',
+        body: '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal lifecycle error"}}',
       });
 
-      expect(await res1.opt({ errorType: 2 }).req()(createEvent(), createContext())).toMatchObject({
+      await expect(
+        res1.opt({ errorType: 2 }).req()(createEvent(), createContext())
+      ).resolves.toMatchObject({
         statusCode: 400,
         body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
       });
@@ -1926,18 +1932,21 @@ describe('creator exceptions', () => {
     it('exception happens in callback and after that in the lifecycle', async () => {
       expect.assertions(3);
 
-      expect(await res2.req()(createEvent(), createContext())).toMatchObject({
+      await expect(res2.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 400,
         body: '{"status":"error","error":{"type":"ImpossibleToDestroy"}}',
       });
 
-      expect(await res2.opt({ errorType: 1 }).req()(createEvent(), createContext())).toMatchObject({
+      await expect(
+        res2.opt({ errorType: 1 }).req()(createEvent(), createContext())
+      ).resolves.toMatchObject({
         statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal lifecycle error"}}',
+        body: '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal lifecycle error"}}',
       });
 
-      expect(await res2.opt({ errorType: 2 }).req()(createEvent(), createContext())).toMatchObject({
+      await expect(
+        res2.opt({ errorType: 2 }).req()(createEvent(), createContext())
+      ).resolves.toMatchObject({
         statusCode: 400,
         body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
       });
@@ -1946,28 +1955,30 @@ describe('creator exceptions', () => {
     it('exception happens in callback and after that in the lifecycle and in the fail handler', async () => {
       expect.assertions(1);
 
-      expect(await res3.req()(createEvent(), createContext())).toMatchObject({
+      await expect(res3.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal fail exception"}}',
+        body: '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal fail exception"}}',
       });
     });
 
     it('exception happens during middleware creation', async () => {
       expect.assertions(3);
 
-      expect(await res4.req()(createEvent(), createContext())).toMatchObject({
+      await expect(res4.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 400,
         body: '{"status":"error","error":{"type":"ImpossibleToDestroy","message":"CreateError"}}',
       });
 
-      expect(await res4.opt({ errorType: 1 }).req()(createEvent(), createContext())).toMatchObject({
+      await expect(
+        res4.opt({ errorType: 1 }).req()(createEvent(), createContext())
+      ).resolves.toMatchObject({
         statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal lifecycle error during middleware create"}}',
+        body: '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal lifecycle error during middleware create"}}',
       });
 
-      expect(await res4.opt({ errorType: 2 }).req()(createEvent(), createContext())).toMatchObject({
+      await expect(
+        res4.opt({ errorType: 2 }).req()(createEvent(), createContext())
+      ).resolves.toMatchObject({
         statusCode: 400,
         body: '{"status":"error","error":{"cause":"Unknown","type":"UncaughtError"}}',
       });
@@ -2004,10 +2015,9 @@ describe('creator exceptions', () => {
           return ok('4');
         });
 
-      expect(await resOk.req()(createEvent(), createContext())).toMatchObject({
+      await expect(resOk.req()(createEvent(), createContext())).resolves.toMatchObject({
         statusCode: 400,
-        body:
-          '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal error"}}',
+        body: '{"status":"error","error":{"cause":"Error","type":"UncaughtError","message":"Fatal error"}}',
       });
 
       expect(okCalls).toStrictEqual(2);
@@ -2083,7 +2093,7 @@ describe('creator exceptions', () => {
 
         const res = creator(cr1).srv(cr2).fail(f1).on(safe);
 
-        expect(await res.req()(createEvent(), createContext())).toMatchObject({
+        await expect(res.req()(createEvent(), createContext())).resolves.toMatchObject({
           status: 'success',
           data: 'f1',
         });
@@ -2122,7 +2132,7 @@ describe('creator exceptions', () => {
 
         const res2 = creator(cr1).srv(cr2).fail(f2).on(safe);
 
-        expect(await res2.req()(createEvent(), createContext())).toMatchObject({
+        await expect(res2.req()(createEvent(), createContext())).resolves.toMatchObject({
           status: 'error',
           name: 'FailureException',
           error: { cause: 'MiddlewareFail: throwError', type: 'UncaughtError' },
@@ -2164,7 +2174,7 @@ describe('creator exceptions', () => {
 
       const res1 = creator(cr1).srv(cr2).opt({ destroyed: true }).fail(f1).on(raw);
 
-      expect(await res1.req()(createEvent(), createContext())).toMatchObject({
+      await expect(res1.req()(createEvent(), createContext())).resolves.toMatchObject({
         status: 'success',
         data: 'f1',
       });

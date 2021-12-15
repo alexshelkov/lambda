@@ -31,9 +31,9 @@ describe('createMdl and createFail mocks', () => {
 
     const res2 = creator(cr2).fail(f2).on(raw);
 
-    expect(
-      await res2.opt({ throwError: 'cr2' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res2.opt({ throwError: 'cr2' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f2',
     });
@@ -47,7 +47,9 @@ describe('createMdl and createFail mocks', () => {
 
     reset(steps2);
 
-    expect(await res3.req()(createEvent({ throwError: 'cr2' }), createContext())).toMatchObject({
+    await expect(
+      res3.req()(createEvent({ throwError: 'cr2' }), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f2',
     });
@@ -68,9 +70,9 @@ describe('fails error handlers not called if registered earlier than services', 
 
     const res1 = creator(cr1).srv(cr2).fail(f1).fail(f2).on(raw);
 
-    expect(
-      await res1.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res1.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f2',
     });
@@ -85,9 +87,9 @@ describe('fails error handlers not called if registered earlier than services', 
 
     const res2 = creator(cr3).srv(cr4).fail(f3).fail(f4).on(raw);
 
-    expect(
-      await res2.opt({ throwError: 'cr4' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res2.opt({ throwError: 'cr4' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f4',
     });
@@ -106,9 +108,9 @@ describe('fails error handlers not called if registered earlier than services', 
 
     const res1 = creator(cr1).fail(f1).srv(cr2).fail(f2).on(raw);
 
-    expect(
-      await res1.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res1.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f2',
     });
@@ -123,9 +125,9 @@ describe('fails error handlers not called if registered earlier than services', 
 
     const res2 = creator(cr3).fail(f3).srv(cr4).fail(f4).on(raw);
 
-    expect(
-      await res2.opt({ throwError: 'cr4' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res2.opt({ throwError: 'cr4' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f4',
     });
@@ -158,9 +160,9 @@ describe('fails error handlers not called if registered earlier than services', 
       .fail(f5)
       .on(raw);
 
-    expect(
-      await res1.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res1.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f5',
     });
@@ -178,9 +180,9 @@ describe('fails error handlers not called if registered earlier than services', 
 
     reset(steps);
 
-    expect(
-      await res1.opt({ throwError: 'cr2' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res1.opt({ throwError: 'cr2' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f5',
     });
@@ -196,9 +198,9 @@ describe('fails error handlers not called if registered earlier than services', 
 
     reset(steps);
 
-    expect(
-      await res1.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res1.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f5',
     });
@@ -207,9 +209,9 @@ describe('fails error handlers not called if registered earlier than services', 
 
     reset(steps);
 
-    expect(
-      await res1.opt({ throwError: 'cr3' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res1.opt({ throwError: 'cr3' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f5',
     });
@@ -225,9 +227,9 @@ describe('fails error handlers not called if registered earlier than services', 
 
     reset(steps);
 
-    expect(
-      await res1.opt({ throwError: 'cr4' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res1.opt({ throwError: 'cr4' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f5',
     });
@@ -243,9 +245,9 @@ describe('fails error handlers not called if registered earlier than services', 
 
     reset(steps);
 
-    expect(
-      await res1.opt({ throwError: 'cr3', throwMdl: true }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res1.opt({ throwError: 'cr3', throwMdl: true }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f5',
     });
@@ -327,12 +329,9 @@ describe('works with fails', () => {
 
     const res1 = creator(cr1).fail(f1).srv(cr2).fail(f2).ok(error).on(raw);
 
-    expect(
-      await res1.opt({ throwError: 'cr1', throwService: true }).req()(
-        createEvent(),
-        createContext()
-      )
-    ).toMatchObject({
+    await expect(
+      res1.opt({ throwError: 'cr1', throwService: true }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f2',
     });
@@ -353,12 +352,9 @@ describe('works with fails', () => {
 
     const res2 = creator(cr3).fail(f3).srv(cr4).fail(f4).ok(error2).on(raw);
 
-    expect(
-      await res2.opt({ throwError: 'cr4', throwService: true }).req()(
-        createEvent(),
-        createContext()
-      )
-    ).toMatchObject({
+    await expect(
+      res2.opt({ throwError: 'cr4', throwService: true }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f4',
     });
@@ -377,12 +373,9 @@ describe('works with fails', () => {
 
     const res1 = creator(cr1).fail(f1).srv(cr2).fail(f2).on(raw);
 
-    expect(
-      await res1.opt({ throwError: 'cr2', throwCreator: true }).req()(
-        createEvent(),
-        createContext()
-      )
-    ).toMatchObject({
+    await expect(
+      res1.opt({ throwError: 'cr2', throwCreator: true }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f2',
     });
@@ -399,12 +392,9 @@ describe('works with fails', () => {
 
     const res3 = res1.ok(error).fail(f3).onOk(raw);
 
-    expect(
-      await res3.opt({ throwError: 'cr2', throwService: true }).req()(
-        createEvent(),
-        createContext()
-      )
-    ).toMatchObject({
+    await expect(
+      res3.opt({ throwError: 'cr2', throwService: true }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f3',
     });
@@ -413,9 +403,9 @@ describe('works with fails', () => {
 
     reset(steps);
 
-    expect(
-      await res1.opt({ throwError: 'cr2' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res1.opt({ throwError: 'cr2' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f2',
     });
@@ -450,9 +440,9 @@ describe('works with fails', () => {
       })
       .on(raw);
 
-    expect(
-      await res.opt({ throwError: 'cr2', destroyThrow: true }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res.opt({ throwError: 'cr2', destroyThrow: true }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f2',
     });
@@ -483,9 +473,9 @@ describe('works with glued middlewares and handlers', () => {
 
     const res = creator(cr1).fail(f1).srv(g1).fail(f2).srv(cr2).fail(f3).on(raw);
 
-    expect(
-      await res.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f3',
     });
@@ -494,9 +484,9 @@ describe('works with glued middlewares and handlers', () => {
 
     reset(steps);
 
-    expect(
-      await res.opt({ throwError: 'cr2' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res.opt({ throwError: 'cr2' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f3',
     });
@@ -505,23 +495,23 @@ describe('works with glued middlewares and handlers', () => {
 
     reset(steps);
 
-    expect(await res.opt({ throwError: 'g1' }).req()(createEvent(), createContext())).toMatchObject(
-      {
-        status: 'success',
-        data: 'f3',
-      }
-    );
+    await expect(
+      res.opt({ throwError: 'g1' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
+      status: 'success',
+      data: 'f3',
+    });
 
     expect(steps).toStrictEqual(['cr1 req', 'g1 req', 'g1 fail', 'f2 runs', 'f3 runs']);
 
     reset(steps);
 
-    expect(await res.opt({ throwError: 'g2' }).req()(createEvent(), createContext())).toMatchObject(
-      {
-        status: 'success',
-        data: 'f3',
-      }
-    );
+    await expect(
+      res.opt({ throwError: 'g2' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
+      status: 'success',
+      data: 'f3',
+    });
 
     expect(steps).toStrictEqual(['cr1 req', 'g1 req', 'g2 req', 'g2 fail', 'f2 runs', 'f3 runs']);
   });
@@ -540,9 +530,9 @@ describe('works with glued middlewares and handlers', () => {
 
     const res = creator(cr1).fail(f1).srv(cr2).fail(g1).srv(cr3).fail(f2).on(raw);
 
-    expect(
-      await res.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res.opt({ throwError: 'cr1' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f2',
     });
@@ -558,9 +548,9 @@ describe('works with glued middlewares and handlers', () => {
 
     reset(steps);
 
-    expect(
-      await res.opt({ throwError: 'cr2' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res.opt({ throwError: 'cr2' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f2',
     });
@@ -576,9 +566,9 @@ describe('works with glued middlewares and handlers', () => {
 
     reset(steps);
 
-    expect(
-      await res.opt({ throwError: 'cr3' }).req()(createEvent(), createContext())
-    ).toMatchObject({
+    await expect(
+      res.opt({ throwError: 'cr3' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       status: 'success',
       data: 'f2',
     });

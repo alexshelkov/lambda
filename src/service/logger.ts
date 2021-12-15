@@ -62,7 +62,7 @@ const getLogger = (): Logger => {
   return service;
 };
 
-export const resetLogger = (logger: Logger = (undefined as unknown) as Logger): void => {
+export const resetLogger = (logger: Logger = undefined as unknown as Logger): void => {
   service = logger;
 };
 

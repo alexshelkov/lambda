@@ -69,10 +69,10 @@ describe('middleware utils', () => {
     expect(lc.errored()).toStrictEqual(1);
     expect(l2.errored()).toStrictEqual(1);
 
-    expect(await l1.destroyed()).toBeUndefined();
-    expect(await l2.destroyed()).toBeUndefined();
-    expect(await l1.ended()).toBeUndefined();
-    expect(await l2.ended()).toBeUndefined();
+    await expect(l1.destroyed()).resolves.toBeUndefined();
+    await expect(l2.destroyed()).resolves.toBeUndefined();
+    await expect(l1.ended()).resolves.toBeUndefined();
+    await expect(l2.ended()).resolves.toBeUndefined();
   });
 
   it('connect 2 middleware creators', async () => {

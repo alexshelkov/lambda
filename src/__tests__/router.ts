@@ -41,7 +41,9 @@ const refine = (
 const refineError = (
   request: RequestError<AwsEvent, TestRouter, RouterErrors>
 ): RequestError<AwsEvent, RefinedTestRouter, E2> | false => {
-  return request.error.type === 'err2' ? (request as RequestError<AwsEvent, RefinedTestRouter, E2>) : false;
+  return request.error.type === 'err2'
+    ? (request as RequestError<AwsEvent, RefinedTestRouter, E2>)
+    : false;
 };
 
 const routerCreatorTest: MiddlewareCreator<
@@ -146,12 +148,14 @@ describe('router', () => {
 
     const srv1 = srv.ok(h1).fail(e1);
 
-    expect(await srv1.req()(createEvent(), createContext())).toMatchObject({
+    await expect(srv1.req()(createEvent(), createContext())).resolves.toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"NotImplemented"}}',
     });
 
-    expect(await srv1.opt({ err: 'err1' }).req()(createEvent(), createContext())).toMatchObject({
+    await expect(
+      srv1.opt({ err: 'err1' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       statusCode: 400,
       body: '{"status":"error","error":{"type":"err1"}}',
     });
@@ -176,12 +180,16 @@ describe('router', () => {
         return fail<Err>(`Skipped ${err.type}`, { skip: true });
       });
 
-    expect(await srv2.opt({ a2: true }).req()(createEvent(), createContext())).toMatchObject({
+    await expect(
+      srv2.opt({ a2: true }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"will be triggered: ok"}',
     });
 
-    expect(await srv2.opt({ err: 'err2' }).req()(createEvent(), createContext())).toMatchObject({
+    await expect(
+      srv2.opt({ err: 'err2' }).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
       statusCode: 200,
       body: '{"status":"success","data":"will be triggered"}',
     });

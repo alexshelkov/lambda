@@ -504,7 +504,7 @@ export const joinFailure = (failGen: number) => {
           lifecycle
         );
       } else {
-        r2 = (fail<Err>('Skipped', { skip: true }) as unknown) as Failure<Error2>;
+        r2 = fail<Err>('Skipped', { skip: true }) as unknown as Failure<Error2>;
       }
 
       return compare(r1, r2);

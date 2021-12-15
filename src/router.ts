@@ -68,7 +68,15 @@ export const routeError = <
 ) => {
   return <Data, Error, HandledError = never>(
     handler: HandlerError<RoutedService, RoutedError, Data, Error, HandledError, Event, Options>
-  ): HandlerError<Service, ServiceError, Data, SkippedError | Error, HandledError, Event, Options> => {
+  ): HandlerError<
+    Service,
+    ServiceError,
+    Data,
+    SkippedError | Error,
+    HandledError,
+    Event,
+    Options
+  > => {
     return async (request, options, handlerLifecycle, lifecycle) => {
       const routedRequest = router(request, options);
 

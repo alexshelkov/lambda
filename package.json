@@ -9,7 +9,7 @@
     "error-handling",
     "middleware"
   ],
-  "version": "1.1.1",
+  "version": "1.1.2",
   "author": "Alex Shelkovskiy <alexshelkov@gmail.com>",
   "repository": "https://github.com/alexshelkov/lambda",
   "license": "MIT",
@@ -18,11 +18,6 @@
   "files": [
     "dist"
   ],
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
   "lint-staged": {
     "*.md": [
       "typescript-docs-verifier",
@@ -40,32 +35,33 @@
     "docs": "typescript-docs-verifier",
     "build": "tsc -b",
     "test": "jest --coverage --collectCoverageFrom=src/** --collectCoverageFrom=!**/__stubs__/**",
-    "prepublishOnly": "rm -rf dist && npm run build"
+    "prepublishOnly": "rm -rf dist && npm run build",
+    "prepare": "git config core.hooksPath .githooks",
+    "commit": "lint-staged"
   },
   "dependencies": {
-    "lambda-res": "^1.0.19",
+    "lambda-res": "^1.0.20",
     "@types/aws-lambda": "^8.10.87"
   },
   "devDependencies": {
+    "@types/jest": "^27.0.3",
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
-    "@types/jest": "^27.0.3",
     "coveralls": "^3.1.1",
     "eslint": "^8.4.1",
     "eslint-config-airbnb": "^19.0.2",
     "eslint-config-airbnb-typescript": "^16.1.0",
+    "eslint-config-prettier": "^8.3.0",
     "eslint-import-resolver-typescript": "^2.5.0",
     "eslint-plugin-import": "^2.25.3",
     "eslint-plugin-jest": "^25.3.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "eslint-config-prettier": "^8.3.0",
-    "husky": "^7.0.4",
+    "eslint-plugin-tsc": "^2.0.0",
     "jest": "^27.4.5",
     "lint-staged": "^12.1.2",
     "prettier": "^2.5.1",
     "ts-jest": "^27.1.1",
     "typescript": "^4.5.4",
-    "typescript-docs-verifier": "^2.0.0",
-    "eslint-plugin-tsc": "^2.0.0"
+    "typescript-docs-verifier": "^2.0.0"
   }
 }
