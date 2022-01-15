@@ -82,19 +82,16 @@ export {
 
 export { json, raw, safe, none } from './transform';
 
+export { join, glue, glueFailure, joinFatal, addService } from './utils';
+
 export {
-  join,
-  glue,
-  glueFailure,
-  joinFatal,
-  addService,
   createLifecycle,
   createMiddlewareLifecycle,
   createHandlerLifecycle,
   disconnectMiddlewareLifecycle,
   disconnectLifecycle,
   disconnectHandlerLifecycle,
-} from './utils';
+} from './lifecycles';
 
 export { lambda, convertToFailure, resetFallBackTransform, getFallBackTransform } from './lambda';
 

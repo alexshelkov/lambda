@@ -17,7 +17,7 @@ import {
   FallBackTransform,
 } from './types';
 import { json } from './transform';
-import { createLifecycle, createHandlerLifecycle, createMiddlewareLifecycle } from './utils';
+import { createLifecycle, createHandlerLifecycle, createMiddlewareLifecycle } from './lifecycles';
 
 export const convertToFailure = (
   type: UnhandledErrors['type'],
