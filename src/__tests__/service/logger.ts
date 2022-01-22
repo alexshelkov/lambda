@@ -9,7 +9,7 @@ import {
   resetLogger,
   resetTransport,
   MiddlewareCreator,
-  LoggerService,
+  LoggerService, addService
 } from '../../index';
 import { createContext, createEvent } from '../../__stubs__';
 
@@ -85,7 +85,7 @@ describe('logger', () => {
         expect(r.service.logger.meta().test).toStrictEqual('test');
         expect(r.service.logger.meta().event).toMatchObject(options);
 
-        return ok(r);
+        return addService(r);
       };
     };
 

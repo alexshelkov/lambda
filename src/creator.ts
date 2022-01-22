@@ -25,6 +25,33 @@ import { lambda, convertToFailure } from './lambda';
 
 import { json } from './transform';
 
+export interface Package<
+  Options extends ServiceOptions,
+  Service extends ServiceContainer,
+  ServiceError,
+  Data,
+  Error,
+  FailureData,
+  FailureError,
+  HandledError = never,
+  ServiceDeps extends ServiceContainer = ServiceContainer,
+  Event extends AwsEvent = AwsEvent
+> {
+  srv: MiddlewareCreator<Options, Service, ServiceError, ServiceDeps, Event>;
+
+  ok: Handler<Service, Data, Error, Event, Options>;
+
+  fail: HandlerError<
+    Service,
+    ServiceError,
+    FailureData,
+    FailureError,
+    HandledError,
+    Event,
+    Options
+  >;
+}
+
 export interface Creator<
   Event extends AwsEvent,
   ResOk1,
@@ -42,12 +69,54 @@ export interface Creator<
   FailureError1,
   ExceptionData1,
   ExceptionError1,
-  ServiceDeps extends ServiceOptions = ServiceContainer
+  ServiceDeps extends ServiceContainer = ServiceContainer
 > {
+  // bundle: <
+  //   Options2 extends ServiceOptions,
+  //   Service2 extends ServiceContainer,
+  //   ServiceError2,
+  //   Data2,
+  //   Error2,
+  //   FailureData2,
+  //   FailureError2,
+  //   HandledError2 = never
+  // >(
+  //   pack: Package<
+  //     Options1 & Options2,
+  //     Service1 & Service2,
+  //     ServiceError2,
+  //     Data2,
+  //     Error2,
+  //     FailureData2,
+  //     FailureError2,
+  //     HandledError2,
+  //     ServiceDeps,
+  //     Event
+  //   >
+  // ) => Creator<
+  //   Event,
+  //   ResOk1,
+  //   ResOkRes1,
+  //   ResErr1,
+  //   ResErrRes1,
+  //   ResFatal1,
+  //   ResFatalRes1,
+  //   Options1 & Options2,
+  //   Service1 & Service2,
+  //   ServiceError1 | Service2,
+  //   Data1 | Data2,
+  //   Error1 | Error2,
+  //   FailureData1 | FailureData2,
+  //   FailureError1 | FailureError2,
+  //   ExceptionData1,
+  //   ExceptionError1,
+  //   ServiceDeps
+  // >;
+
   srv: <Options2 extends ServiceOptions, Service2 extends ServiceContainer, ServiceError2>(
     middlewareCreator: MiddlewareCreator<
       Options1 & Options2,
-      Service2,
+      Partial<Service1> & Service2,
       ServiceError2,
       ServiceDeps,
       Event
@@ -73,7 +142,7 @@ export interface Creator<
   >;
 
   opt: <Options2 extends ServiceContainer>(
-    options: Partial<Options1 & Options2>
+    options: Partial<Options1> & Options2
   ) => Creator<
     Event,
     ResOk1,
@@ -418,8 +487,51 @@ export const creatorHelper = <
   Service1
 > => {
   return {
+    // bundle: <
+    //   Options2 extends ServiceOptions,
+    //   Service2 extends ServiceContainer,
+    //   ServiceError2,
+    //   Data2,
+    //   Error2,
+    //   FailureData2,
+    //   FailureError2,
+    //   HandledError2 = never
+    //   >(
+    //   pack: Package<
+    //     Options1 & Options2,
+    //     Service1 & Service2,
+    //     ServiceError2,
+    //     Data2,
+    //     Error2,
+    //     FailureData2,
+    //     FailureError2,
+    //     HandledError2,
+    //     Service1,
+    //     Event
+    //     >
+    // ) => {
+    //   const creator12 = connect(crtGen + 1)(creator1)(pack.srv);
+    //   const success12 = join(success1, pack.ok);
+    //   const error12 = joinFailure(crtGen)(error1, pack.fail);
+    //
+    //   return creatorHelper(
+    //     crtGen + 1,
+    //     creator12,
+    //     options1 as Options1 & Options2,
+    //     success12,
+    //     error12 ,
+    //     exception1,
+    //     transform1,
+    //     transformRes1,
+    //     transformError1,
+    //     transformErrorRes1,
+    //     transformException1,
+    //     transformExceptionRes1
+    //   ) as any;
+    // },
+
     srv: <Options2 extends ServiceOptions, Service2 extends ServiceContainer, ServiceError2>(
-      creator2: MiddlewareCreator<Options1 & Options2, Service2, ServiceError2, Service1, Event>
+      creator2: MiddlewareCreator<Options1 & Options2, Partial<Service1> & Service2, ServiceError2, Service1, Event>
     ) => {
       const creator12 = connect(crtGen + 1)(creator1)(creator2);
 
@@ -447,11 +559,17 @@ export const creatorHelper = <
       );
     },
 
-    opt: <Options2 extends ServiceContainer>(options2: Partial<Options2>) => {
+    opt: <Options2 extends ServiceContainer>(options2: Partial<Options1> & Options2) => {
       return creatorHelper(
         crtGen,
-        creator1,
-        { ...options1, ...options2 } as Options1 & Options2,
+        creator1 as MiddlewareCreator<
+          Options1 & Options2,
+          Service1,
+          ServiceError1,
+          ServiceContainer,
+          Event
+        >,
+        { ...options1, ...options2 },
         success1,
         error1,
         exception1,

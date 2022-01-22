@@ -88,7 +88,8 @@ describe('middleware utils', () => {
     expect(response.isOk()).toStrictEqual(true);
 
     expect(response.ok()).toMatchObject({
-      service: { test2: '2', test1: '1' },
+      test2: '2',
+      test1: '1',
     });
   });
 
@@ -105,7 +106,9 @@ describe('middleware utils', () => {
     expect(response.isOk()).toStrictEqual(true);
 
     expect(response.isOk() ? response.data : {}).toMatchObject({
-      service: { test2: '2', test1: '1', test3: '3' },
+      test2: '2',
+      test1: '1',
+      test3: '3',
     });
   });
 
@@ -166,12 +169,7 @@ describe('handlers utils', () => {
       }
     );
 
-    const resOk = await successes(
-      createRequest({}),
-      {},
-      createHandlerLifecycle(),
-      createLifecycle()
-    );
+    const resOk = await successes(createRequest({}), createHandlerLifecycle(), createLifecycle());
 
     expect(resOk).toMatchObject({ status: 'success', data: 2 });
 
@@ -191,7 +189,6 @@ describe('handlers utils', () => {
 
     const resErr = await errors(
       createErrorRequest('1'),
-      {},
       createHandlerLifecycle(),
       createLifecycle()
     );
@@ -211,12 +208,7 @@ describe('handlers utils', () => {
       }
     );
 
-    const resOk = await successes(
-      createRequest({}),
-      {},
-      createHandlerLifecycle(),
-      createLifecycle()
-    );
+    const resOk = await successes(createRequest({}), createHandlerLifecycle(), createLifecycle());
 
     expect(resOk).toMatchObject({ status: 'error', error: { type: 'err' } });
 
@@ -231,7 +223,6 @@ describe('handlers utils', () => {
 
     const resErr = await errors(
       createErrorRequest('1'),
-      {},
       createHandlerLifecycle(),
       createLifecycle()
     );
@@ -241,7 +232,7 @@ describe('handlers utils', () => {
     let earlyReturns = false;
 
     const errors2 = glueFailure(
-      async (_r, _o, { returns }) => {
+      async (_, { returns }) => {
         returns(() => {
           return earlyReturns;
         });
@@ -255,7 +246,6 @@ describe('handlers utils', () => {
 
     const resErr2 = await errors2(
       createErrorRequest('1'),
-      {},
       createHandlerLifecycle(),
       createLifecycle()
     );
@@ -266,7 +256,6 @@ describe('handlers utils', () => {
 
     const resErr3 = await errors2(
       createErrorRequest('1'),
-      {},
       createHandlerLifecycle(),
       createLifecycle()
     );

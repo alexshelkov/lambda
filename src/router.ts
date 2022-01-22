@@ -17,7 +17,7 @@ export interface Router<
   Service extends ServiceContainer,
   Routed extends ServiceContainer
 > {
-  (request: Request<Event, Service>, options: Partial<Options>): Request<Event, Routed> | false;
+  (request: Request<Event, Options, Service>): Request<Event, Options, Routed> | false;
 }
 
 export interface RouterError<
@@ -28,8 +28,8 @@ export interface RouterError<
   RoutedService extends ServiceContainer,
   RoutedError
 > {
-  (request: RequestError<Event, Service, ServiceError>, options: Partial<Options>):
-    | RequestError<Event, RoutedService, RoutedError>
+  (request: RequestError<Event, Options, Service, ServiceError>):
+    | RequestError<Event, Options, RoutedService, RoutedError>
     | false;
 }
 
@@ -44,14 +44,14 @@ export const route = <
   return <Data, Error>(
     handler: Handler<Routed, Data, Error, Event, Options>
   ): Handler<Service, Data, SkippedError | Error, Event, Options> => {
-    return async (request, options, handlerLifecycle, lifecycle) => {
-      const routedRequest = router(request, options);
+    return async (request, handlerLifecycle, lifecycle) => {
+      const routedRequest = router(request);
 
       if (!routedRequest) {
         return fail<SkippedError>('Skipped', { skip: true });
       }
 
-      return handler(routedRequest, options, handlerLifecycle, lifecycle);
+      return handler(routedRequest, handlerLifecycle, lifecycle);
     };
   };
 };
@@ -77,14 +77,14 @@ export const routeError = <
     Event,
     Options
   > => {
-    return async (request, options, handlerLifecycle, lifecycle) => {
-      const routedRequest = router(request, options);
+    return async (request, handlerLifecycle, lifecycle) => {
+      const routedRequest = router(request);
 
       if (!routedRequest) {
         return fail<SkippedError>('Skipped', { skip: true });
       }
 
-      return handler(routedRequest, options, handlerLifecycle, lifecycle);
+      return handler(routedRequest, handlerLifecycle, lifecycle);
     };
   };
 };

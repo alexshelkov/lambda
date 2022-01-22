@@ -110,29 +110,27 @@ export type GetError<Crt> = Crt extends Creator<
   ? Error
   : never;
 
-export type GetHandler<Crt, Data, Error> = [Crt] extends [
-  Creator<
-    infer Event,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    infer Options,
-    infer Service,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any
-  >
-]
+export type GetHandler<Crt, Data, Error> = Crt extends Creator<
+  infer Event,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer Options,
+  infer Service,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>
   ? Handler<Service, Data, Error, Event, Options>
-  : [Crt] extends [MiddlewareCreator<infer Options, infer Service, any, any, infer Event>]
+  : Crt extends MiddlewareCreator<infer Options, infer Service, any, any, infer Event>
   ? Handler<Service, Data, Error, Event, Options>
   : never;
 
@@ -142,55 +140,64 @@ export type GetHandlerError<
   Error,
   HandledError = never,
   CrtRequired = ServiceContainer
-> = [Crt] extends [
-  Creator<
-    infer Event,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    infer Options,
-    any,
-    infer ServiceError,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any
-  >
-]
+> = Crt extends Creator<
+  infer Event,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer Options,
+  any,
+  infer ServiceError,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>
   ? HandlerError<CrtRequired, ServiceError, Data, Error, HandledError, Event, Options>
-  : [Crt] extends [MiddlewareCreator<infer Options, any, infer ServiceError, any, infer Event>]
+  : Crt extends [
+      MiddlewareCreator<infer Options1, any, infer ServiceError1, any, infer Event1>,
+      MiddlewareCreator<infer Options2, any, infer ServiceError2, any, infer Event2>
+    ]
+  ? HandlerError<
+      CrtRequired,
+      ServiceError1 | ServiceError2,
+      Data,
+      Error,
+      HandledError,
+      Event1 & Event2,
+      Options1 & Options2
+    >
+  : Crt extends MiddlewareCreator<infer Options, any, infer ServiceError, any, infer Event>
   ? HandlerError<CrtRequired, ServiceError, Data, Error, HandledError, Event, Options>
   : never;
 
-export type GetHandlerException<Crt, Data, Error> = [Crt] extends [
-  Creator<
-    infer Event,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    infer Options,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any
-  >
-]
+export type GetHandlerException<Crt, Data, Error> = Crt extends Creator<
+  infer Event,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer Options,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>
   ? HandlerException<Data, Error, Event, Options>
-  : [Crt] extends [MiddlewareCreator<infer Options, any, any, any, infer Event>]
+  : Crt extends MiddlewareCreator<infer Options, any, any, any, infer Event>
   ? HandlerException<Data, Error, Event, Options>
   : never;
 

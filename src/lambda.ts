@@ -7,7 +7,6 @@ import {
   HandlerException,
   Middleware,
   MiddlewareCreator,
-  Request,
   ServiceContainer,
   ServiceOptions,
   Transform,
@@ -95,7 +94,7 @@ export const lambda = <
   transformError: TransformError<ResErr, FailureData, FailureError, Event, Options>,
   transformException: TransformError<ResFatal, ExceptionData, ExceptionError, Event, Options>
 ): AwsHandler<Event, ResOk | ResErr | ResFatal> => {
-  let middleware: Middleware<Service, ServiceError, ServiceContainer, Event> | undefined;
+  let middleware: Middleware<Options, Service, ServiceError, ServiceContainer, Event> | undefined;
   let middlewareError: unknown;
 
   const middlewareLifecycle = createMiddlewareLifecycle();
@@ -109,34 +108,26 @@ export const lambda = <
   return async (event: Event['event'], context: Event['context']) => {
     const lifecycle = createLifecycle();
 
-    const evObj = { event, context } as Event;
+    const reqBaseObj = { event, context, options };
 
     let response;
 
     const handleServiceError = async (err: ServiceError) => {
       const handlerLifecycle = createHandlerLifecycle();
 
-      const result = await failure(
-        {
-          event,
-          context,
-          error: err,
-          service: lifecycle.partial(),
-        },
-        options,
-        handlerLifecycle,
-        lifecycle
-      );
+      const reqObj = { ...reqBaseObj, error: err, service: lifecycle.partial() };
 
-      return transformError(result, evObj, options);
+      const result = await failure(reqObj, handlerLifecycle, lifecycle);
+
+      return transformError(result, reqObj);
     };
 
-    const handleHandler = async (data: Request<Event, Service>) => {
+    const handleHandler = async (data: Service) => {
       const handlerLifecycle = createHandlerLifecycle();
 
-      const result = await success(data, options, handlerLifecycle, lifecycle);
+      const result = await success({ ...reqBaseObj, service: data }, handlerLifecycle, lifecycle);
 
-      return transform(result, data, options);
+      return transform(result, { ...reqBaseObj, service: data });
     };
 
     const isHandleFailureError = (err: unknown): err is Failure<MiddlewareFail<ServiceError>> => {
@@ -156,19 +147,11 @@ export const lambda = <
 
       const handlerLifecycle = createHandlerLifecycle();
 
-      const result = await failure(
-        {
-          event,
-          context,
-          error: error.inner.err(),
-          service: lifecycle.partial(),
-        },
-        options,
-        handlerLifecycle,
-        lifecycle
-      );
+      const reqObj = { ...reqBaseObj, error: error.inner.err(), service: lifecycle.partial() };
 
-      return transformError(result, evObj, options);
+      const result = await failure(reqObj, handlerLifecycle, lifecycle);
+
+      return transformError(result, reqObj);
     };
 
     const handleFatalError = async (err: unknown) => {
@@ -176,27 +159,16 @@ export const lambda = <
 
       let result;
 
+      const reqObj = { ...reqBaseObj, exception: err };
+
       try {
-        result = await exception(
-          {
-            event,
-            context,
-            exception: err,
-          },
-          options,
-          handlerLifecycle,
-          lifecycle
-        );
+        result = await exception(reqObj, handlerLifecycle, lifecycle);
       } catch (fatal) {
         result = convertToFailure('UncaughtError', fatal);
       }
 
       try {
-        response = await transformException(
-          result as unknown as Failure<ExceptionError>,
-          evObj,
-          options
-        );
+        response = await transformException(result as unknown as Failure<ExceptionError>, reqObj);
       } catch (fatal) {
         result = convertToFailure('UncaughtTransformError', fatal);
         response = (await getFallBackTransform()(result)) as Promise<ResFatal>;
@@ -244,8 +216,7 @@ export const lambda = <
       try {
         const service = await middleware(
           {
-            event,
-            context,
+            ...reqBaseObj,
             service: {} as Service,
           },
           lifecycle

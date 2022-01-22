@@ -426,7 +426,7 @@ describe('works with fails', () => {
       .fail(f1)
       .srv(cr2)
       .fail(f2)
-      .ok(async (_r, _o, { returns }) => {
+      .ok(async (_, { returns }) => {
         returns(() => {
           steps.push('ok1 returns');
           return true;

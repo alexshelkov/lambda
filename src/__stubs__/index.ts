@@ -8,6 +8,7 @@ import {
   MiddlewareLifecycle,
   HandlerError,
   addService,
+  ServiceOptions,
 } from '../index';
 
 /* eslint-disable @typescript-eslint/require-await */
@@ -126,21 +127,31 @@ export const createContext = <Context extends AwsEvent['context']>(
   return context;
 };
 
-export const createRequest = <Service extends ServiceContainer>(
-  service: Service
-): Request<AwsEvent, Service> => {
+export const createRequest = <
+  Service extends ServiceContainer,
+  Options extends ServiceOptions = ServiceOptions
+>(
+  service: Service,
+  options: Options = {} as Options
+): Request<AwsEvent, Options, Service> => {
   return {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     event: createEvent(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     context: createContext(),
     service,
+    options,
   };
 };
 
-export const createErrorRequest = <Service extends ServiceContainer, Error>(
-  error: Error
-): RequestError<AwsEvent, Service, Error> => {
+export const createErrorRequest = <
+  Service extends ServiceContainer,
+  Error,
+  Options extends ServiceOptions = ServiceOptions
+>(
+  error: Error,
+  options: Options = {} as Options
+): RequestError<AwsEvent, Options, Service, Error> => {
   return {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     event: createEvent(),
@@ -148,6 +159,7 @@ export const createErrorRequest = <Service extends ServiceContainer, Error>(
     context: createContext(),
     error,
     service: {},
+    options,
   };
 };
 
@@ -171,10 +183,7 @@ export const createMdl = <T extends string>(
       throws<Err>(name);
     }
 
-    return async <Service1 extends ServiceContainer>(
-      request: Request<AwsEvent, Service1 & ServiceContainer>,
-      { destroy }: MiddlewareLifecycle
-    ) => {
+    return async (request, { destroy }) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
       const serviceFail: string = request.event?.throwError || options.throwError;
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions,@typescript-eslint/no-unsafe-member-access

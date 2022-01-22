@@ -4,6 +4,7 @@ import {
   Handler,
   HandlerError,
   HandlerException,
+  ProtectedMiddlewareLifecycle,
   PrivateMiddlewareCreatorLifecycle,
   MiddlewareLifecycle,
   PrivateMiddlewareLifecycle,
@@ -68,11 +69,20 @@ export const connect = (gen: number) => {
             dec = true;
             r = r1;
           } else {
-            const data = r1.ok();
+            const srv = r1.ok();
 
-            l1.service(data.service);
+            l1.service(srv);
 
-            r = await m2<typeof data.service>(data, l2);
+            r = await m2<typeof srv>(
+              {
+                ...request,
+                service: {
+                  ...request.service,
+                  ...srv,
+                },
+              },
+              l2
+            );
           }
 
           if (gen !== -1 && r.isErr()) {
@@ -101,16 +111,16 @@ export const join = <
   c1: Handler<Service1, Data1, Error1, Event, Options>,
   c2: Handler<Service2, Data2, Error2, Event, Options>
 ): Handler<Service1 & Service2, Data1 | Data2, Error1 | Error2, Event, Options> => {
-  return async (request, options, lifecycleHandler, lifecycle) => {
+  return async (request, lifecycleHandler, lifecycle) => {
     const [l1, l2] = disconnectHandlerLifecycle(lifecycleHandler as PrivateHandlerLifecycle);
 
-    const r1 = await c1(request, options, l1, lifecycle);
+    const r1 = await c1(request, l1, lifecycle);
 
     if (l1.stops()) {
       return r1;
     }
 
-    const r2 = await c2(request, options, l2, lifecycle);
+    const r2 = await c2(request, l2, lifecycle);
 
     return compare(r1, r2);
   };
@@ -141,16 +151,14 @@ export const glueFailure = <
   Options
 > => {
   return async (
-    request: RequestError<Event, Service, ServiceError1 | ServiceError2>,
-    options: Partial<Options>,
+    request: RequestError<Event, Options, Service, ServiceError1 | ServiceError2>,
     handlerLifecycle: HandlerLifecycle,
-    lifecycle: MiddlewareLifecycle
+    lifecycle: ProtectedMiddlewareLifecycle
   ) => {
     const [l1, l2] = disconnectHandlerLifecycle(handlerLifecycle as PrivateHandlerLifecycle);
 
     const r1 = await c1(
-      request as RequestError<Event, Service, ServiceError1>,
-      options,
+      request as RequestError<Event, Options, Service, ServiceError1>,
       l1,
       lifecycle
     );
@@ -160,8 +168,7 @@ export const glueFailure = <
     }
 
     const r2 = await c2(
-      request as RequestError<Event, Service, ServiceError2>,
-      options,
+      request as RequestError<Event, Options, Service, ServiceError2>,
       l2,
       lifecycle
     );
@@ -196,18 +203,16 @@ export const joinFailure = (failGen: number) => {
     Options
   > => {
     return async (
-      request: RequestError<Event, Service, ServiceError1 | ServiceError2>,
-      options: Partial<Options>,
+      request: RequestError<Event, Options, Service, ServiceError1 | ServiceError2>,
       handlerLifecycle: HandlerLifecycle,
-      publicLifecycle: MiddlewareLifecycle
+      protectedMiddlewareLifecycle: ProtectedMiddlewareLifecycle
     ) => {
-      const lifecycle = publicLifecycle as PrivateMiddlewareLifecycle;
+      const lifecycle = protectedMiddlewareLifecycle as PrivateMiddlewareLifecycle;
 
       const [l1, l2] = disconnectHandlerLifecycle(handlerLifecycle as PrivateHandlerLifecycle);
 
       const r1 = await c1(
-        request as RequestError<Event, Service, ServiceError1>,
-        options,
+        request as RequestError<Event, Options, Service, ServiceError1>,
         l1,
         lifecycle
       );
@@ -227,8 +232,7 @@ export const joinFailure = (failGen: number) => {
 
       if (failGen >= gen) {
         r2 = await c2(
-          request as RequestError<Event, Service, ServiceError2>,
-          options,
+          request as RequestError<Event, Options, Service, ServiceError2>,
           l2,
           lifecycle
         );
@@ -253,20 +257,19 @@ export const joinFatal = <
   c2: HandlerException<Data2, Error2, Event, Options>
 ): HandlerException<Data1 | Data2, Error1 | Error2, Event, Options> => {
   return async (
-    request: RequestException<Event>,
-    options: Partial<Options>,
+    request: RequestException<Event, Options>,
     lifecycleHandler: HandlerLifecycle,
     lifecycle: MiddlewareLifecycle
   ) => {
     const [l1, l2] = disconnectHandlerLifecycle(lifecycleHandler as PrivateHandlerLifecycle);
 
-    const r1 = await c1(request, options, l1, lifecycle);
+    const r1 = await c1(request, l1, lifecycle);
 
     if (l1.stops()) {
       return r1;
     }
 
-    const r2 = await c2(request, options, l2, lifecycle);
+    const r2 = await c2(request, l2, lifecycle);
 
     return compare(r1, r2);
   };
@@ -274,17 +277,15 @@ export const joinFatal = <
 
 export const addService = <
   Event extends AwsEvent,
+  Options extends ServiceOptions,
   Service1 extends ServiceContainer,
   Service2 extends ServiceContainer
 >(
-  request: Request<Event, Service1>,
-  addedService: Service2
-): Result<Request<Event, Service1 & Service2>, never> => {
+  request: Request<Event, Options, Service1>,
+  addedService?: Service2
+): Result<Service1 & Service2, never> => {
   return ok({
-    ...request,
-    service: {
-      ...request.service,
-      ...addedService,
-    },
+    ...request.service,
+    ...(addedService || {} as Service2),
   });
 };

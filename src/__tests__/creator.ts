@@ -194,8 +194,7 @@ describe('creator base', () => {
       const err1 = await error1(
         {
           error: 1,
-        } as RequestError<AwsEvent, ServiceContainer, number>,
-        {},
+        } as RequestError<AwsEvent, ServiceOptions, ServiceContainer, number>,
         createHandlerLifecycle(),
         createLifecycle()
       );
@@ -209,8 +208,7 @@ describe('creator base', () => {
       const err1 = await error1(
         {
           error: 'test',
-        } as RequestError<AwsEvent, ServiceContainer, string>,
-        {},
+        } as RequestError<AwsEvent, ServiceOptions, ServiceContainer, string>,
         createHandlerLifecycle(),
         createLifecycle()
       );
@@ -226,8 +224,7 @@ describe('creator base', () => {
           error: {
             type: 1 as unknown as string,
           },
-        } as RequestError<AwsEvent, ServiceContainer, Err>,
-        {},
+        } as RequestError<AwsEvent, ServiceOptions, ServiceContainer, Err>,
         createHandlerLifecycle(),
         createLifecycle()
       );
@@ -280,7 +277,7 @@ describe('create middleware lazily and in correct order', () => {
       return async (request) => {
         steps.push('m1 request');
 
-        return ok(request);
+        return addService(request);
       };
     };
 
@@ -290,7 +287,7 @@ describe('create middleware lazily and in correct order', () => {
       return async (request) => {
         steps.push('m2 request');
 
-        return ok(request);
+        return addService(request);
       };
     };
 
@@ -334,7 +331,7 @@ describe('create middleware lazily and in correct order', () => {
       return async (request) => {
         steps.push('m1 request');
 
-        return ok(request);
+        return addService(request);
       };
     };
 
@@ -388,7 +385,7 @@ describe('create middleware lazily and in correct order', () => {
       return async (request) => {
         steps.push('m1 request');
 
-        return ok(request);
+        return addService(request);
       };
     };
 
@@ -402,7 +399,7 @@ describe('create middleware lazily and in correct order', () => {
           throw new Error('Fatal error');
         }
 
-        return ok(request);
+        return addService(request);
       };
     };
 
@@ -524,18 +521,19 @@ describe('creator types correctness', () => {
     };
 
     type InferredEvent = GetEventMdl<InferMiddleware>;
+    type InferredOptions = GetOpt<InferMiddleware>;
     type InferredService = GetServiceMdl<InferMiddleware> & GetServiceMdl<typeof dep1>;
 
     const res = creator(dep1)
       .srv(inferMiddleware)
-      .ok(async (_r: Request<InferredEvent, InferredService>) => {
+      .ok(async (_r: Request<InferredEvent, InferredOptions, InferredService>) => {
         return ok('success');
       });
 
     type InferredError = GetErrorMdl<InferMiddleware> | GetErrorMdl<typeof dep1>;
 
     const resErr = res.fail(
-      async (_r: RequestError<InferredEvent, InferredService, InferredError>) => {
+      async (_r: RequestError<InferredEvent, InferredOptions, InferredService, InferredError>) => {
         return ok('error');
       }
     );
@@ -557,7 +555,7 @@ describe('creator types correctness', () => {
       { event: string; context: number }
     > = () => {
       return async (request) => {
-        return ok(request);
+        return addService(request);
       };
     };
 
@@ -600,7 +598,7 @@ describe('creator types correctness', () => {
       string,
       never,
       GetError<typeof creatorTest4Error>
-    > = async (_r, _o, { returns }) => {
+    > = async (_r, { returns }) => {
       returns(() => {
         return true;
       });
@@ -613,7 +611,7 @@ describe('creator types correctness', () => {
       string,
       never,
       GetError<typeof creatorTest1>
-    > = async (_r, _o, { returns }) => {
+    > = async (_r, { returns }) => {
       returns(() => {
         return true;
       });
@@ -789,7 +787,7 @@ describe('creator types correctness', () => {
 
     const cr1: MiddlewareCreator<ServiceOptions, ServiceContainer, never> = () => {
       return async (request) => {
-        return ok(request);
+        return addService(request);
       };
     };
 
@@ -800,11 +798,11 @@ describe('creator types correctness', () => {
       { appEnvs: { env2: string } }
     > = () => {
       return async (request) => {
-        return ok(request);
+        return addService(request);
       };
     };
 
-    type Opts = { envs: readonly string[] };
+    type BaseOpts = { envs: readonly string[] };
     type Serv<O> = O extends { envs: infer X }
       ? X extends readonly string[]
         ? { [k in X[number]]: string }
@@ -812,10 +810,12 @@ describe('creator types correctness', () => {
       : unknown;
     type EnvError = Err<'EnvError', { name: string }>;
 
-    const inferServices = <O extends Opts>(
-      options: Partial<O>
-    ): Middleware<{ appEnvs: Serv<O> }, EnvError> => {
-      return async <Service1 extends ServiceContainer>(request: Request<AwsEvent, Service1>) => {
+    const inferServices = <Opt extends BaseOpts>(
+      options: Partial<Opt>
+    ): Middleware<Opt, { appEnvs: Serv<Opt> }, EnvError> => {
+      return async <Service1 extends ServiceContainer>(
+        request: Request<AwsEvent, Opt, Service1>
+      ) => {
         const { envs } = options;
 
         const service: Record<string, string> = {};
@@ -833,7 +833,7 @@ describe('creator types correctness', () => {
         }
 
         return addService(request, {
-          appEnvs: service as Serv<O>,
+          appEnvs: service as Serv<Opt>,
         });
       };
     };
@@ -877,7 +877,7 @@ describe('creator types correctness', () => {
     expect.assertions(3);
 
     const f1: GetHandlerError<
-      typeof creatorTest1 | typeof creatorTest4Error,
+      [typeof creatorTest1, typeof creatorTest4Error],
       string,
       never,
       never,
@@ -933,7 +933,7 @@ describe('creator handlers and transforms', () => {
           okCalls += 1;
           return ok('1');
         })
-        .ok(async (_r, _s, { returns }) => {
+        .ok(async (_, { returns }) => {
           returns(() => {
             return true;
           });
@@ -953,7 +953,7 @@ describe('creator handlers and transforms', () => {
       expect(okCalls).toStrictEqual(2);
 
       const resOk2 = res
-        .ok(async (_r, _s, { returns }) => {
+        .ok(async (_, { returns }) => {
           returns(() => {
             return true;
           });
@@ -985,7 +985,7 @@ describe('creator handlers and transforms', () => {
           failCalls += 1;
           return ok('1');
         })
-        .fail(async (_e, _s, { returns }) => {
+        .fail(async (_, { returns }) => {
           returns(() => {
             return true;
           });
@@ -1005,7 +1005,7 @@ describe('creator handlers and transforms', () => {
       expect(failCalls).toStrictEqual(2);
 
       const resFail2 = res
-        .fail(async (_e, _s, { returns }) => {
+        .fail(async (_, { returns }) => {
           returns(() => {
             return true;
           });
@@ -1038,7 +1038,7 @@ describe('creator handlers and transforms', () => {
             throw new Error('Uncaught error');
           }
 
-          return ok(request);
+          return addService(request);
         };
       };
 
@@ -1051,7 +1051,7 @@ describe('creator handlers and transforms', () => {
           fatal += 1;
           return ok('1');
         })
-        .fatal(async (_e, _s, { returns }) => {
+        .fatal(async (_, { returns }) => {
           returns(() => {
             return true;
           });
@@ -1071,7 +1071,7 @@ describe('creator handlers and transforms', () => {
       expect(fatal).toStrictEqual(2);
 
       const resFail2 = res
-        .fatal(async (_e, _s, { returns }) => {
+        .fatal(async (_, { returns }) => {
           returns(() => {
             return true;
           });
@@ -1999,7 +1999,7 @@ describe('creator exceptions', () => {
           okCalls += 1;
           return ok('1');
         })
-        .ok(async (_r, _s, { returns }) => {
+        .ok(async (_, { returns }) => {
           returns(() => {
             throw new Error('Fatal error');
           });
@@ -2076,7 +2076,7 @@ describe('creator exceptions', () => {
         expect(steps).toStrictEqual([]);
 
         const f1: GetHandlerError<
-          typeof cr1 | typeof cr2,
+          [typeof cr1, typeof cr2],
           string,
           never,
           never,
@@ -2115,7 +2115,7 @@ describe('creator exceptions', () => {
         expect(steps).toStrictEqual([]);
 
         const f2: GetHandlerError<
-          typeof cr1 | typeof cr2,
+          [typeof cr1, typeof cr2],
           string,
           never,
           never,
@@ -2157,7 +2157,7 @@ describe('creator exceptions', () => {
       expect(steps).toStrictEqual([]);
 
       const f1: GetHandlerError<
-        typeof cr1 | typeof cr2,
+        [typeof cr1, typeof cr2],
         string,
         never,
         never,

@@ -12,7 +12,7 @@ import {
   ServiceContainer,
   AwsEvent,
   RequestError,
-  HandlerError,
+  HandlerError, ServiceOptions
 } from '../index';
 import { createEvent, createContext, createRequest, createErrorRequest } from '../__stubs__';
 
@@ -33,16 +33,16 @@ type E2 = Err<'err2'>;
 type RouterErrors = E1 | E2;
 
 const refine = (
-  request: Request<AwsEvent, TestRouter>
-): Request<AwsEvent, RefinedTestRouter> | false => {
-  return 'a2' in request.service.a ? (request as Request<AwsEvent, RefinedTestRouter>) : false;
+  request: Request<AwsEvent, ServiceOptions, TestRouter>
+): Request<AwsEvent, ServiceOptions, RefinedTestRouter> | false => {
+  return 'a2' in request.service.a ? (request as Request<AwsEvent, ServiceOptions, RefinedTestRouter>) : false;
 };
 
 const refineError = (
-  request: RequestError<AwsEvent, TestRouter, RouterErrors>
-): RequestError<AwsEvent, RefinedTestRouter, E2> | false => {
+  request: RequestError<AwsEvent, ServiceOptions, TestRouter, RouterErrors>
+): RequestError<AwsEvent, ServiceOptions, RefinedTestRouter, E2> | false => {
   return request.error.type === 'err2'
-    ? (request as RequestError<AwsEvent, RefinedTestRouter, E2>)
+    ? (request as RequestError<AwsEvent, ServiceOptions, RefinedTestRouter, E2>)
     : false;
 };
 
@@ -75,7 +75,6 @@ describe('router', () => {
 
     const res1 = await h1(
       createRequest({ a: { a1: '1' } }),
-      {},
       createHandlerLifecycle(),
       createLifecycle()
     );
@@ -88,7 +87,6 @@ describe('router', () => {
 
     const res2 = await h2(
       createRequest({ a: { a2: true } }),
-      {},
       createHandlerLifecycle(),
       createLifecycle()
     );
@@ -107,7 +105,6 @@ describe('router', () => {
 
     const res1 = await e1(
       createErrorRequest({ type: 'err1' }),
-      {},
       createHandlerLifecycle(),
       createLifecycle()
     );
@@ -122,7 +119,6 @@ describe('router', () => {
 
     const res2 = await e2(
       createErrorRequest({ type: 'err2' }),
-      {},
       createHandlerLifecycle(),
       createLifecycle()
     );
