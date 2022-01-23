@@ -59,7 +59,9 @@ export {
   GetReqRes,
 } from './types';
 
-export { Creator, Package, creator } from './creator';
+export { Creator, creator } from './creator';
+
+export { Package } from './package';
 
 export {
   GetOpt,

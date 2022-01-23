@@ -1,4 +1,4 @@
-import { Err, fail, nope, ok } from 'lambda-res';
+import { Err, isErr, fail, nope, ok } from 'lambda-res';
 
 import {
   creator,
@@ -53,7 +53,7 @@ describe('packages basic', () => {
           return fail('p1_Fail_Err1');
         }
 
-        return ok(`fail: ${error.type}`);
+        return ok(`fail: ${isErr(error) ? error.type : ''}`);
       },
     };
 
@@ -192,7 +192,7 @@ describe('packages partial', () => {
 
       // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error }) => {
-        return ok(`fail: ${error.type}`);
+        return ok(`fail: ${isErr(error) ? error.type : ''}`);
       },
     };
 
@@ -244,7 +244,7 @@ describe('packages partial handlers', () => {
 
       // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error }) => {
-        return ok(`fail: ${error.type}`);
+        return ok(`fail: ${isErr(error) ? error.type : ''}`);
       },
     };
 
@@ -271,7 +271,7 @@ describe('packages partial handlers', () => {
       never,
       Err<'p1_Ok_Err1', { p1Srv: string }>,
       never,
-      Err<'p1_Fail_Err1', { p1Err: 'p1_Srv_Err1' }>
+      Err<'p1_Fail_Err1', { p1Err?: 'p1_Srv_Err1' }>
     > = {
       srv: () => {
         // eslint-disable-next-line @typescript-eslint/require-await
@@ -293,7 +293,7 @@ describe('packages partial handlers', () => {
 
       // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error }) => {
-        return fail('p1_Fail_Err1', { p1Err: error.type });
+        return fail('p1_Fail_Err1', { p1Err: isErr(error) ? error.type : undefined });
       },
     };
 
@@ -358,7 +358,7 @@ describe('packages advanced', () => {
           return Promise.resolve(!!options.earlyReturn);
         });
 
-        return ok(`fail: ${error.type}`);
+        return ok(`fail: ${isErr(error) ? error.type : ''}`);
       },
     };
 
@@ -454,10 +454,10 @@ describe('packages advanced', () => {
       // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error }, { returns }) => {
         returns(() => {
-          return Promise.resolve(error.type === 'p1_Srv_Err1');
+          return Promise.resolve(isErr(error) ? error.type === 'p1_Srv_Err1' : false);
         });
 
-        return ok(`p1 fail: ${error.type}`);
+        return ok(`p1 fail: ${isErr(error) ? error.type : ''}`);
       },
     };
 

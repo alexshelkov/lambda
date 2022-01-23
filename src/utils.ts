@@ -128,57 +128,6 @@ export const join = <
   };
 };
 
-// export const glueFailure = <
-//   Event extends AwsEvent,
-//   Options extends ServiceOptions,
-//   Service extends ServiceContainer,
-//   ServiceError1,
-//   ServiceError2,
-//   Data1,
-//   Error1,
-//   Data2,
-//   Error2,
-//   HandledError1 = never,
-//   HandledError2 = never
-// >(
-//   c1: HandlerError<Service, ServiceError1, Data1, Error1, HandledError1, Event, Options>,
-//   c2: HandlerError<Service, ServiceError2, Data2, Error2, HandledError2, Event, Options>
-// ): HandlerError<
-//   Service,
-//   Exclude<ServiceError1 | ServiceError2, HandledError1 | HandledError2>,
-//   Data1 | Data2,
-//   Error1 | Error2,
-//   HandledError1 | HandledError2,
-//   Event,
-//   Options
-// > => {
-//   return async (
-//     request: RequestError<Event, Options, Service, ServiceError1 | ServiceError2>,
-//     handlerLifecycle: HandlerLifecycle,
-//     lifecycle: ProtectedMiddlewareLifecycle
-//   ) => {
-//     const [l1, l2] = disconnectHandlerLifecycle(handlerLifecycle as PrivateHandlerLifecycle);
-//
-//     const r1 = await c1(
-//       request as RequestError<Event, Options, Service, ServiceError1>,
-//       l1,
-//       lifecycle
-//     );
-//
-//     if (l1.stops()) {
-//       return r1;
-//     }
-//
-//     const r2 = await c2(
-//       request as RequestError<Event, Options, Service, ServiceError2>,
-//       l2,
-//       lifecycle
-//     );
-//
-//     return compare(r1, r2);
-//   };
-// };
-
 export const joinFailure = (failGen: number) => {
   return <
     Event extends AwsEvent,
