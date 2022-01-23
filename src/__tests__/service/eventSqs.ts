@@ -2,8 +2,7 @@ import { SQSHandler, SQSEvent } from 'aws-lambda';
 
 import { ok } from 'lambda-res';
 
-import { eventSqsService, creator, none } from '../../index';
-import { createContext, createEvent } from '../../__stubs__';
+import { eventSqsService, creator, none, createContext, createEvent } from '../../index';
 
 describe('eventSqs', () => {
   it('returns 400 EventSqsRequestError for malformed input', async () => {

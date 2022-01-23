@@ -8,10 +8,12 @@ import {
   logger as getLogger,
   resetLogger,
   resetTransport,
+  addService,
+  createContext,
+  createEvent,
   MiddlewareCreator,
-  LoggerService, addService
+  LoggerService,
 } from '../../index';
-import { createContext, createEvent } from '../../__stubs__';
 
 describe('logger', () => {
   // eslint-disable-next-line jest/no-hooks

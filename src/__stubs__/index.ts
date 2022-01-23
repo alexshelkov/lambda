@@ -1,14 +1,13 @@
 import { fail, Err, ok } from 'lambda-res';
 import {
   MiddlewareCreator,
-  Request,
   ServiceContainer,
   AwsEvent,
-  RequestError,
-  MiddlewareLifecycle,
   HandlerError,
+  Creator,
   addService,
-  ServiceOptions,
+  createEvent,
+  createContext,
 } from '../index';
 
 /* eslint-disable @typescript-eslint/require-await */
@@ -116,53 +115,6 @@ export const creatorTest5Error: MiddlewareCreator<
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-export const createEvent = <Event extends AwsEvent['event']>(event: Event = {} as Event): Event => {
-  return event;
-};
-
-export const createContext = <Context extends AwsEvent['context']>(
-  context: Context = {} as Context
-): Context => {
-  return context;
-};
-
-export const createRequest = <
-  Service extends ServiceContainer,
-  Options extends ServiceOptions = ServiceOptions
->(
-  service: Service,
-  options: Options = {} as Options
-): Request<AwsEvent, Options, Service> => {
-  return {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    event: createEvent(),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    context: createContext(),
-    service,
-    options,
-  };
-};
-
-export const createErrorRequest = <
-  Service extends ServiceContainer,
-  Error,
-  Options extends ServiceOptions = ServiceOptions
->(
-  error: Error,
-  options: Options = {} as Options
-): RequestError<AwsEvent, Options, Service, Error> => {
-  return {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    event: createEvent(),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    context: createContext(),
-    error,
-    service: {},
-    options,
-  };
-};
-
 export const createMdl = <T extends string>(
   name: T,
   steps: string[]
@@ -251,3 +203,29 @@ export const reset = (steps: string[]): void => {
   // eslint-disable-next-line no-empty
   while (steps.pop()) {}
 };
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export const req = (
+  creator: Creator<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any
+  >
+) => {
+  return creator.req()(createEvent(), createContext());
+};
+/* eslint-enable @typescript-eslint/no-explicit-any */

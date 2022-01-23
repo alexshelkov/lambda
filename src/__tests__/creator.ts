@@ -37,6 +37,8 @@ import {
   createLifecycle,
   empty,
   safe,
+  createEvent,
+  createContext,
 } from '../index';
 
 import { error1 } from '../creator';
@@ -46,8 +48,6 @@ import {
   creatorTest2,
   creatorTest3,
   creatorTest4Error,
-  createEvent,
-  createContext,
   TestError,
   reset,
 } from '../__stubs__';

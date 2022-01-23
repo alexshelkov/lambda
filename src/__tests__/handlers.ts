@@ -2,9 +2,19 @@ import { DefineAuthChallengeTriggerHandler, DefineAuthChallengeTriggerEvent } fr
 
 import { Err, fail, ok } from 'lambda-res';
 
-import { creator, GetError, GetService, Handler, HandlerError, GetEvent, GetOpt } from '../index';
+import {
+  creator,
+  createEvent,
+  createContext,
+  GetError,
+  GetService,
+  Handler,
+  HandlerError,
+  GetEvent,
+  GetOpt,
+} from '../index';
 
-import { creatorTest1, createEvent, createContext } from '../__stubs__';
+import { creatorTest1 } from '../__stubs__';
 
 /* eslint-disable @typescript-eslint/require-await */
 

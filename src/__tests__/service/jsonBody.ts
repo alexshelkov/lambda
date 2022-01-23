@@ -1,7 +1,6 @@
 import { ok } from 'lambda-res';
 
-import { jsonBodyService, creator } from '../../index';
-import { createContext, createEvent } from '../../__stubs__';
+import { jsonBodyService, creator, createContext, createEvent } from '../../index';
 
 describe('jsonBody', () => {
   it('returns 400 JsonRequestError for malformed input', async () => {

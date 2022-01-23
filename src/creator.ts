@@ -25,32 +25,43 @@ import { lambda, convertToFailure } from './lambda';
 
 import { json } from './transform';
 
-export interface Package<
+type IsBothNever<Data, Error> = [Data] extends [never]
+  ? [Error] extends [never]
+    ? true
+    : false
+  : false;
+
+export type Package<
   Options extends ServiceOptions,
   Service extends ServiceContainer,
   ServiceError,
-  Data,
-  Error,
-  FailureData,
-  FailureError,
+  Data = never,
+  Error = never,
+  FailureData = never,
+  FailureError = never,
   HandledError = never,
   ServiceDeps extends ServiceContainer = ServiceContainer,
   Event extends AwsEvent = AwsEvent
-> {
+> = {
   srv: MiddlewareCreator<Options, Service, ServiceError, ServiceDeps, Event>;
-
-  ok: Handler<Service, Data, Error, Event, Options>;
-
-  fail: HandlerError<
-    Service,
-    ServiceError,
-    FailureData,
-    FailureError,
-    HandledError,
-    Event,
-    Options
-  >;
-}
+} & (IsBothNever<Data, Error> extends true
+  ? // eslint-disable-next-line @typescript-eslint/ban-types
+    {}
+  : { ok: Handler<Service, Data, Error, Event, Options> }) &
+  (IsBothNever<FailureData, FailureError> extends true
+    ? // eslint-disable-next-line @typescript-eslint/ban-types
+      {}
+    : {
+        fail: HandlerError<
+          Service,
+          ServiceError,
+          FailureData,
+          FailureError,
+          HandledError,
+          Event,
+          Options
+        >;
+      });
 
 export interface Creator<
   Event extends AwsEvent,
@@ -71,50 +82,8 @@ export interface Creator<
   ExceptionError1,
   ServiceDeps extends ServiceContainer = ServiceContainer
 > {
-  // bundle: <
-  //   Options2 extends ServiceOptions,
-  //   Service2 extends ServiceContainer,
-  //   ServiceError2,
-  //   Data2,
-  //   Error2,
-  //   FailureData2,
-  //   FailureError2,
-  //   HandledError2 = never
-  // >(
-  //   pack: Package<
-  //     Options1 & Options2,
-  //     Service1 & Service2,
-  //     ServiceError2,
-  //     Data2,
-  //     Error2,
-  //     FailureData2,
-  //     FailureError2,
-  //     HandledError2,
-  //     ServiceDeps,
-  //     Event
-  //   >
-  // ) => Creator<
-  //   Event,
-  //   ResOk1,
-  //   ResOkRes1,
-  //   ResErr1,
-  //   ResErrRes1,
-  //   ResFatal1,
-  //   ResFatalRes1,
-  //   Options1 & Options2,
-  //   Service1 & Service2,
-  //   ServiceError1 | Service2,
-  //   Data1 | Data2,
-  //   Error1 | Error2,
-  //   FailureData1 | FailureData2,
-  //   FailureError1 | FailureError2,
-  //   ExceptionData1,
-  //   ExceptionError1,
-  //   ServiceDeps
-  // >;
-
   srv: <Options2 extends ServiceOptions, Service2 extends ServiceContainer, ServiceError2>(
-    middlewareCreator: MiddlewareCreator<
+    creator: MiddlewareCreator<
       Options1 & Options2,
       Partial<Service1> & Service2,
       ServiceError2,
@@ -184,7 +153,7 @@ export interface Creator<
   >;
 
   ok: <Data2, Error2>(
-    success: Handler<Service1, Data2, Error2, Event, Options1>
+    handler: Handler<Service1, Data2, Error2, Event, Options1>
   ) => Creator<
     Event,
     ResOk1,
@@ -206,7 +175,7 @@ export interface Creator<
   >;
 
   fail: <FailureData2, FailureError2, HandledError2 = never>(
-    error: HandlerError<
+    handlerError: HandlerError<
       Service1,
       ServiceError1,
       FailureData2,
@@ -236,7 +205,7 @@ export interface Creator<
   >;
 
   fatal: <ExceptionData2, ExceptionError2>(
-    exception: HandlerException<ExceptionData2, ExceptionError2, Event, Options1>
+    handlerFatal: HandlerException<ExceptionData2, ExceptionError2, Event, Options1>
   ) => Creator<
     Event,
     ResOk1,
@@ -255,6 +224,48 @@ export interface Creator<
     ExceptionData1 | ExceptionData2,
     ExceptionError1 | ExceptionError2,
     ServiceDeps
+  >;
+
+  pack: <
+    Options2 extends ServiceOptions,
+    Service2 extends ServiceContainer,
+    ServiceError2,
+    Data2 = never,
+    Error2 = never,
+    FailureData2 = never,
+    FailureError2 = never,
+    HandledError2 = never
+  >(
+    pack: Package<
+      Options1 & Options2,
+      Partial<Service1> & Service2,
+      ServiceError2,
+      Data2,
+      Error2,
+      FailureData2,
+      FailureError2,
+      HandledError2,
+      ServiceDeps,
+      Event
+    >
+  ) => Creator<
+    Event,
+    ResOk1,
+    ResOkRes1,
+    ResErr1,
+    ResErrRes1,
+    ResFatal1,
+    ResFatalRes1,
+    Options1 & Options2,
+    Service1 & Service2,
+    Exclude<ServiceError1 | ServiceError2, HandledError2>,
+    Data1 | Data2,
+    Error1 | Error2,
+    FailureData1 | FailureData2,
+    FailureError1 | FailureError2,
+    ExceptionData1,
+    ExceptionError1,
+    Service2 & ServiceDeps
   >;
 
   on: <ResOk2, ResErr2, ResFatal2>(
@@ -487,51 +498,14 @@ export const creatorHelper = <
   Service1
 > => {
   return {
-    // bundle: <
-    //   Options2 extends ServiceOptions,
-    //   Service2 extends ServiceContainer,
-    //   ServiceError2,
-    //   Data2,
-    //   Error2,
-    //   FailureData2,
-    //   FailureError2,
-    //   HandledError2 = never
-    //   >(
-    //   pack: Package<
-    //     Options1 & Options2,
-    //     Service1 & Service2,
-    //     ServiceError2,
-    //     Data2,
-    //     Error2,
-    //     FailureData2,
-    //     FailureError2,
-    //     HandledError2,
-    //     Service1,
-    //     Event
-    //     >
-    // ) => {
-    //   const creator12 = connect(crtGen + 1)(creator1)(pack.srv);
-    //   const success12 = join(success1, pack.ok);
-    //   const error12 = joinFailure(crtGen)(error1, pack.fail);
-    //
-    //   return creatorHelper(
-    //     crtGen + 1,
-    //     creator12,
-    //     options1 as Options1 & Options2,
-    //     success12,
-    //     error12 ,
-    //     exception1,
-    //     transform1,
-    //     transformRes1,
-    //     transformError1,
-    //     transformErrorRes1,
-    //     transformException1,
-    //     transformExceptionRes1
-    //   ) as any;
-    // },
-
     srv: <Options2 extends ServiceOptions, Service2 extends ServiceContainer, ServiceError2>(
-      creator2: MiddlewareCreator<Options1 & Options2, Partial<Service1> & Service2, ServiceError2, Service1, Event>
+      creator2: MiddlewareCreator<
+        Options1 & Options2,
+        Partial<Service1> & Service2,
+        ServiceError2,
+        Service1,
+        Event
+      >
     ) => {
       const creator12 = connect(crtGen + 1)(creator1)(creator2);
 
@@ -689,6 +663,112 @@ export const creatorHelper = <
         transformErrorRes1,
         transformException1,
         undefined
+      );
+    },
+
+    pack: <
+      Options2 extends ServiceOptions,
+      Service2 extends ServiceContainer,
+      ServiceError2,
+      Data2,
+      Error2,
+      FailureData2,
+      FailureError2,
+      HandledError2 = never
+    >(
+      thepackage: Package<
+        Options1 & Options2,
+        Partial<Service1> & Service2,
+        ServiceError2,
+        Data2,
+        Error2,
+        FailureData2,
+        FailureError2,
+        HandledError2,
+        Service1,
+        Event
+      >
+    ) => {
+      const creator12 = connect(crtGen + 1)(creator1)(thepackage.srv) as MiddlewareCreator<
+        Options1 & Options2,
+        Service1 & Service2,
+        Exclude<ServiceError1 | ServiceError2, HandledError2>,
+        ServiceContainer,
+        Event
+      >;
+
+      let success12;
+
+      if ((thepackage as { ok?: unknown }).ok) {
+        success12 = join(
+          success1,
+          (
+            thepackage as unknown as {
+              ok: Handler<Service1 & Service2, Data2, Error2, Event, Options1 & Options2>;
+            }
+          ).ok
+        );
+      } else {
+        success12 = success1;
+      }
+
+      let error12;
+
+      if ((thepackage as { fail?: unknown }).fail) {
+        error12 = joinFailure(crtGen + 1)(
+          error1,
+          (
+            thepackage as unknown as {
+              fail: HandlerError<
+                Service1 & Service2,
+                ServiceError1 | ServiceError2,
+                FailureData2,
+                FailureError2,
+                HandledError2,
+                Event,
+                Options1 & Options2
+              >;
+            }
+          ).fail
+        );
+      } else {
+        error12 = error1 as HandlerError<
+          Service1 & Service2,
+          ServiceError1 | ServiceError2,
+          FailureData1,
+          FailureError1,
+          never,
+          Event,
+          Options1 & Options2
+        >;
+      }
+
+      return creatorHelper(
+        crtGen + 1,
+        creator12,
+        options1 as Options1 & Options2,
+        success12,
+        error12,
+        exception1,
+        transform1,
+        transformRes1 as Transform<
+          ResOkRes1,
+          Data1 | Data2,
+          Error1 | Error2,
+          Event,
+          Options1 & Options2,
+          Service1 & Service2
+        >,
+        transformError1,
+        transformErrorRes1 as TransformError<
+          ResErrRes1,
+          FailureData1 | FailureData2,
+          FailureError1 | FailureError2,
+          Event,
+          Options1 & Options2
+        >,
+        transformException1,
+        transformExceptionRes1
       );
     },
 

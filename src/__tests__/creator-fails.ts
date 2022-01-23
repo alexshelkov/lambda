@@ -1,6 +1,6 @@
 import { ok } from 'lambda-res';
-import { GetHandler, creator, raw, glue, glueFailure } from '../index';
-import { createContext, createEvent, createMdl, createFail, reset } from '../__stubs__';
+import { GetHandler, creator, raw, glue, glueFailure, createContext, createEvent } from '../index';
+import { createMdl, createFail, reset } from '../__stubs__';
 
 /* eslint-disable @typescript-eslint/require-await */
 

@@ -2,8 +2,7 @@ import { SNSHandler, SNSEvent } from 'aws-lambda';
 
 import { ok } from 'lambda-res';
 
-import { eventSnsService, creator, none } from '../../index';
-import { createContext, createEvent } from '../../__stubs__';
+import { eventSnsService, creator, none, createContext, createEvent } from '../../index';
 
 describe('eventSns', () => {
   it('returns 400 EventSnsRequestError for malformed input', async () => {

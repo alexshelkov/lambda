@@ -8,6 +8,8 @@ import {
   join,
   glue,
   glueFailure,
+  createRequest,
+  createErrorRequest,
   HandlerError,
   ServiceContainer,
 } from '../index';
@@ -18,8 +20,6 @@ import {
   creatorTest3,
   creatorTest4Error,
   creatorTest5Error,
-  createRequest,
-  createErrorRequest,
   TestError,
 } from '../__stubs__';
 

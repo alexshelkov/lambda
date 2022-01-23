@@ -2,8 +2,7 @@ import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 
 import { ok } from 'lambda-res';
 
-import { eventGatewayService, creator } from '../../index';
-import { createContext, createEvent } from '../../__stubs__';
+import { eventGatewayService, creator, createContext, createEvent } from '../../index';
 
 describe('eventGateway', () => {
   it('returns 400 EventGatewayRequestError for malformed input', async () => {

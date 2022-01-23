@@ -6,11 +6,12 @@ import {
   GetOpt,
   GetService,
   JsonBodyService,
+  createContext,
+  createEvent,
   addService,
   creator,
   jsonBodyService,
 } from '../index';
-import { createContext, createEvent } from '../__stubs__';
 
 /* eslint-disable @typescript-eslint/require-await */
 

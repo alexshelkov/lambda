@@ -2,14 +2,10 @@ import { Err, Response, Result, ThrowFailFn } from 'lambda-res';
 import { APIGatewayProxyResult } from 'aws-lambda';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ServiceContainer {
-  // _?: 'c';
-}
+export interface ServiceContainer {}
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ServiceOptions {
-  // _?: 'o';
-}
+export interface ServiceOptions {}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface AwsEvent<Event = any, Context = any> {
@@ -96,7 +92,7 @@ export interface Middleware<
   Service2 extends ServiceContainer,
   ServiceError,
   ServiceDeps extends ServiceContainer = ServiceContainer,
-  Event extends AwsEvent = AwsEvent,
+  Event extends AwsEvent = AwsEvent
 > {
   _o?: Partial<Options>;
   _s?: Partial<Service2>;
@@ -105,7 +101,6 @@ export interface Middleware<
     request: Request<Event, Options, Service1 & ServiceDeps>,
     lifecycle: MiddlewareLifecycle
   ): Response<Service1 & Service2, ServiceError>;
-
 }
 
 export interface MiddlewareCreator<
@@ -133,7 +128,6 @@ export interface Handler<
 > {
   (
     request: Request<Event, Options, Service>,
-    // options: Partial<Options>,
     handlerLifecycle: HandlerLifecycle,
     lifecycle: ProtectedMiddlewareLifecycle
   ): Response<Data, Error>;
@@ -151,7 +145,6 @@ export interface HandlerError<
 > {
   (
     request: RequestError<Event, Options, Service, ServiceError>,
-    // options: Partial<Options>,
     handlerLifecycle: HandlerLifecycle,
     lifecycle: ProtectedMiddlewareLifecycle
   ): Response<Data, Error>;
@@ -165,7 +158,6 @@ export interface HandlerException<
 > {
   (
     request: RequestException<Event, Options>,
-    // options: Partial<Options>,
     handlerLifecycle: HandlerLifecycle,
     lifecycle: MiddlewareLifecycle
   ): Response<Data, Error>;
@@ -179,10 +171,7 @@ export interface Transform<
   Options extends ServiceOptions = ServiceOptions,
   Service extends ServiceContainer = ServiceContainer
 > {
-  (
-    response: Result<Data, Error>,
-    request: Request<Event, Options, Service> /*options: Partial<Options>*/
-  ): Promise<Res>;
+  (response: Result<Data, Error>, request: Request<Event, Options, Service>): Promise<Res>;
 }
 
 export interface TransformError<

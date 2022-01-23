@@ -1,7 +1,6 @@
 import { ok } from 'lambda-res';
 
-import { empty, creator } from '../../index';
-import { createContext, createEvent } from '../../__stubs__';
+import { empty, creator, createContext, createEvent } from '../../index';
 
 describe('empty', () => {
   it('returns 400 EventGatewayRequestError for malformed input', async () => {

@@ -59,7 +59,7 @@ export {
   GetReqRes,
 } from './types';
 
-export { Creator, creator } from './creator';
+export { Creator, Package, creator } from './creator';
 
 export {
   GetOpt,
@@ -98,6 +98,8 @@ export { lambda, convertToFailure, resetFallBackTransform, getFallBackTransform 
 export { route, routeError, Router, RouterError } from './router';
 
 export { default as empty, EmptyOptions, EmptyService, EmptyErrors } from './service/empty';
+
+export { createContext, createEvent, createRequest, createErrorRequest } from './request';
 
 export {
   default as jsonBodyService,

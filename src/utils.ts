@@ -286,6 +286,6 @@ export const addService = <
 ): Result<Service1 & Service2, never> => {
   return ok({
     ...request.service,
-    ...(addedService || {} as Service2),
+    ...(addedService || ({} as Service2)),
   });
 };

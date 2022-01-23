@@ -1,20 +1,24 @@
 import { Err, fail, ok } from 'lambda-res';
 
 import {
-  creator,
-  route,
-  routeError,
   addService,
-  createLifecycle,
+  createContext,
+  createErrorRequest,
+  createEvent,
   createHandlerLifecycle,
+  createLifecycle,
+  createRequest,
+  creator,
+  AwsEvent,
+  HandlerError,
   MiddlewareCreator,
   Request,
-  ServiceContainer,
-  AwsEvent,
   RequestError,
-  HandlerError, ServiceOptions
+  route,
+  routeError,
+  ServiceContainer,
+  ServiceOptions,
 } from '../index';
-import { createEvent, createContext, createRequest, createErrorRequest } from '../__stubs__';
 
 type A1 = { a1: string };
 type A2 = { a2: boolean };
@@ -35,7 +39,9 @@ type RouterErrors = E1 | E2;
 const refine = (
   request: Request<AwsEvent, ServiceOptions, TestRouter>
 ): Request<AwsEvent, ServiceOptions, RefinedTestRouter> | false => {
-  return 'a2' in request.service.a ? (request as Request<AwsEvent, ServiceOptions, RefinedTestRouter>) : false;
+  return 'a2' in request.service.a
+    ? (request as Request<AwsEvent, ServiceOptions, RefinedTestRouter>)
+    : false;
 };
 
 const refineError = (
