@@ -346,7 +346,7 @@ describe('packages advanced', () => {
       // eslint-disable-next-line @typescript-eslint/require-await
       ok: async ({ service, options }, { returns }) => {
         returns(() => {
-          return !!options.earlyReturn;
+          return Promise.resolve(!!options.earlyReturn);
         });
 
         return ok(`ok: ${service.p1Srv}`);
@@ -354,8 +354,8 @@ describe('packages advanced', () => {
 
       // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error, options }, { returns }) => {
-        returns(() => {
-          return !!options.earlyReturn;
+        returns(async () => {
+          return Promise.resolve(!!options.earlyReturn);
         });
 
         return ok(`fail: ${error.type}`);
@@ -454,7 +454,7 @@ describe('packages advanced', () => {
       // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error }, { returns }) => {
         returns(() => {
-          return error.type === 'p1_Srv_Err1';
+          return Promise.resolve(error.type === 'p1_Srv_Err1');
         });
 
         return ok(`p1 fail: ${error.type}`);

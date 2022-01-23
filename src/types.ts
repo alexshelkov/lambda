@@ -80,11 +80,11 @@ export interface PrivateMiddlewareLifecycle extends MiddlewareLifecycle {
 }
 
 export interface HandlerLifecycle {
-  returns: (cb: () => boolean) => void;
+  returns: (cb: () => Promise<boolean>) => void;
 }
 
 export interface PrivateHandlerLifecycle extends HandlerLifecycle {
-  stops: () => boolean;
+  stops: () => Promise<boolean>;
 }
 
 export interface Middleware<

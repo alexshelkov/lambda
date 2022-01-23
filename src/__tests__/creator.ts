@@ -599,7 +599,7 @@ describe('creator types correctness', () => {
       never,
       GetError<typeof creatorTest4Error>
     > = async (_r, { returns }) => {
-      returns(() => {
+      returns(async () => {
         return true;
       });
 
@@ -612,7 +612,7 @@ describe('creator types correctness', () => {
       never,
       GetError<typeof creatorTest1>
     > = async (_r, { returns }) => {
-      returns(() => {
+      returns(async () => {
         return true;
       });
 
@@ -934,7 +934,7 @@ describe('creator handlers and transforms', () => {
           return ok('1');
         })
         .ok(async (_, { returns }) => {
-          returns(() => {
+          returns(async () => {
             return true;
           });
           okCalls += 1;
@@ -954,7 +954,7 @@ describe('creator handlers and transforms', () => {
 
       const resOk2 = res
         .ok(async (_, { returns }) => {
-          returns(() => {
+          returns(async () => {
             return true;
           });
           okCalls += 1;
@@ -986,7 +986,7 @@ describe('creator handlers and transforms', () => {
           return ok('1');
         })
         .fail(async (_, { returns }) => {
-          returns(() => {
+          returns(async () => {
             return true;
           });
           failCalls += 1;
@@ -1006,7 +1006,7 @@ describe('creator handlers and transforms', () => {
 
       const resFail2 = res
         .fail(async (_, { returns }) => {
-          returns(() => {
+          returns(async () => {
             return true;
           });
           failCalls += 1;
@@ -1052,7 +1052,7 @@ describe('creator handlers and transforms', () => {
           return ok('1');
         })
         .fatal(async (_, { returns }) => {
-          returns(() => {
+          returns(async () => {
             return true;
           });
           fatal += 1;
@@ -1072,7 +1072,7 @@ describe('creator handlers and transforms', () => {
 
       const resFail2 = res
         .fatal(async (_, { returns }) => {
-          returns(() => {
+          returns(async () => {
             return true;
           });
           fatal += 1;

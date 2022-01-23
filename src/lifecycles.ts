@@ -185,15 +185,17 @@ export const disconnectLifecycle = (
 };
 
 export const createHandlerLifecycle = (): PrivateHandlerLifecycle => {
-  let stops: () => boolean = () => {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  let stops: () => Promise<boolean> = async () => {
     return false;
   };
 
   return {
-    returns(cb) {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async returns(cb) {
       stops = cb;
     },
-    stops() {
+    async stops() {
       return stops();
     },
   };
@@ -202,10 +204,12 @@ export const createHandlerLifecycle = (): PrivateHandlerLifecycle => {
 export const disconnectHandlerLifecycle = (
   lifecycle: PrivateHandlerLifecycle
 ): [PrivateHandlerLifecycle, PrivateHandlerLifecycle] => {
-  let s1: () => boolean = () => {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  let s1: () => Promise<boolean> = async () => {
     return false;
   };
-  let s2: () => boolean = () => {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  let s2: () => Promise<boolean> = async () => {
     return false;
   };
 
@@ -229,8 +233,10 @@ export const disconnectHandlerLifecycle = (
     },
   };
 
-  lifecycle.returns(() => {
-    if (l1.stops()) {
+  lifecycle.returns(async () => {
+    const l1Stops = await l1.stops();
+
+    if (l1Stops) {
       return true;
     }
 

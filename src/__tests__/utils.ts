@@ -149,7 +149,7 @@ describe('handlers utils', () => {
 
     const lc = createHandlerLifecycle();
 
-    expect(lc.stops()).toStrictEqual(false);
+    await expect(lc.stops()).resolves.toStrictEqual(false);
   });
 
   it('not reject if first callback not returning errors', async () => {
@@ -233,7 +233,7 @@ describe('handlers utils', () => {
 
     const errors2 = glueFailure(
       async (_, { returns }) => {
-        returns(() => {
+        returns(async () => {
           return earlyReturns;
         });
 
