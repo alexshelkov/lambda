@@ -9,7 +9,7 @@
     "error-handling",
     "middleware"
   ],
-  "version": "1.1.6",
+  "version": "1.1.7",
   "author": "Alex Shelkovskiy <alexshelkov@gmail.com>",
   "repository": "https://github.com/alexshelkov/lambda",
   "license": "MIT",
@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@types/aws-lambda": "^8.10.87",
-    "lambda-res": "^1.0.20"
+    "lambda-res": "^1.0.21"
   },
   "devDependencies": {
     "@types/jest": "^27.0.3",

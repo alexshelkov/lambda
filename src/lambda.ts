@@ -1,4 +1,4 @@
-import { Failure, FailureException, fail, isFailureLike, isErr } from 'lambda-res';
+import { Failure, FailureException, fail, isFailureLike, isUnknownErr } from 'lambda-res';
 import {
   AwsEvent,
   AwsHandler,
@@ -25,11 +25,11 @@ export const convertToFailure = (
   let cause;
   let message;
 
-  if (isFailureLike(exception) && isErr(exception.error)) {
+  if (isFailureLike(exception) && isUnknownErr(exception.error)) {
     const { error } = exception;
     const { inner } = error as unknown as { inner: unknown };
 
-    if (isFailureLike(inner) && isErr(inner.error)) {
+    if (isFailureLike(inner) && isUnknownErr(inner.error)) {
       cause = `${error.type}: ${inner.error.type}`;
       message = `${error.message || ''}\n${inner.error.message || ''}`.trim() || undefined;
     } else {
