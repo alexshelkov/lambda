@@ -47,13 +47,13 @@ export type Package<
 } & (IsBothNever<Data, Error> extends true
   ? // eslint-disable-next-line @typescript-eslint/ban-types
     {}
-  : { ok: Handler<Service, Data, Error, Event, Options> }) &
+  : { ok: Handler<Service & ServiceDeps, Data, Error, Event, Options> }) &
   (IsBothNever<FailureData, FailureError> extends true
     ? // eslint-disable-next-line @typescript-eslint/ban-types
       {}
     : {
         fail: HandlerError<
-          Service,
+          Service & ServiceDeps,
           ServiceError,
           FailureData,
           FailureError,

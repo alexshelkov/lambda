@@ -1,8 +1,16 @@
 import { Err, fail, nope, ok } from 'lambda-res';
 
-import { creator, Package, addService, MiddlewareCreator, safe } from '../index';
+import {
+  creator,
+  addService,
+  safe,
+  Package,
+  MiddlewareCreator,
+  GetService,
+  ServiceOptions,
+} from '../index';
 
-import { req, creatorTest1 } from '../__stubs__';
+import { req, creatorTest1, creatorTest2 } from '../__stubs__';
 
 describe('packages basic', () => {
   it('works with package with all options', async () => {
@@ -495,6 +503,43 @@ describe('packages advanced', () => {
     await expect(req(res2.opt({ p1SrvFail2: true }))).resolves.toMatchObject({
       status: 'success',
       data: 'fail: p1_Srv_Err2',
+    });
+  });
+
+  it('works with dependent service', async () => {
+    expect.assertions(1);
+
+    const p1: Package<
+      ServiceOptions,
+      { p1Srv: string },
+      never,
+      string,
+      never,
+      never,
+      never,
+      never,
+      GetService<typeof creatorTest2>
+    > = {
+      srv: () => {
+        // eslint-disable-next-line @typescript-eslint/require-await
+        return async (request) => {
+          return addService(request, {
+            p1Srv: `p1Srv=${request.service.test2}`,
+          });
+        };
+      },
+
+      // eslint-disable-next-line @typescript-eslint/require-await
+      ok: async ({ service }) => {
+        return ok(`ok: ${service.p1Srv}`);
+      },
+    };
+
+    const res = creator(creatorTest1).srv(creatorTest2).pack(p1).on(safe);
+
+    await expect(req(res)).resolves.toMatchObject({
+      status: 'success',
+      data: 'ok: p1Srv=2',
     });
   });
 });
