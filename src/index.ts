@@ -43,9 +43,8 @@ export {
   AwsHandler,
   SkippedError,
   NotImplementedError,
-  UnhandledError,
-  UncaughtError,
-  UncaughtErrorTransform,
+  RunnerUncaughtError,
+  RunnerUncaughtErrorTransform,
   UnhandledErrors,
   HandlerLifecycle,
   MiddlewareCreatorLifecycle,
@@ -57,7 +56,7 @@ export {
   Transform1,
   TransformError1,
   GetReqRes,
-} from './types';
+} from './core';
 
 export { Creator, creator } from './creator';
 
@@ -82,20 +81,13 @@ export {
   GetEventMdl,
 } from './infer';
 
-export { json, raw, safe, none } from './transform';
+export { json, raw, safe, none, resetFallBackTransform, getFallBackTransform } from './transform';
 
-export { join, glue, glueFailure, joinFatal, addService } from './utils';
+export { addService, convertToFailure } from './utils';
 
-export {
-  createLifecycle,
-  createMiddlewareLifecycle,
-  createHandlerLifecycle,
-  disconnectMiddlewareLifecycle,
-  disconnectLifecycle,
-  disconnectHandlerLifecycle,
-} from './lifecycles';
+export { createLifecycle, createCreatorLifecycle, createHandlerLifecycle } from './lifecycles';
 
-export { lambda, convertToFailure, resetFallBackTransform, getFallBackTransform } from './lambda';
+export { runner } from './runner';
 
 export { route, routeError, Router, RouterError } from './router';
 

@@ -6,7 +6,6 @@ import {
   createErrorRequest,
   createEvent,
   createHandlerLifecycle,
-  createLifecycle,
   createRequest,
   creator,
   AwsEvent,
@@ -79,11 +78,8 @@ describe('router', () => {
       return Promise.resolve(ok('will not be triggered'));
     });
 
-    const res1 = await h1(
-      createRequest({ a: { a1: '1' } }),
-      createHandlerLifecycle(),
-      createLifecycle()
-    );
+    const reqObj1 = createRequest({ a: { a1: '1' } });
+    const res1 = await h1(reqObj1, createHandlerLifecycle(reqObj1));
 
     expect(res1).toMatchObject({ status: 'error', error: { type: 'Skipped' } });
 
@@ -91,11 +87,8 @@ describe('router', () => {
       return Promise.resolve(ok(`will be triggered: ${request.service.a.a2 ? 'ok' : 'bad'}`));
     });
 
-    const res2 = await h2(
-      createRequest({ a: { a2: true } }),
-      createHandlerLifecycle(),
-      createLifecycle()
-    );
+    const reqObj2 = createRequest({ a: { a2: true } });
+    const res2 = await h2(reqObj2, createHandlerLifecycle(reqObj2));
 
     expect(res2).toMatchObject({ status: 'success', data: 'will be triggered: ok' });
   });
@@ -109,11 +102,8 @@ describe('router', () => {
       return Promise.resolve(ok('will not be triggered'));
     });
 
-    const res1 = await e1(
-      createErrorRequest({ type: 'err1' }),
-      createHandlerLifecycle(),
-      createLifecycle()
-    );
+    const reqObj1 = createErrorRequest({ type: 'err1' });
+    const res1 = await e1(reqObj1, createHandlerLifecycle(reqObj1));
 
     expect(res1).toMatchObject({ status: 'error', error: { type: 'Skipped' } });
 
@@ -123,11 +113,8 @@ describe('router', () => {
       return Promise.resolve(ok('will be triggered'));
     });
 
-    const res2 = await e2(
-      createErrorRequest({ type: 'err2' }),
-      createHandlerLifecycle(),
-      createLifecycle()
-    );
+    const reqObj2 = createErrorRequest({ type: 'err2' });
+    const res2 = await e2(reqObj2, createHandlerLifecycle(reqObj2));
 
     expect(res2).toMatchObject({ status: 'success', data: 'will be triggered' });
   });

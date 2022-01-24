@@ -1,4 +1,4 @@
-import { Err, isErr, fail, nope, ok } from 'lambda-res';
+import { Err, fail, nope, ok } from 'lambda-res';
 
 import {
   creator,
@@ -10,23 +10,28 @@ import {
   ServiceOptions,
 } from '../index';
 
-import { req, creatorTest1, creatorTest2 } from '../__stubs__';
+import { req, creatorTest1, creatorTest2, reset } from '../__stubs__';
+
+/* eslint-disable @typescript-eslint/require-await */
 
 describe('packages basic', () => {
   it('works with package with all options', async () => {
-    expect.assertions(4);
+    expect.assertions(5);
 
     const p1: Package<
-      { p1SrvFail: boolean; okHandlerErr: boolean; failHandlerErr: boolean },
+      { p1SrvFail: boolean; p1SrvThrows: boolean; okHandlerErr: boolean; failHandlerErr: boolean },
       { p1Srv: string },
-      Err<'p1_Srv_Err1'>,
+      Err<'p1_Srv_Err1'> | Err<'p1_Srv_Throw1'>,
       string,
       Err<'p1_Ok_Err1'>,
       string,
       Err<'p1_Fail_Err1'>
     > = {
-      srv: () => {
-        // eslint-disable-next-line @typescript-eslint/require-await
+      srv: (options, { throws }) => {
+        if (options.p1SrvThrows) {
+          throws<Err<'p1_Srv_Throw1'>>('p1_Srv_Throw1');
+        }
+
         return async (request) => {
           if (request.options.p1SrvFail) {
             return fail('p1_Srv_Err1');
@@ -38,7 +43,6 @@ describe('packages basic', () => {
         };
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       ok: async ({ service, options }) => {
         if (options.okHandlerErr) {
           return fail('p1_Ok_Err1');
@@ -47,13 +51,12 @@ describe('packages basic', () => {
         return ok(`ok: ${service.p1Srv}`);
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error, options }) => {
         if (options.failHandlerErr) {
           return fail('p1_Fail_Err1');
         }
 
-        return ok(`fail: ${isErr(error) ? error.type : ''}`);
+        return ok(`fail: ${error.type}`);
       },
     };
 
@@ -82,6 +85,11 @@ describe('packages basic', () => {
         type: 'p1_Fail_Err1',
       },
     });
+
+    await expect(req(res.opt({ p1SrvThrows: true, p1SrvFail: true }))).resolves.toMatchObject({
+      status: 'success',
+      data: 'fail: p1_Srv_Throw1',
+    });
   });
 });
 
@@ -91,7 +99,6 @@ describe('packages partial', () => {
 
     const p1: Package<{ p1SrvFail: boolean }, { p1Srv: string }, Err<'p1_Srv_Err1'>> = {
       srv: () => {
-        // eslint-disable-next-line @typescript-eslint/require-await
         return async (request) => {
           if (request.options.p1SrvFail) {
             return fail('p1_Srv_Err1');
@@ -132,7 +139,6 @@ describe('packages partial', () => {
       Err<'p1_Ok_Err1'>
     > = {
       srv: () => {
-        // eslint-disable-next-line @typescript-eslint/require-await
         return async (request) => {
           if (request.options.p1SrvFail) {
             return fail('p1_Srv_Err1');
@@ -144,7 +150,6 @@ describe('packages partial', () => {
         };
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       ok: async ({ service }) => {
         return ok(`ok: ${service.p1Srv}`);
       },
@@ -178,7 +183,6 @@ describe('packages partial', () => {
       Err<'p1_Fail_Err1'>
     > = {
       srv: () => {
-        // eslint-disable-next-line @typescript-eslint/require-await
         return async (request) => {
           if (request.options.p1SrvFail) {
             return fail('p1_Srv_Err1');
@@ -190,9 +194,8 @@ describe('packages partial', () => {
         };
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error }) => {
-        return ok(`fail: ${isErr(error) ? error.type : ''}`);
+        return ok(`fail: ${error.type}`);
       },
     };
 
@@ -225,7 +228,6 @@ describe('packages partial handlers', () => {
       string
     > = {
       srv: () => {
-        // eslint-disable-next-line @typescript-eslint/require-await
         return async (request) => {
           if (request.options.p1SrvFail) {
             return fail('p1_Srv_Err1');
@@ -237,14 +239,12 @@ describe('packages partial handlers', () => {
         };
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       ok: async ({ service }) => {
         return ok(`ok: ${service.p1Srv}`);
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error }) => {
-        return ok(`fail: ${isErr(error) ? error.type : ''}`);
+        return ok(`fail: ${error.type}`);
       },
     };
 
@@ -274,7 +274,6 @@ describe('packages partial handlers', () => {
       Err<'p1_Fail_Err1', { p1Err?: 'p1_Srv_Err1' }>
     > = {
       srv: () => {
-        // eslint-disable-next-line @typescript-eslint/require-await
         return async (request) => {
           if (request.options.p1SrvFail) {
             return fail('p1_Srv_Err1');
@@ -286,14 +285,12 @@ describe('packages partial handlers', () => {
         };
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       ok: async ({ service }) => {
         return fail(`p1_Ok_Err1`, { p1Srv: service.p1Srv });
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error }) => {
-        return fail('p1_Fail_Err1', { p1Err: isErr(error) ? error.type : undefined });
+        return fail('p1_Fail_Err1', { p1Err: error.type });
       },
     };
 
@@ -331,7 +328,6 @@ describe('packages advanced', () => {
       Err<'p1_Fail_Err1'>
     > = {
       srv: () => {
-        // eslint-disable-next-line @typescript-eslint/require-await
         return async (request) => {
           if (request.options.p1SrvFail) {
             return fail('p1_Srv_Err1');
@@ -343,7 +339,6 @@ describe('packages advanced', () => {
         };
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       ok: async ({ service, options }, { returns }) => {
         returns(() => {
           return Promise.resolve(!!options.earlyReturn);
@@ -352,13 +347,12 @@ describe('packages advanced', () => {
         return ok(`ok: ${service.p1Srv}`);
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error, options }, { returns }) => {
         returns(async () => {
           return Promise.resolve(!!options.earlyReturn);
         });
 
-        return ok(`fail: ${isErr(error) ? error.type : ''}`);
+        return ok(`fail: ${error.type}`);
       },
     };
 
@@ -375,10 +369,9 @@ describe('packages advanced', () => {
     });
 
     const res2 = res
-      // eslint-disable-next-line @typescript-eslint/require-await
       .ok(async () => {
         return ok('overwrite_p1_ok');
-      }) // eslint-disable-next-line @typescript-eslint/require-await
+      })
       .fail(async () => {
         return ok('overwrite_p1_fail');
       });
@@ -412,7 +405,6 @@ describe('packages advanced', () => {
     const cr1: MiddlewareCreator<{ cr1SrvFail: boolean }, { cr1Srv: string }, Err<'cr1_Err1'>> = (
       options
     ) => {
-      // eslint-disable-next-line @typescript-eslint/require-await
       return async (request) => {
         if (options.cr1SrvFail) {
           return fail('cr1_Err1');
@@ -435,7 +427,6 @@ describe('packages advanced', () => {
       Err<'p1_Srv_Err1'>
     > = {
       srv: () => {
-        // eslint-disable-next-line @typescript-eslint/require-await
         return async (request) => {
           if (request.options.p1SrvFail1) {
             return fail('p1_Srv_Err1');
@@ -451,24 +442,23 @@ describe('packages advanced', () => {
         };
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       fail: async ({ error }, { returns }) => {
         returns(() => {
-          return Promise.resolve(isErr(error) ? error.type === 'p1_Srv_Err1' : false);
+          return error.type === 'p1_Srv_Err1';
         });
 
-        return ok(`p1 fail: ${isErr(error) ? error.type : ''}`);
+        return ok(`p1 fail: ${error.type}`);
       },
     };
 
     const res = creator(cr1).pack(p1).on(safe);
 
     const res2 = res
-      // eslint-disable-next-line @typescript-eslint/require-await
+
       .ok(async ({ service }) => {
         return ok(`ok: ${service.p1Srv} and ${service.cr1Srv}`);
       })
-      // eslint-disable-next-line @typescript-eslint/require-await
+
       .fail(async ({ error }) => {
         let errCode: string;
 
@@ -521,7 +511,6 @@ describe('packages advanced', () => {
       GetService<typeof creatorTest2>
     > = {
       srv: () => {
-        // eslint-disable-next-line @typescript-eslint/require-await
         return async (request) => {
           return addService(request, {
             p1Srv: `p1Srv=${request.service.test2}`,
@@ -529,7 +518,6 @@ describe('packages advanced', () => {
         };
       },
 
-      // eslint-disable-next-line @typescript-eslint/require-await
       ok: async ({ service }) => {
         return ok(`ok: ${service.p1Srv}`);
       },
@@ -541,5 +529,122 @@ describe('packages advanced', () => {
       status: 'success',
       data: 'ok: p1Srv=2',
     });
+  });
+});
+
+describe('packages fails', () => {
+  it('package fail handler called only if this packaged failed', async () => {
+    expect.assertions(11);
+
+    const steps: string[] = [];
+
+    const cr1: MiddlewareCreator<{ cr1SrvFail: boolean }, { cr1Srv: string }, Err<'cr1_Err1'>> = (
+      options
+    ) => {
+      return async (request) => {
+        steps.push('cr1 req');
+
+        if (options.cr1SrvFail) {
+          steps.push('cr1 Err1');
+          return fail('cr1_Err1');
+        }
+
+        return addService(request, {
+          cr1Srv: 'cr1Srv',
+        });
+      };
+    };
+
+    const p1: Package<
+      { p1SrvFail1: boolean; p1SrvThrows: boolean; p1SrvFail2: boolean },
+      { p1Srv: string },
+      Err<'p1_Srv_Err1'>,
+      never,
+      never,
+      string,
+      Err<'p1_Fail_Err1'>,
+      Err<'p1_Srv_Err1'>
+    > = {
+      srv: (options, { throws }) => {
+        if (options.p1SrvThrows) {
+          steps.push('p1 Srv Throws');
+
+          throws<Err<'p1SrvThrows'>>('p1SrvThrows');
+        }
+
+        return async (request) => {
+          steps.push('p1 req');
+
+          if (request.options.p1SrvFail1) {
+            steps.push('p1 Srv Err1');
+
+            return fail('p1_Srv_Err1');
+          }
+
+          return addService(request, {
+            p1Srv: 'p1Srv',
+          });
+        };
+      },
+
+      fail: async ({ error }) => {
+        steps.push('p1 fail');
+
+        return ok(`p1 fail: ${error.type}`);
+      },
+    };
+
+    const res = creator(cr1)
+      .fail(async () => {
+        steps.push('f1');
+        return ok('f1');
+      })
+      .pack(p1)
+      .fail(async () => {
+        steps.push('f2');
+        return ok('f2');
+      })
+      .ok(async () => {
+        steps.push('ok');
+        return ok('ok');
+      })
+      .on(safe);
+
+    await expect(req(res)).resolves.toMatchObject({
+      status: 'success',
+      data: 'ok',
+    });
+
+    expect(steps).toStrictEqual(['cr1 req', 'p1 req', 'ok']);
+
+    reset(steps);
+    expect(steps).toStrictEqual([]);
+
+    await expect(req(res.opt({ cr1SrvFail: true }))).resolves.toMatchObject({
+      status: 'success',
+      data: 'f2',
+    });
+
+    expect(steps).toStrictEqual(['cr1 req', 'cr1 Err1', 'f1', 'f2']);
+
+    reset(steps);
+    expect(steps).toStrictEqual([]);
+
+    await expect(req(res.opt({ p1SrvFail1: true }))).resolves.toMatchObject({
+      status: 'success',
+      data: 'f2',
+    });
+
+    expect(steps).toStrictEqual(['cr1 req', 'p1 req', 'p1 Srv Err1', 'p1 fail', 'f2']);
+
+    reset(steps);
+    expect(steps).toStrictEqual([]);
+
+    await expect(req(res.opt({ p1SrvThrows: true, p1SrvFail1: true }))).resolves.toMatchObject({
+      status: 'success',
+      data: 'f2',
+    });
+
+    expect(steps).toStrictEqual(['p1 Srv Throws', 'p1 fail', 'f2']);
   });
 });

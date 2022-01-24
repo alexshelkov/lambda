@@ -1,7 +1,7 @@
 import { Err, fail } from 'lambda-res';
 import { SQSEvent, SQSRecord } from 'aws-lambda';
 
-import { MiddlewareCreator } from '../types';
+import { MiddlewareCreator } from '../core';
 import { addService } from '../utils';
 import { isHaveRecords } from './utils';
 

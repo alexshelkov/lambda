@@ -9,7 +9,8 @@ import {
   RequestError,
   HandlerError,
   SkippedError,
-} from './types';
+  HandlerLifecycle,
+} from './core';
 
 export interface Router<
   Event extends AwsEvent,
@@ -44,14 +45,17 @@ export const route = <
   return <Data, Error>(
     handler: Handler<Routed, Data, Error, Event, Options>
   ): Handler<Service, Data, SkippedError | Error, Event, Options> => {
-    return async (request, handlerLifecycle, lifecycle) => {
+    return async (request, handlerLifecycle) => {
       const routedRequest = router(request);
 
       if (!routedRequest) {
         return fail<SkippedError>('Skipped', { skip: true });
       }
 
-      return handler(routedRequest, handlerLifecycle, lifecycle);
+      return handler(
+        routedRequest,
+        handlerLifecycle as unknown as HandlerLifecycle<Event, Options, Routed, never>
+      );
     };
   };
 };
@@ -77,14 +81,17 @@ export const routeError = <
     Event,
     Options
   > => {
-    return async (request, handlerLifecycle, lifecycle) => {
+    return async (request, handlerLifecycle) => {
       const routedRequest = router(request);
 
       if (!routedRequest) {
         return fail<SkippedError>('Skipped', { skip: true });
       }
 
-      return handler(routedRequest, handlerLifecycle, lifecycle);
+      return handler(
+        routedRequest,
+        handlerLifecycle as unknown as HandlerLifecycle<Event, Options, RoutedService, RoutedError>
+      );
     };
   };
 };

@@ -7,7 +7,7 @@ import {
   TransformError,
   MiddlewareCreator,
   ServiceContainer,
-} from './types';
+} from './core';
 import { Creator } from './creator';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

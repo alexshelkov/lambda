@@ -1,4 +1,4 @@
-import { MiddlewareCreator } from '../types';
+import { MiddlewareCreator } from '../core';
 import { addService } from '../utils';
 
 // eslint-disable-next-line @typescript-eslint/ban-types

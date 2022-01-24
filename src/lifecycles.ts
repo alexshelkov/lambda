@@ -1,4 +1,4 @@
-import { fail } from 'lambda-res';
+import { fail, isErr } from 'lambda-res';
 
 import {
   PrivateMiddlewareCreatorLifecycle,
@@ -6,70 +6,39 @@ import {
   PrivateHandlerLifecycle,
   ServiceContainer,
   MiddlewareFail,
-} from './types';
+  SkippedError,
+  AwsEvent,
+  ServiceOptions,
+  RequestError,
+  Request,
+  RequestException,
+} from './core';
+import { isPromise } from './utils';
 
-export const createMiddlewareLifecycle = (): PrivateMiddlewareCreatorLifecycle => {
-  let gen = -1;
+export const createCreatorLifecycle = (): PrivateMiddlewareCreatorLifecycle => {
+  let creatorId = -1;
+  let packId: number | undefined;
 
   return {
-    gen(g) {
-      gen = g;
+    gen(c, p) {
+      creatorId = c;
+      packId = p;
     },
     throws(...params) {
-      throw fail<MiddlewareFail<unknown>>('MiddlewareFail', { gen, inner: fail(...params) });
+      throw fail<MiddlewareFail<unknown>>('MiddlewareFail', {
+        creatorId,
+        packId,
+        inner: fail(...params),
+      });
     },
   };
-};
-
-export const disconnectMiddlewareLifecycle = (
-  _lifecycle: PrivateMiddlewareCreatorLifecycle
-): [PrivateMiddlewareCreatorLifecycle, PrivateMiddlewareCreatorLifecycle] => {
-  let g1 = -1;
-  let g2 = -1;
-
-  const l1: PrivateMiddlewareCreatorLifecycle = {
-    gen(g) {
-      g1 = g;
-    },
-    throws(...params) {
-      throw fail<MiddlewareFail<unknown>>('MiddlewareFail', { gen: g1, inner: fail(...params) });
-    },
-  };
-
-  const l2: PrivateMiddlewareCreatorLifecycle = {
-    gen(g) {
-      g2 = g;
-    },
-    throws(...params) {
-      throw fail<MiddlewareFail<unknown>>('MiddlewareFail', { gen: g2, inner: fail(...params) });
-    },
-  };
-
-  return [l1, l2];
 };
 
 export const createLifecycle = (): PrivateMiddlewareLifecycle => {
-  let srv: ServiceContainer = {};
-  let threw: number | undefined;
-  let error = -1;
   let destroyed: () => Promise<void> = async () => {};
   let ended: () => Promise<void> = async () => {};
 
   return {
-    threw(th) {
-      threw = th;
-    },
-    throws() {
-      return threw;
-    },
-    error(err) {
-      if (error === -1) {
-        error = err;
-      }
-    },
-    errored() {
-      return error;
-    },
     // eslint-disable-next-line @typescript-eslint/require-await
     async destroy(cb) {
       destroyed = cb;
@@ -84,164 +53,88 @@ export const createLifecycle = (): PrivateMiddlewareLifecycle => {
     async ended() {
       return ended();
     },
-    service(service) {
-      srv = service;
-    },
-    partial() {
-      return srv;
-    },
   };
 };
 
-export const disconnectLifecycle = (
-  lifecycle: PrivateMiddlewareLifecycle
-): [PrivateMiddlewareLifecycle, PrivateMiddlewareLifecycle] => {
-  let d1: () => Promise<void> = async () => {};
-  let e1: () => Promise<void> = async () => {};
-  let d2: () => Promise<void> = async () => {};
-  let e2: () => Promise<void> = async () => {};
-
-  const l1: PrivateMiddlewareLifecycle = {
-    threw(th) {
-      lifecycle.threw(th);
-    },
-    throws() {
-      return lifecycle.throws();
-    },
-    error(err) {
-      lifecycle.error(err);
-    },
-    errored() {
-      return lifecycle.errored();
-    },
-    // eslint-disable-next-line @typescript-eslint/require-await
-    async destroy(cb) {
-      d1 = cb;
-    },
-    async destroyed() {
-      return d1();
-    },
-    // eslint-disable-next-line @typescript-eslint/require-await
-    async end(cb) {
-      e1 = cb;
-    },
-    async ended() {
-      return e1();
-    },
-    service(service) {
-      lifecycle.service(service);
-    },
-    partial() {
-      return lifecycle.partial();
-    },
-  };
-
-  const l2: PrivateMiddlewareLifecycle = {
-    error(err) {
-      lifecycle.error(err);
-    },
-    throws() {
-      return lifecycle.throws();
-    },
-    threw(th) {
-      lifecycle.threw(th);
-    },
-    errored() {
-      return lifecycle.errored();
-    },
-    // eslint-disable-next-line @typescript-eslint/require-await
-    async destroy(cb) {
-      d2 = cb;
-    },
-    async destroyed() {
-      return d2();
-    },
-    // eslint-disable-next-line @typescript-eslint/require-await
-    async end(cb) {
-      e2 = cb;
-    },
-    async ended() {
-      return e2();
-    },
-    service(service) {
-      lifecycle.service(service);
-    },
-    partial() {
-      return lifecycle.partial();
-    },
-  };
-
-  lifecycle.destroy(async () => {
-    await d2();
-    await d1();
-  });
-
-  lifecycle.end(async () => {
-    await e1();
-    await e2();
-  });
-
-  return [l1, l2];
-};
-
-export const createHandlerLifecycle = (): PrivateHandlerLifecycle => {
+export const createHandlerLifecycle = <
+  Event extends AwsEvent,
+  Options extends ServiceOptions,
+  Service extends ServiceContainer,
+  ServiceError
+>(
+  request:
+    | Request<Event, Options, Service>
+    | RequestError<Event, Options, Service, ServiceError>
+    | RequestException<Event, Options>
+): PrivateHandlerLifecycle => {
+  let isStopped = false;
   // eslint-disable-next-line @typescript-eslint/require-await
-  let stops: () => Promise<boolean> = async () => {
-    return false;
+  let stops: () => Promise<boolean> | boolean = async () => {
+    return isStopped;
   };
 
   return {
     // eslint-disable-next-line @typescript-eslint/require-await
     async returns(cb) {
-      stops = cb;
+      if (typeof cb === 'boolean') {
+        isStopped = cb;
+      } else {
+        stops = cb;
+      }
     },
     async stops() {
       return stops();
     },
-  };
-};
+    works<Works extends boolean | Promise<boolean>>(
+      cb: (() => Works) | Works
+    ): Works extends Promise<unknown> ? Promise<never> : never {
+      const working = typeof cb === 'function' ? cb() : cb;
 
-export const disconnectHandlerLifecycle = (
-  lifecycle: PrivateHandlerLifecycle
-): [PrivateHandlerLifecycle, PrivateHandlerLifecycle] => {
-  // eslint-disable-next-line @typescript-eslint/require-await
-  let s1: () => Promise<boolean> = async () => {
-    return false;
-  };
-  // eslint-disable-next-line @typescript-eslint/require-await
-  let s2: () => Promise<boolean> = async () => {
-    return false;
-  };
+      if (isPromise(working)) {
+        return working.then((worked) => {
+          if (!worked) {
+            throw fail<SkippedError>('Skipped', { works: true });
+          }
+        }) as never;
+      } else if (!working) {
+        throw fail<SkippedError>('Skipped', { works: true });
+      }
 
-  const l1: PrivateHandlerLifecycle = {
-    ...lifecycle,
-    stops() {
-      return s1();
+      return undefined as never;
     },
-    returns(cb) {
-      s1 = cb;
+    worksForErr<Type extends string[]>(
+      cb: (() => Promise<Type> | Type) | Type,
+      returns?: (() => Promise<boolean> | boolean) | boolean
+    ): never {
+      if (returns) {
+        if (typeof returns === 'boolean') {
+          isStopped = returns;
+        } else {
+          stops = returns;
+        }
+      }
+
+      const working = typeof cb === 'function' ? cb() : cb;
+
+      const isSkip = (worked: string[]) => {
+        return (
+          'error' in request && isErr(request.error) && worked.indexOf(request.error.type) === -1
+        );
+      };
+
+      if (isPromise(working)) {
+        return working.then((worked) => {
+          if (isSkip(worked)) {
+            throw fail<SkippedError>('Skipped', { works: true });
+          }
+
+          return request;
+        }) as never;
+      } else if (isSkip(working)) {
+        throw fail<SkippedError>('Skipped', { works: true });
+      }
+
+      return request as never;
     },
   };
-
-  const l2: PrivateHandlerLifecycle = {
-    ...lifecycle,
-    stops() {
-      return s2();
-    },
-    returns(cb) {
-      s2 = cb;
-    },
-  };
-
-  lifecycle.returns(async () => {
-    const l1Stops = await l1.stops();
-
-    if (l1Stops) {
-      return true;
-    }
-
-    return l2.stops();
-  });
-
-  return [l1, l2];
 };

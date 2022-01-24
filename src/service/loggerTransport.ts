@@ -1,4 +1,4 @@
-import { MiddlewareCreator } from '../types';
+import { MiddlewareCreator } from '../core';
 import { addService } from '../utils';
 
 export type MessageType = string;

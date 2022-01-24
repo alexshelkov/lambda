@@ -1,4 +1,4 @@
-import { MiddlewareCreator } from '../types';
+import { MiddlewareCreator } from '../core';
 import { addService } from '../utils';
 
 import getTransport, { Transport, TransportService } from './loggerTransport';

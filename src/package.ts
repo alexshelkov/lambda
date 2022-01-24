@@ -1,39 +1,17 @@
-import { Response } from 'lambda-res';
-
 import {
   AwsEvent,
   Handler,
-  HandlerLifecycle,
   MiddlewareCreator,
-  ProtectedMiddlewareLifecycle,
-  RequestError,
   ServiceContainer,
   ServiceOptions,
-} from './types';
+  HandlerError,
+} from './core';
 
 type IsBothNever<Data, Error> = [Data] extends [never]
   ? [Error] extends [never]
     ? true
     : false
   : false;
-
-// MUST be compatible HandlerError
-interface PackageHandlerError<
-  Service extends ServiceContainer,
-  ServiceError2,
-  Data,
-  Error,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  HandledError = never,
-  Event extends AwsEvent = AwsEvent,
-  Options extends ServiceOptions = ServiceOptions
-> {
-  <ServiceError1>(
-    request: RequestError<Event, Options, Service, ServiceError1 | ServiceError2>,
-    handlerLifecycle: HandlerLifecycle,
-    lifecycle: ProtectedMiddlewareLifecycle
-  ): Response<Data, Error>;
-}
 
 export type Package<
   Options extends ServiceOptions,
@@ -56,7 +34,7 @@ export type Package<
     ? // eslint-disable-next-line @typescript-eslint/ban-types
       {}
     : {
-        fail: PackageHandlerError<
+        fail: HandlerError<
           Service & ServiceDeps,
           ServiceError,
           FailureData,

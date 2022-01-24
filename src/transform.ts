@@ -1,5 +1,6 @@
 import { Result } from 'lambda-res';
 import { APIGatewayProxyResult } from 'aws-lambda';
+import { FallBackTransform } from './core';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const json = async (result: Result<unknown, unknown>): Promise<APIGatewayProxyResult> => {
@@ -69,3 +70,13 @@ export const none = async (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   result: Result<unknown, unknown>
 ): Promise<void> => {};
+
+let fallBackTransform: FallBackTransform = json;
+
+export const getFallBackTransform = (): FallBackTransform => {
+  return fallBackTransform;
+};
+
+export const resetFallBackTransform = (transform: FallBackTransform): void => {
+  fallBackTransform = transform;
+};

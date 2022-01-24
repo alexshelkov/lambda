@@ -1,4 +1,4 @@
-import { AwsEvent, Request, RequestError, ServiceContainer, ServiceOptions } from './types';
+import { AwsEvent, Request, RequestError, ServiceContainer, ServiceOptions } from './core';
 
 export const createEvent = <Event extends AwsEvent['event']>(event: Event = {} as Event): Event => {
   return event;
@@ -31,7 +31,8 @@ export const createRequest = <
 
 export const createErrorRequest = <
   Service extends ServiceContainer,
-  Error,
+  Type extends string,
+  Error extends { type: Type },
   Options extends ServiceOptions,
   Event extends AwsEvent['event'],
   Context extends AwsEvent['context']
