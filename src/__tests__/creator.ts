@@ -220,6 +220,30 @@ describe('creator base', () => {
 
     expect(res.options()).toStrictEqual(options);
   });
+
+  it('last service overwrite prev', async () => {
+    expect.assertions(1);
+
+    const overwrite: MiddlewareCreator<ServiceOptions, { test1: string }, never> = () => {
+      return async (request) => {
+        return addService(request, {
+          test1: 'overwrite 1',
+        });
+      };
+    };
+
+    const res = creator(creatorTest1)
+      .srv(overwrite)
+      .ok(async ({ service }) => {
+        return ok(`ok: ${service.test1}`);
+      })
+      .on(safe);
+
+    await expect(req(res)).resolves.toMatchObject({
+      status: 'success',
+      data: 'ok: overwrite 1',
+    });
+  });
 });
 
 describe('create middleware lazily and in correct order', () => {

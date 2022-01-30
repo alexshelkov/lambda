@@ -432,8 +432,8 @@ const runMiddlewares = async (
         break;
       } else {
         services = {
-          ...service.ok(),
           ...services,
+          ...service.ok(),
         };
       }
     } catch (err) {
