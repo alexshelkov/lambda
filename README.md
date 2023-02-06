@@ -124,10 +124,10 @@ type Errors = never;
 
 const service = <Opt extends Options>(
   options: Partial<Opt>
-): Middleware<{ service: Service<Opt> }, Errors> => {
-  return async <Service1 extends ServiceContainer>(request: Request<AwsEvent, Service1>) => {
+): Middleware<Opt, { data: Service<Opt> }, Errors> => {
+  return async <Srv extends ServiceContainer>(request: Request<AwsEvent, Opt, Srv>) => {
     return addService(request, {
-      service: { test: options.test } as Service<Opt>,
+      data: { test: options.test } as Service<Opt>,
     });
   };
 };

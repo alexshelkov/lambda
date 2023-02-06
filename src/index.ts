@@ -81,7 +81,16 @@ export {
   GetEventMdl,
 } from './infer';
 
-export { json, raw, safe, none, resetFallBackTransform, getFallBackTransform } from './transform';
+export {
+  json,
+  raw,
+  safe,
+  none,
+  unwrap,
+  unwrapSafe,
+  resetFallBackTransform,
+  getFallBackTransform,
+} from './transform';
 
 export { addService, convertToFailure } from './utils';
 
@@ -91,9 +100,9 @@ export { runner } from './runner';
 
 export { route, routeError, Router, RouterError } from './router';
 
-export { default as empty, EmptyOptions, EmptyService, EmptyErrors } from './service/empty';
-
 export { createContext, createEvent, createRequest, createErrorRequest } from './request';
+
+export { default as empty, EmptyOptions, EmptyService, EmptyErrors } from './service/empty';
 
 export {
   default as jsonBodyService,
@@ -156,3 +165,13 @@ export {
   TransportErrors,
   MessageType,
 } from './service/loggerTransport';
+
+export {
+  default as envs,
+  envsLoader,
+  EnvsLoaderOptions,
+  EnvsLoaderService,
+  EnvsOptions,
+  EnvsService,
+  EnvsErrors,
+} from './service/envs';

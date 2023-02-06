@@ -38,6 +38,8 @@ import {
   safe,
   createEvent,
   createContext,
+  unwrap,
+  unwrapSafe,
 } from '../index';
 
 import { error1 } from '../creator';
@@ -1483,7 +1485,7 @@ describe('creator and handler lifecycles', () => {
 
 describe('creator transform', () => {
   it('everything success', async () => {
-    expect.assertions(5);
+    expect.assertions(7);
 
     const res = creator(creatorTest1).opt({ op1: '1' });
 
@@ -1506,6 +1508,14 @@ describe('creator transform', () => {
       statusCode: 123,
       body: 'Test 1 1',
     });
+
+    await expect(resOk.onOk(unwrap).req()(createEvent(), createContext())).resolves.toStrictEqual(
+      'success'
+    );
+
+    await expect(
+      resOk.onOk(unwrapSafe).req()(createEvent(), createContext())
+    ).resolves.toStrictEqual('success');
 
     const trans1: Transform<string, unknown, unknown> = async () => {
       return 'Test 2';
@@ -1544,7 +1554,7 @@ describe('creator transform', () => {
   });
 
   it('ok fail', async () => {
-    expect.assertions(2);
+    expect.assertions(4);
 
     const res = creator(creatorTest1).opt({ op1: '1' });
 
@@ -1563,6 +1573,16 @@ describe('creator transform', () => {
       statusCode: 456,
       body: 'Test 1 1',
     });
+
+    await expect(
+      resErr.onOk(unwrapSafe).req()(createEvent(), createContext())
+    ).resolves.toMatchObject({
+      type: 'error',
+    });
+
+    await expect(() => {
+      return resErr.onOk(unwrap).req()(createEvent(), createContext());
+    }).rejects.toThrow('error');
 
     const trans1: Transform<string, unknown, unknown> = async () => {
       return 'Test 1';

@@ -1,4 +1,4 @@
-import { Result } from 'lambda-res';
+import { Failure, Result } from 'lambda-res';
 import { APIGatewayProxyResult } from 'aws-lambda';
 import { FallBackTransform } from './core';
 
@@ -63,6 +63,28 @@ export const raw = async <Res extends Result<unknown, unknown> = Result<unknown,
   result: Res
   // eslint-disable-next-line @typescript-eslint/require-await
 ): Promise<Res> => {
+  return result;
+};
+
+export const unwrapSafe = async <Data = unknown, Fail = unknown>(
+  result: Result<Data, Fail>
+  // eslint-disable-next-line @typescript-eslint/require-await
+): Promise<Data | Fail> => {
+  if (result.isOk()) {
+    return result.ok();
+  }
+
+  return result.err();
+};
+
+export const unwrap = async <Data = unknown, Fail = unknown>(
+  result: Result<Data, Fail>
+  // eslint-disable-next-line @typescript-eslint/require-await
+): Promise<Data | Failure<Fail>> => {
+  if (result.isOk()) {
+    return result.ok();
+  }
+
   return result;
 };
 
