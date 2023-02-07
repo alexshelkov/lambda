@@ -116,7 +116,11 @@ export const createHandlerLifecycle = <
 
       const working = typeof cb === 'function' ? cb() : cb;
 
-      const isSkip = (worked: string[]) => {
+      const isSkip = (worked: string | string[]) => {
+        if (!Array.isArray(worked)) {
+          worked = [worked];
+        }
+
         return (
           'error' in request && isErr(request.error) && worked.indexOf(request.error.type) === -1
         );

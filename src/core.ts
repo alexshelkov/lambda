@@ -90,9 +90,25 @@ export interface HandlerLifecycle<
     returns?: (() => Promise<boolean> | boolean) | boolean
   ): RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>;
 
+  worksForErr<Type extends ServiceError extends Err ? ServiceError['type'] : never>(
+    cb: (() => Type) | Type,
+    returns?: (() => Promise<boolean> | boolean) | boolean
+  ): RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>;
+
   worksForErr<
     Type extends Promise<readonly (ServiceError extends Err ? ServiceError['type'] : never)[]>
   >(
+    cb: (() => Type) | Type,
+    returns?: (() => Promise<boolean> | boolean) | boolean
+  ): Type extends Promise<infer JustType>
+    ? JustType extends string[]
+      ? Promise<
+          RequestError<Event, Options, Service, Extract<ServiceError, { type: JustType[number] }>>
+        >
+      : never
+    : never;
+
+  worksForErr<Type extends Promise<ServiceError extends Err ? ServiceError['type'] : never>>(
     cb: (() => Type) | Type,
     returns?: (() => Promise<boolean> | boolean) | boolean
   ): Type extends Promise<infer JustType>

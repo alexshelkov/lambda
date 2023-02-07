@@ -307,4 +307,42 @@ Same as calling `onOk`, `onFail` and `onFatal`.
 
 Returns AWS Lambda handler.
 
+------------------------------------------------------------------------------------------
 
+### Packages
+
+Packages allow grouping a service, and ok and fail handlers together. 
+
+```typescript
+import { Err, fail, ok } from 'lambda-res';
+import { creator, empty, addService, ServiceOptions, Package } from 'lambda-mdl';
+
+const pack: Package<
+  ServiceOptions,
+  { packageService: string },
+  Err<'ServiceError'>,
+  string,
+  never,
+  string
+> = {
+  srv: () => {
+    return async (request) => {
+      return addService(request, {
+        packageService: 'service test',
+      });
+    };
+  },
+  ok: async () => {
+    return ok(`ok`);
+  },
+  fail: async () => {
+    return ok(`fail`);
+  },
+};
+
+creator(empty)
+  .pack(pack)
+  .ok(async ({ service: { packageService } }) => {
+    return ok(packageService);
+  });
+```

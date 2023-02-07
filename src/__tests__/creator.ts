@@ -1260,7 +1260,7 @@ describe('creator and handler lifecycles', () => {
         .fail(async (_, { worksForErr }) => {
           failCalls += 1;
           const { error } = worksForErr(() => {
-            return ['cr1'];
+            return 'cr1' as const;
           }, true);
           failRuns += 1;
           return ok(`fail 1: ${error.type}`);
