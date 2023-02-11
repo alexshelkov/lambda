@@ -56,6 +56,8 @@ export {
   Transform1,
   TransformError1,
   GetReqRes,
+  EarlyReturns,
+  WorksType,
 } from './core';
 
 export { Creator, creator } from './creator';

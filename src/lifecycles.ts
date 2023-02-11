@@ -12,6 +12,7 @@ import {
   RequestError,
   Request,
   RequestException,
+  EarlyReturns,
 } from './core';
 import { isPromise } from './utils';
 
@@ -85,9 +86,9 @@ export const createHandlerLifecycle = <
     async stops() {
       return stops();
     },
-    works<Works extends boolean | Promise<boolean>>(
-      cb: (() => Works) | Works
-    ): Works extends Promise<unknown> ? Promise<never> : never {
+    works<Works extends EarlyReturns>(
+      cb: Works
+    ): Works extends () => Promise<unknown> ? Promise<void> : void {
       const working = typeof cb === 'function' ? cb() : cb;
 
       if (isPromise(working)) {
@@ -104,7 +105,7 @@ export const createHandlerLifecycle = <
     },
     worksForErr<Type extends string[]>(
       cb: (() => Promise<Type> | Type) | Type,
-      returns?: (() => Promise<boolean> | boolean) | boolean
+      returns?: EarlyReturns
     ): never {
       if (returns) {
         if (typeof returns === 'boolean') {

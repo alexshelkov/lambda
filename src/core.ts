@@ -73,43 +73,38 @@ export interface PrivateMiddlewareLifecycle extends MiddlewareLifecycle {
   ended: () => Promise<void>;
 }
 
+export type EarlyReturns = (() => Promise<boolean> | boolean) | boolean;
+export type WorksType<ServiceError> = ServiceError extends Err ? ServiceError['type'] : never;
+
 export interface HandlerLifecycle<
   Event extends AwsEvent,
   Options extends ServiceOptions,
   Service extends ServiceContainer,
   ServiceError
 > {
-  returns(cb: (() => Promise<boolean> | boolean) | boolean): void;
+  returns(cb: EarlyReturns): void;
 
-  works<Works extends Promise<boolean> | boolean>(
-    cb: (() => Works) | Works
-  ): Works extends Promise<unknown> ? Promise<void> : void;
+  works<Works extends EarlyReturns>(
+    cb: Works
+  ): Works extends () => Promise<unknown> ? Promise<void> : void;
 
-  worksForErr<
-    Type extends readonly (ServiceError extends Err ? ServiceError['type'] : never)[],
-    Works extends (() => Promise<boolean>) | (() => boolean) | boolean
-  >(
-    cb: (() => Type) | Type,
-    returns?: (() => Works) | boolean
-  ): Works extends () => Promise<unknown>
-    ? Promise<RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>>
-    : RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>;
-
-  worksForErr<
-    Type extends ServiceError extends Err ? ServiceError['type'] : never,
-    Works extends (() => Promise<boolean>) | (() => boolean) | boolean
-  >(
+  worksForErr<Type extends readonly WorksType<ServiceError>[], Works extends EarlyReturns>(
     cb: (() => Type) | Type,
     returns?: Works
   ): Works extends () => Promise<unknown>
     ? Promise<RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>>
     : RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>;
 
-  worksForErr<
-    Type extends Promise<readonly (ServiceError extends Err ? ServiceError['type'] : never)[]>
-  >(
+  worksForErr<Type extends WorksType<ServiceError>, Works extends EarlyReturns>(
     cb: (() => Type) | Type,
-    returns?: (() => Promise<boolean> | boolean) | boolean
+    returns?: Works
+  ): Works extends () => Promise<unknown>
+    ? Promise<RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>>
+    : RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>;
+
+  worksForErr<Type extends Promise<readonly WorksType<ServiceError>[]>>(
+    cb: (() => Type) | Type,
+    returns?: EarlyReturns
   ): Type extends Promise<infer JustType>
     ? JustType extends string[]
       ? Promise<
@@ -118,9 +113,9 @@ export interface HandlerLifecycle<
       : never
     : never;
 
-  worksForErr<Type extends Promise<ServiceError extends Err ? ServiceError['type'] : never>>(
+  worksForErr<Type extends WorksType<ServiceError>>(
     cb: (() => Type) | Type,
-    returns?: (() => Promise<boolean> | boolean) | boolean
+    returns?: EarlyReturns
   ): Type extends Promise<infer JustType>
     ? JustType extends string[]
       ? Promise<
