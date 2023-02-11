@@ -85,15 +85,25 @@ export interface HandlerLifecycle<
     cb: (() => Works) | Works
   ): Works extends Promise<unknown> ? Promise<void> : void;
 
-  worksForErr<Type extends readonly (ServiceError extends Err ? ServiceError['type'] : never)[]>(
+  worksForErr<
+    Type extends readonly (ServiceError extends Err ? ServiceError['type'] : never)[],
+    Works extends (() => Promise<boolean>) | (() => boolean) | boolean
+  >(
     cb: (() => Type) | Type,
-    returns?: (() => Promise<boolean> | boolean) | boolean
-  ): RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>;
+    returns?: (() => Works) | boolean
+  ): Works extends () => Promise<unknown>
+    ? Promise<RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>>
+    : RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>;
 
-  worksForErr<Type extends ServiceError extends Err ? ServiceError['type'] : never>(
+  worksForErr<
+    Type extends ServiceError extends Err ? ServiceError['type'] : never,
+    Works extends (() => Promise<boolean>) | (() => boolean) | boolean
+  >(
     cb: (() => Type) | Type,
-    returns?: (() => Promise<boolean> | boolean) | boolean
-  ): RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>;
+    returns?: Works
+  ): Works extends () => Promise<unknown>
+    ? Promise<RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>>
+    : RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>;
 
   worksForErr<
     Type extends Promise<readonly (ServiceError extends Err ? ServiceError['type'] : never)[]>
