@@ -74,7 +74,10 @@ export interface PrivateMiddlewareLifecycle extends MiddlewareLifecycle {
 }
 
 export type EarlyReturns = (() => Promise<boolean> | boolean) | boolean;
-export type WorksType<ServiceError> = ServiceError extends Err ? ServiceError['type'] : never;
+export type WorksCb<SrvErr> =
+  | (() => Promise<readonly SrvErr[] | SrvErr> | readonly SrvErr[] | SrvErr)
+  | readonly SrvErr[]
+  | SrvErr;
 
 export interface HandlerLifecycle<
   Event extends AwsEvent,
@@ -88,41 +91,31 @@ export interface HandlerLifecycle<
     cb: Works
   ): Works extends () => Promise<unknown> ? Promise<void> : void;
 
-  worksForErr<Type extends readonly WorksType<ServiceError>[], Works extends EarlyReturns>(
-    cb: (() => Type) | Type,
-    returns?: Works
-  ): Works extends () => Promise<unknown>
-    ? Promise<RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>>
-    : RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>;
-
-  worksForErr<Type extends WorksType<ServiceError>, Works extends EarlyReturns>(
-    cb: (() => Type) | Type,
-    returns?: Works
-  ): Works extends () => Promise<unknown>
-    ? Promise<RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>>
-    : RequestError<Event, Options, Service, Extract<ServiceError, { type: Type[number] }>>;
-
-  worksForErr<Type extends Promise<readonly WorksType<ServiceError>[]>>(
-    cb: (() => Type) | Type,
-    returns?: EarlyReturns
-  ): Type extends Promise<infer JustType>
-    ? JustType extends string[]
-      ? Promise<
-          RequestError<Event, Options, Service, Extract<ServiceError, { type: JustType[number] }>>
-        >
+  worksForErr<
+    SrvErr extends ServiceError extends Err ? ServiceError['type'] : never,
+    Cb extends WorksCb<SrvErr>,
+    Works extends EarlyReturns,
+    Type = Cb extends () => Promise<readonly [...infer T]>
+      ? T[number]
+      : Cb extends () => Promise<infer T>
+      ? T
+      : Cb extends () => readonly [...infer T]
+      ? T[number]
+      : Cb extends () => infer T
+      ? T
+      : Cb extends readonly [...infer T]
+      ? T[number]
+      : Cb extends string
+      ? Cb
       : never
-    : never;
-
-  worksForErr<Type extends WorksType<ServiceError>>(
-    cb: (() => Type) | Type,
-    returns?: EarlyReturns
-  ): Type extends Promise<infer JustType>
-    ? JustType extends string[]
-      ? Promise<
-          RequestError<Event, Options, Service, Extract<ServiceError, { type: JustType[number] }>>
-        >
-      : never
-    : never;
+  >(
+    cb: Cb,
+    returns?: Works
+  ): Cb extends () => Promise<unknown>
+    ? Promise<RequestError<Event, Options, Service, Extract<ServiceError, { type: Type }>>>
+    : Works extends () => Promise<unknown>
+    ? Promise<RequestError<Event, Options, Service, Extract<ServiceError, { type: Type }>>>
+    : RequestError<Event, Options, Service, Extract<ServiceError, { type: Type }>>;
 }
 
 export interface PrivateHandlerLifecycle extends HandlerLifecycle<never, never, never, never> {

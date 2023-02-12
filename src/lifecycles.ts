@@ -13,6 +13,7 @@ import {
   Request,
   RequestException,
   EarlyReturns,
+  WorksCb,
 } from './core';
 import { isPromise } from './utils';
 
@@ -103,10 +104,7 @@ export const createHandlerLifecycle = <
 
       return undefined as never;
     },
-    worksForErr<Type extends string[]>(
-      cb: (() => Promise<Type> | Type) | Type,
-      returns?: EarlyReturns
-    ): never {
+    worksForErr(cb: WorksCb<string>, returns?: EarlyReturns): never {
       if (returns) {
         if (typeof returns === 'boolean') {
           isStopped = returns;
@@ -117,9 +115,9 @@ export const createHandlerLifecycle = <
 
       const working = typeof cb === 'function' ? cb() : cb;
 
-      const isSkip = (worked: string | string[]) => {
+      const isSkip = (worked: string | readonly string[]) => {
         if (!Array.isArray(worked)) {
-          worked = [worked];
+          worked = [worked as string];
         }
 
         return (
