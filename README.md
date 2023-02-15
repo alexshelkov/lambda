@@ -41,17 +41,17 @@ type AdderService = { add: (a: number, b: number) => number };
 type AdderErrNoFloats = Err<'Float'>;
 
 const adder: MiddlewareCreator<Options, AdderService, AdderErrNoFloats> = (options, { throws }) => {
+  const service: AdderService = {
+    add: (a: number, b: number) => {
+      if (!options.acceptFloat && !(Number.isInteger(a) && Number.isInteger(b))) {
+        throws<AdderErrNoFloats>('Float');
+      }
+
+      return a + b;
+    },
+  };
+
   return async (request) => {
-    const service: AdderService = {
-      add: (a: number, b: number) => {
-        if (!options.acceptFloat && !(Number.isInteger(a) && Number.isInteger(b))) {
-          throws<AdderErrNoFloats>('Float');
-        }
-
-        return a + b;
-      },
-    };
-
     return addService(request, service);
   };
 };
