@@ -95,7 +95,7 @@ export interface HandlerLifecycle<
     SrvErr extends ServiceError extends Err ? ServiceError['type'] : never,
     Cb extends WorksCb<SrvErr>,
     Works extends EarlyReturns,
-    Type = Cb extends () => Promise<readonly [...infer T]>
+    Type extends Cb extends () => Promise<readonly [...infer T]>
       ? T[number]
       : Cb extends () => Promise<infer T>
       ? T
@@ -105,17 +105,16 @@ export interface HandlerLifecycle<
       ? T
       : Cb extends readonly [...infer T]
       ? T[number]
-      : Cb extends string
-      ? Cb
-      : never
+      : Cb,
+    Res extends RequestError<Event, Options, Service, Extract<ServiceError, { type: Type }>>
   >(
     cb: Cb,
     returns?: Works
   ): Cb extends () => Promise<unknown>
-    ? Promise<RequestError<Event, Options, Service, Extract<ServiceError, { type: Type }>>>
+    ? Promise<Res>
     : Works extends () => Promise<unknown>
-    ? Promise<RequestError<Event, Options, Service, Extract<ServiceError, { type: Type }>>>
-    : RequestError<Event, Options, Service, Extract<ServiceError, { type: Type }>>;
+    ? Promise<Res>
+    : Res;
 }
 
 export interface PrivateHandlerLifecycle extends HandlerLifecycle<never, never, never, never> {
